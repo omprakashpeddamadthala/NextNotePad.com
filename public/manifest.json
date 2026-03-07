@@ -1,0 +1,18 @@
+{
+    "name": "Notepad Web",
+    "short_name": "Notepad",
+    "description": "A browser-based code and notes editor similar to Notepad++",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#1e1e1e",
+    "theme_color": "#1e1e1e",
+    "orientation": "any",
+    "icons": [
+        {
+            "src": "/vite.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ]
+}

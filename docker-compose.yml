@@ -1,0 +1,17 @@
+services:
+  nextnotepad:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
+    container_name: nextnotepad
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "-qO-", "http://localhost:8080/" ]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s

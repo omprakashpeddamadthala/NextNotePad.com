@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+/* Global resets */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+  font-size: 13px;
+}
+
+/* NextNotePad classic scrollbar styling */
+::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f0f0f0;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border: 1px solid #a8a8a8;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+::-webkit-scrollbar-corner {
+  background: #f0f0f0;
+}
+
+/* Dark theme scrollbars */
+.dark-scrollbar::-webkit-scrollbar-track {
+  background: #2d2d2d;
+}
+
+.dark-scrollbar::-webkit-scrollbar-thumb {
+  background: #555;
+  border: 1px solid #444;
+}
+
+.dark-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
+/* Monaco editor overrides */
+.monaco-editor .overflow-guard {
+  border-radius: 0 !important;
+}
+
+/* Tab scrollbar — thin */
+div[style*="overflow-x: auto"]::-webkit-scrollbar {
+  height: 4px;
+}
+
+div[style*="overflow-x: auto"]::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.4);
+  border-radius: 2px;
+}
+
+/* MUI Menu overrides for NextNotePad look */
+.MuiMenu-paper {
+  border-radius: 2px !important;
+  border: 1px solid #bcbcbc !important;
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Print styles */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .monaco-editor,
+  .monaco-editor * {
+    visibility: visible;
+  }
+}
