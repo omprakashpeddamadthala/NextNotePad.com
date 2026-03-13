@@ -31,6 +31,17 @@ interface MenuBarProps {
     theme: 'light' | 'dark';
     onSyncDrive: () => void;
     onAbout: () => void;
+    onDownloadFile: () => void;
+    onDownloadAllAsZip: () => void;
+    showMinimap: boolean;
+    onToggleMinimap: () => void;
+    onWordCount: () => void;
+    onSortLines: () => void;
+    onRemoveDuplicateLines: () => void;
+    onTrimWhitespace: () => void;
+    onUpperCase: () => void;
+    onLowerCase: () => void;
+    onRunInBrowser: () => void;
 }
 
 interface MenuDef {
@@ -47,7 +58,7 @@ const MENUS: MenuDef[] = [
     { label: 'Language', id: 'language' },
     { label: 'Settings', id: 'settings' },
     { label: 'Tools', id: 'tools' },
-    { label: 'Macro', id: 'macro' },
+    { label: 'Plugins', id: 'plugins' },
     { label: 'Run', id: 'run' },
     { label: '?', id: 'help' },
 ];
@@ -73,6 +84,10 @@ const MenuBar: React.FC<MenuBarProps> = ({
     sidebarOpen, onToggleSidebar,
     currentEncoding, currentLanguage, theme,
     onSyncDrive, onAbout, onThemeToggle,
+    onDownloadFile, onDownloadAllAsZip,
+    showMinimap, onToggleMinimap,
+    onWordCount, onSortLines, onRemoveDuplicateLines, onTrimWhitespace,
+    onUpperCase, onLowerCase, onRunInBrowser,
 }) => {
     const [openMenu, setOpenMenu] = useState<string | null>(null);
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -232,6 +247,13 @@ const MenuBar: React.FC<MenuBarProps> = ({
                     <ListItemText><Typography sx={{ fontSize: '13px' }}>Print...</Typography></ListItemText>
                     <Shortcut text="Ctrl+P" />
                 </MenuItem>
+                <Divider sx={{ my: '2px!important' }} />
+                <MenuItem sx={menuItemSx} onClick={menuAction(onDownloadFile)}>
+                    <ListItemText><Typography sx={{ fontSize: '13px' }}>Download File</Typography></ListItemText>
+                </MenuItem>
+                <MenuItem sx={menuItemSx} onClick={menuAction(onDownloadAllAsZip)}>
+                    <ListItemText><Typography sx={{ fontSize: '13px' }}>Download All as ZIP</Typography></ListItemText>
+                </MenuItem>
             </Menu>
 
             {/* Edit Menu */}
@@ -333,6 +355,11 @@ const MenuBar: React.FC<MenuBarProps> = ({
                     <ListItemText><Typography sx={{ fontSize: '13px' }}>Restore Default Zoom</Typography></ListItemText>
                     <Shortcut text="Ctrl+Num/" />
                 </MenuItem>
+                <Divider sx={{ my: '2px!important' }} />
+                <MenuItem sx={menuItemSx} onClick={menuAction(onToggleMinimap)}>
+                    <Check checked={showMinimap} />
+                    <ListItemText><Typography sx={{ fontSize: '13px' }}>Minimap</Typography></ListItemText>
+                </MenuItem>
             </Menu>
 
             {/* Encoding Menu */}
@@ -395,15 +422,32 @@ const MenuBar: React.FC<MenuBarProps> = ({
                 </MenuItem>
             </Menu>
 
-            {/* Macro Menu */}
+            {/* Plugins Menu */}
             <Menu
-                anchorEl={openMenu === 'macro' ? anchorEl : null}
-                open={openMenu === 'macro'}
+                anchorEl={openMenu === 'plugins' ? anchorEl : null}
+                open={openMenu === 'plugins'}
                 onClose={closeMenu}
-                sx={{ '& .MuiPaper-root': { minWidth: 220, borderRadius: '2px', mt: 0 } }}
+                sx={{ '& .MuiPaper-root': { minWidth: 260, borderRadius: '2px', mt: 0 } }}
             >
-                <MenuItem sx={menuItemSx} onClick={closeMenu}>
-                    <ListItemText><Typography sx={{ fontSize: '13px' }}>No macros available</Typography></ListItemText>
+                <MenuItem sx={menuItemSx} onClick={menuAction(onWordCount)}>
+                    <ListItemText><Typography sx={{ fontSize: '13px' }}>Word Count</Typography></ListItemText>
+                </MenuItem>
+                <Divider sx={{ my: '2px!important' }} />
+                <MenuItem sx={menuItemSx} onClick={menuAction(onSortLines)}>
+                    <ListItemText><Typography sx={{ fontSize: '13px' }}>Sort Lines</Typography></ListItemText>
+                </MenuItem>
+                <MenuItem sx={menuItemSx} onClick={menuAction(onRemoveDuplicateLines)}>
+                    <ListItemText><Typography sx={{ fontSize: '13px' }}>Remove Duplicate Lines</Typography></ListItemText>
+                </MenuItem>
+                <MenuItem sx={menuItemSx} onClick={menuAction(onTrimWhitespace)}>
+                    <ListItemText><Typography sx={{ fontSize: '13px' }}>Trim Trailing Whitespace</Typography></ListItemText>
+                </MenuItem>
+                <Divider sx={{ my: '2px!important' }} />
+                <MenuItem sx={menuItemSx} onClick={menuAction(onUpperCase)}>
+                    <ListItemText><Typography sx={{ fontSize: '13px' }}>UPPERCASE</Typography></ListItemText>
+                </MenuItem>
+                <MenuItem sx={menuItemSx} onClick={menuAction(onLowerCase)}>
+                    <ListItemText><Typography sx={{ fontSize: '13px' }}>lowercase</Typography></ListItemText>
                 </MenuItem>
             </Menu>
 
@@ -414,8 +458,9 @@ const MenuBar: React.FC<MenuBarProps> = ({
                 onClose={closeMenu}
                 sx={{ '& .MuiPaper-root': { minWidth: 220, borderRadius: '2px', mt: 0 } }}
             >
-                <MenuItem sx={menuItemSx} onClick={closeMenu}>
-                    <ListItemText><Typography sx={{ fontSize: '13px' }}>No commands available</Typography></ListItemText>
+                <MenuItem sx={menuItemSx} onClick={menuAction(onRunInBrowser)}>
+                    <ListItemText><Typography sx={{ fontSize: '13px' }}>Run in Browser</Typography></ListItemText>
+                    <Shortcut text="F5" />
                 </MenuItem>
             </Menu>
 

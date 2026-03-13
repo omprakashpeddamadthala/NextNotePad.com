@@ -19,11 +19,15 @@ import {
     FormatIndentIncrease as IndentIcon,
     FormatIndentDecrease as UnindentIcon,
     CloudSync as SyncIcon,
+    CloudDone as SyncedIcon,
+    CloudOff as SyncErrorIcon,
     DarkMode as DarkModeIcon,
     LightMode as LightModeIcon,
     Google as GoogleIcon,
     Print as PrintIcon,
     AutoFixHigh as FormatIcon,
+    Download as DownloadIcon,
+    FolderZip as ZipIcon,
 } from '@mui/icons-material';
 import { Tooltip, Avatar, CircularProgress } from '@mui/material';
 
@@ -52,10 +56,13 @@ interface NppToolbarProps {
     onThemeToggle: () => void;
     onGoogleLogin: () => void;
     onGoogleLogout: () => void;
+    onDownloadFile: () => void;
+    onDownloadAllAsZip: () => void;
     wordWrap: boolean;
     showAllChars: boolean;
     theme: 'light' | 'dark';
     syncing: boolean;
+    syncStatus: 'idle' | 'syncing' | 'synced' | 'error';
     user: { name: string; picture: string } | null;
 }
 
@@ -129,7 +136,8 @@ const NppToolbar: React.FC<NppToolbarProps> = ({
     onToggleWordWrap, onToggleShowAllChars,
     onIndent, onUnindent, onFormatText, onSyncDrive, onThemeToggle,
     onGoogleLogin, onGoogleLogout,
-    wordWrap, showAllChars, theme, syncing, user,
+    onDownloadFile, onDownloadAllAsZip,
+    wordWrap, showAllChars, theme, syncing, syncStatus, user,
 }) => {
     const isDark = theme === 'dark';
     const iconSx = { fontSize: 18 };
@@ -198,13 +206,25 @@ const NppToolbar: React.FC<NppToolbarProps> = ({
             {/* Format */}
             <TBtn icon={<FormatIcon sx={iconSx} />} tooltip="Format Text (JSON, XML, HTML, CSS, SQL)" onClick={onFormatText} isDark={isDark} />
 
+            <ToolbarSeparator isDark={isDark} />
+
+            {/* Download */}
+            <TBtn icon={<DownloadIcon sx={iconSx} />} tooltip="Download File" onClick={onDownloadFile} isDark={isDark} />
+            <TBtn icon={<ZipIcon sx={iconSx} />} tooltip="Download All as ZIP" onClick={onDownloadAllAsZip} isDark={isDark} />
+
             {/* Spacer */}
             <div style={{ flex: 1 }} />
 
-            {/* Cloud Sync */}
+            {/* Cloud Sync with status */}
             <TBtn
-                icon={syncing ? <CircularProgress size={16} /> : <SyncIcon sx={iconSx} />}
-                tooltip="Sync to Google Drive"
+                icon={syncing ? <CircularProgress size={16} /> :
+                    syncStatus === 'synced' ? <SyncedIcon sx={{ ...iconSx, color: '#4caf50' }} /> :
+                    syncStatus === 'error' ? <SyncErrorIcon sx={{ ...iconSx, color: '#f44336' }} /> :
+                    <SyncIcon sx={iconSx} />}
+                tooltip={syncing ? 'Syncing...' :
+                    syncStatus === 'synced' ? 'Synced with Google Drive' :
+                    syncStatus === 'error' ? 'Sync error - click to retry' :
+                    'Sync to Google Drive'}
                 onClick={onSyncDrive}
                 isDark={isDark}
                 disabled={syncing}

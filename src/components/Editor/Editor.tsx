@@ -36,13 +36,14 @@ interface EditorProps {
     wordWrap: boolean;
     fontSize: number;
     showAllChars: boolean;
+    showMinimap?: boolean;
     onChange: (id: string, content: string) => void;
     onCursorChange: (line: number, col: number, selChars: number, selLines: number) => void;
     editorRef: React.MutableRefObject<monaco.editor.IStandaloneCodeEditor | null>;
 }
 
 const EditorComponent: React.FC<EditorProps> = ({
-    note, theme, wordWrap, fontSize, showAllChars, onChange, onCursorChange, editorRef,
+    note, theme, wordWrap, fontSize, showAllChars, showMinimap = false, onChange, onCursorChange, editorRef,
 }) => {
     const isDark = theme === 'dark';
     const monacoRef = useRef<typeof monaco | null>(null);
@@ -208,7 +209,7 @@ const EditorComponent: React.FC<EditorProps> = ({
                     fontSize,
                     fontFamily: "'Courier New', 'Consolas', monospace",
                     lineNumbers: 'on',
-                    minimap: { enabled: false },
+                    minimap: { enabled: showMinimap },
                     wordWrap: wordWrap ? 'on' : 'off',
                     scrollBeyondLastLine: false,
                     automaticLayout: true,
