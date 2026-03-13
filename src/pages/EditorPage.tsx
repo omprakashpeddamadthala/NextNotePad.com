@@ -53,6 +53,7 @@ const EditorPage: React.FC = () => {
 
     const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
     const autoSyncTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const handleSyncRef = useRef<(() => void) | null>(null);
     const isDark = settings.theme === 'dark';
 
     const showSnackbar = (message: string, severity: 'success' | 'error' | 'info') => {
@@ -142,7 +143,15 @@ const EditorPage: React.FC = () => {
                     });
                 }
             }
-            setNotes(updatedNotes);
+            // Use functional updater to merge sync results without overwriting concurrent edits
+            setNotes(currentNotes => {
+                const merged = currentNotes.map(n => {
+                    const synced = updatedNotes.find(u => u.id === n.id);
+                    return synced ? { ...n, driveFileId: synced.driveFileId } : n;
+                });
+                const newFromDrive = updatedNotes.filter(u => !currentNotes.some(n => n.id === u.id));
+                return [...merged, ...newFromDrive];
+            });
             setSyncStatus('synced');
             setLastSyncTime(Date.now());
             showSnackbar(`Synced ${updatedNotes.length} notes with Google Drive`, 'success');
@@ -155,14 +164,20 @@ const EditorPage: React.FC = () => {
         }
     }, [notes, setNotes, googleLogin]);
 
+    // Keep handleSyncRef up-to-date so the stable timer always calls latest handleSync
+    useEffect(() => {
+        handleSyncRef.current = handleSync;
+    }, [handleSync]);
+
     // Auto-sync timer: sync every 5 minutes when logged in
+    // Only depends on `user` so the interval is not reset on every keystroke
     useEffect(() => {
         if (user && getAccessToken()) {
             if (autoSyncTimerRef.current) {
                 clearInterval(autoSyncTimerRef.current);
             }
             autoSyncTimerRef.current = setInterval(() => {
-                handleSync();
+                handleSyncRef.current?.();
             }, AUTO_SYNC_INTERVAL);
         } else {
             if (autoSyncTimerRef.current) {
@@ -175,7 +190,8 @@ const EditorPage: React.FC = () => {
                 clearInterval(autoSyncTimerRef.current);
             }
         };
-    }, [user, handleSync]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user]);
 
     // Keyboard shortcuts
     useEffect(() => {
@@ -238,17 +254,19 @@ const EditorPage: React.FC = () => {
         const files = e.dataTransfer.files;
         if (!files || files.length === 0) return;
 
+        let imported = 0;
         for (const file of Array.from(files)) {
             try {
                 const content = await file.text();
                 const note = createNote(file.name);
                 updateContent(note.id, content);
+                imported++;
             } catch (err) {
                 console.error('Failed to read dropped file:', err);
                 showSnackbar(`Failed to import ${file.name}`, 'error');
             }
         }
-        showSnackbar(`Imported ${files.length} file(s)`, 'success');
+        if (imported > 0) showSnackbar(`Imported ${imported} file(s)`, 'success');
     }, [createNote, updateContent]);
 
     // Cursor change handler
@@ -604,6 +622,7 @@ const EditorPage: React.FC = () => {
         const blob = new Blob([htmlContent], { type: 'text/html' });
         const url = URL.createObjectURL(blob);
         window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
         showSnackbar(`Running ${activeNote.name} in browser`, 'success');
     }, [activeNote]);
 
