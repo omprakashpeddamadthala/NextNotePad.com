@@ -26,9 +26,33 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Generate current date tag
+      - name: Generate unique date-based tag
         id: datestamp
-        run: echo "date=$(date +'%m%d%Y')" >> $GITHUB_OUTPUT
+        run: |
+          BASE_DATE=$(date +'%m%d%Y')
+          IMAGE="omprakashornold/nextnotepad"
+
+          # Check if the base date tag already exists on Docker Hub
+          TAG="${BASE_DATE}"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://hub.docker.com/v2/repositories/${IMAGE}/tags/${TAG}/")
+
+          if [ "$STATUS" = "200" ]; then
+            # Tag exists — find the next available suffix (-1, -2, ...)
+            COUNTER=1
+            while true; do
+              TAG="${BASE_DATE}-${COUNTER}"
+              STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+                "https://hub.docker.com/v2/repositories/${IMAGE}/tags/${TAG}/")
+              if [ "$STATUS" != "200" ]; then
+                break
+              fi
+              COUNTER=$((COUNTER + 1))
+            done
+          fi
+
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "Generated tag: ${TAG}"
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
@@ -39,6 +63,7 @@ jobs:
           tags: |
             omprakashornold/nextnotepad:latest
             omprakashornold/nextnotepad:${{ github.sha }}
-            omprakashornold/nextnotepad:${{ steps.datestamp.outputs.date }}
+            omprakashornold/nextnotepad:${{ steps.datestamp.outputs.tag }}
           build-args: |
             VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+

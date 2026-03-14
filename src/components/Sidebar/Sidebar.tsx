@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import type { Note } from '../../types/Note';
+import { getPalette } from '../../theme/colors';
 
 interface SidebarProps {
     notes: Note[];
@@ -11,6 +12,7 @@ interface SidebarProps {
     theme: 'light' | 'dark';
     visible: boolean;
     isMobile?: boolean;
+    activeWorkspaceName?: string;
 }
 
 function getFileIconColor(name: string): string {
@@ -43,11 +45,11 @@ function formatTime(ts: number): string {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
-    notes, activeId, onFileClick, onNewFile, onRename, onDelete, theme, visible, isMobile,
+    notes, activeId, onFileClick, onNewFile, onRename, onDelete, theme, visible, isMobile, activeWorkspaceName,
 }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number; noteId: string } | null>(null);
-    const isDark = theme === 'dark';
+    const p = getPalette(theme);
 
     const filteredNotes = useMemo(() => {
         const q = searchQuery.toLowerCase();
@@ -62,149 +64,84 @@ const Sidebar: React.FC<SidebarProps> = ({
         <>
             <div
                 style={{
-                    width: 250,
-                    minWidth: 200,
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    background: isDark ? '#252526' : '#ffffff',
-                    borderRight: `1px solid ${isDark ? '#3c3c3c' : '#bcbcbc'}`,
-                    fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif",
-                    fontSize: '13px',
-                    flexShrink: 0,
-                    userSelect: 'none',
-                    ...(isMobile ? {
-                        position: 'absolute',
-                        left: 0,
-                        top: 0,
-                        zIndex: 10,
-                        boxShadow: '2px 0 8px rgba(0,0,0,0.5)',
-                    } : {}),
-                }}
+            width: 250, minWidth: 200, height: '100%',
+            display: 'flex', flexDirection: 'column',
+            background: p.panel,
+            borderRight: `1px solid ${p.border}`,
+            fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif",
+            fontSize: '13px', flexShrink: 0, userSelect: 'none',
+            ...(isMobile ? { position: 'absolute', left: 0, top: 0, zIndex: 10, boxShadow: '2px 0 12px rgba(0,0,0,0.4)' } : {}),
+        }}
             >
                 {/* Header */}
-                <div
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '6px 10px',
-                        borderBottom: `1px solid ${isDark ? '#3c3c3c' : '#bcbcbc'}`,
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
-                        color: isDark ? '#999' : '#666',
-                    }}
-                >
-                    <span>Files ({filteredNotes.length})</span>
-                    <button
-                        onClick={onNewFile}
-                        title="New File"
-                        style={{
-                            background: 'none', border: 'none', cursor: 'pointer',
-                            fontSize: '16px', lineHeight: 1, padding: '0 2px',
-                            color: isDark ? '#ccc' : '#555',
-                        }}
-                        onMouseOver={(e) => { (e.currentTarget as HTMLElement).style.color = isDark ? '#fff' : '#000'; }}
-                        onMouseOut={(e) => { (e.currentTarget as HTMLElement).style.color = isDark ? '#ccc' : '#555'; }}
-                    >
-                        +
-                    </button>
+                <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '6px 10px',
+                    borderBottom: `1px solid ${p.border}`,
+                    fontSize: '11px', fontWeight: 600,
+                    textTransform: 'uppercase', letterSpacing: '0.5px', color: p.textDim,
+                }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
+                        Files
+                        {activeWorkspaceName && (
+                            <span style={{ maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'inline-block' }}
+                                title={activeWorkspaceName}>
+                                · {activeWorkspaceName}
+                            </span>
+                        )}
+                        <span style={{ color: p.textMute, fontWeight: 400 }}>({filteredNotes.length})</span>
+                    </span>
+                    <button onClick={onNewFile} title="New File"
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', lineHeight: 1, padding: '0 2px', color: p.textDim }}
+                        onMouseOver={(e) => { (e.currentTarget as HTMLElement).style.color = p.text; }}
+                        onMouseOut={(e) => { (e.currentTarget as HTMLElement).style.color = p.textDim; }}
+                    >+</button>
                 </div>
 
-                {/* Search Bar */}
+                {/* Search */}
                 <div style={{ padding: '6px 8px' }}>
-                    <input
-                        type="text"
-                        placeholder="Search files..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                    <input type="text" placeholder="Search files..."
+                        value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
                         style={{
-                            width: '100%',
-                            height: 26,
-                            padding: '0 8px',
-                            fontSize: '12px',
-                            border: `1px solid ${isDark ? '#555' : '#bcbcbc'}`,
-                            borderRadius: 0,
-                            background: isDark ? '#3c3c3c' : '#ffffff',
-                            color: isDark ? '#e0e0e0' : '#1a1a1a',
-                            outline: 'none',
+                            width: '100%', height: 26, padding: '0 8px', fontSize: '12px',
+                            border: `1px solid ${p.border}`, borderRadius: 4,
+                            background: p.bg, color: p.text, outline: 'none',
                             fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif",
                         }}
-                        onFocus={(e) => { e.currentTarget.style.borderColor = isDark ? '#007acc' : '#0078d4'; }}
-                        onBlur={(e) => { e.currentTarget.style.borderColor = isDark ? '#555' : '#bcbcbc'; }}
+                        onFocus={(e) => { e.currentTarget.style.borderColor = p.accent; }}
+                        onBlur={(e) => { e.currentTarget.style.borderColor = p.border; }}
                     />
                 </div>
 
                 {/* File List */}
                 <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
                     {filteredNotes.length === 0 && (
-                        <div style={{
-                            padding: '20px 16px', textAlign: 'center',
-                            color: isDark ? '#666' : '#999', fontSize: '12px',
-                        }}>
+                        <div style={{ padding: '20px 16px', textAlign: 'center', color: p.textDim, fontSize: '12px' }}>
                             {searchQuery ? 'No matching files' : 'No files yet'}
                         </div>
                     )}
                     {filteredNotes.map((note) => {
                         const isActive = note.id === activeId;
                         const iconColor = getFileIconColor(note.name);
-
                         return (
-                            <div
-                                key={note.id}
+                            <div key={note.id}
                                 onClick={() => onFileClick(note.id)}
-                                onContextMenu={(e) => {
-                                    e.preventDefault();
-                                    setContextMenu({ x: e.clientX, y: e.clientY, noteId: note.id });
-                                }}
+                                onContextMenu={(e) => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, noteId: note.id }); }}
                                 style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 8,
-                                    padding: '5px 10px',
-                                    cursor: 'default',
-                                    background: isActive
-                                        ? isDark ? '#37373d' : '#e8e8e8'
-                                        : 'transparent',
-                                    color: isDark ? '#e0e0e0' : '#000000',
-                                    borderLeft: isActive
-                                        ? `3px solid #ff8c00`
-                                        : '3px solid transparent',
+                                    display: 'flex', alignItems: 'center', gap: 8,
+                                    padding: '5px 10px', cursor: 'default',
+                                    background: isActive ? p.active : 'transparent',
+                                    color: p.text,
+                                    borderLeft: isActive ? `3px solid ${p.accent}` : '3px solid transparent',
+                                    transition: 'background 0.1s',
                                 }}
-                                onMouseOver={(e) => {
-                                    if (!isActive) {
-                                        (e.currentTarget as HTMLElement).style.background = isDark ? '#2a2d2e' : '#f0f0f0';
-                                    }
-                                }}
-                                onMouseOut={(e) => {
-                                    if (!isActive) {
-                                        (e.currentTarget as HTMLElement).style.background = 'transparent';
-                                    }
-                                }}
+                                onMouseOver={(e) => { if (!isActive) (e.currentTarget as HTMLElement).style.background = p.hover; }}
+                                onMouseOut={(e) => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                             >
-                                {/* File type dot */}
-                                <span style={{
-                                    width: 8, height: 8, borderRadius: '50%',
-                                    background: iconColor, flexShrink: 0,
-                                }} />
-
-                                {/* File info */}
+                                <span style={{ width: 8, height: 8, borderRadius: '50%', background: iconColor, flexShrink: 0 }} />
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{
-                                        fontSize: '12px', whiteSpace: 'nowrap',
-                                        overflow: 'hidden', textOverflow: 'ellipsis',
-                                    }}>
-                                        {note.name}
-                                    </div>
-                                    <div style={{
-                                        fontSize: '10px',
-                                        color: isDark ? '#666' : '#999',
-                                        marginTop: 1,
-                                    }}>
-                                        {formatTime(note.lastModified)}
-                                    </div>
+                                    <div style={{ fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{note.name}</div>
+                                    <div style={{ fontSize: '10px', color: p.textDim, marginTop: 1 }}>{formatTime(note.lastModified)}</div>
                                 </div>
                             </div>
                         );
@@ -215,70 +152,29 @@ const Sidebar: React.FC<SidebarProps> = ({
             {/* Right-click Context Menu */}
             {contextMenu && (
                 <>
-                    <div
-                        style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 999 }}
-                        onClick={() => setContextMenu(null)}
-                    />
-                    <div
-                        style={{
-                            position: 'fixed',
-                            top: contextMenu.y,
-                            left: contextMenu.x,
-                            background: isDark ? '#2d2d2d' : '#f5f5f5',
-                            border: `1px solid ${isDark ? '#555' : '#bcbcbc'}`,
-                            borderRadius: 2,
-                            boxShadow: '2px 2px 6px rgba(0,0,0,0.2)',
-                            zIndex: 1000,
-                            minWidth: 150,
-                            padding: '4px 0',
-                        }}
-                    >
-                        <div
-                            onClick={() => {
-                                onFileClick(contextMenu.noteId);
-                                setContextMenu(null);
-                            }}
-                            style={{
-                                padding: '4px 16px', cursor: 'default', fontSize: '13px',
-                                color: isDark ? '#e0e0e0' : '#1a1a1a',
-                            }}
-                            onMouseOver={(e) => { (e.currentTarget as HTMLElement).style.background = isDark ? '#094771' : '#d6e4f2'; }}
+                    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 999 }} onClick={() => setContextMenu(null)} />
+                    <div style={{
+                        position: 'fixed', top: contextMenu.y, left: contextMenu.x,
+                        background: p.panel, border: `1px solid ${p.border}`,
+                        borderRadius: 4, boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
+                        zIndex: 1000, minWidth: 150, padding: '4px 0',
+                    }}>
+                        {[['Open', () => { onFileClick(contextMenu.noteId); setContextMenu(null); }],
+                          ['Rename', () => { onRename(contextMenu.noteId); setContextMenu(null); }],
+                        ].map(([label, action]) => (
+                            <div key={label as string}
+                                onClick={action as () => void}
+                                style={{ padding: '5px 16px', cursor: 'default', fontSize: '13px', color: p.text }}
+                                onMouseOver={(e) => { (e.currentTarget as HTMLElement).style.background = p.hover; }}
+                                onMouseOut={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                            >{label as string}</div>
+                        ))}
+                        <div style={{ height: 1, margin: '4px 0', background: p.border }} />
+                        <div onClick={() => { onDelete(contextMenu.noteId); setContextMenu(null); }}
+                            style={{ padding: '5px 16px', cursor: 'default', fontSize: '13px', color: p.danger }}
+                            onMouseOver={(e) => { (e.currentTarget as HTMLElement).style.background = p.hover; }}
                             onMouseOut={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
-                        >
-                            Open
-                        </div>
-                        <div
-                            onClick={() => {
-                                onRename(contextMenu.noteId);
-                                setContextMenu(null);
-                            }}
-                            style={{
-                                padding: '4px 16px', cursor: 'default', fontSize: '13px',
-                                color: isDark ? '#e0e0e0' : '#1a1a1a',
-                            }}
-                            onMouseOver={(e) => { (e.currentTarget as HTMLElement).style.background = isDark ? '#094771' : '#d6e4f2'; }}
-                            onMouseOut={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
-                        >
-                            Rename
-                        </div>
-                        <div style={{
-                            height: 1, margin: '4px 0',
-                            background: isDark ? '#444' : '#ddd',
-                        }} />
-                        <div
-                            onClick={() => {
-                                onDelete(contextMenu.noteId);
-                                setContextMenu(null);
-                            }}
-                            style={{
-                                padding: '4px 16px', cursor: 'default', fontSize: '13px',
-                                color: '#e74c3c',
-                            }}
-                            onMouseOver={(e) => { (e.currentTarget as HTMLElement).style.background = isDark ? '#094771' : '#d6e4f2'; }}
-                            onMouseOut={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
-                        >
-                            Delete
-                        </div>
+                        >Delete</div>
                     </div>
                 </>
             )}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     NoteAdd as NewIcon,
     FolderOpen as OpenIcon,
@@ -28,9 +28,12 @@ import {
     Print as PrintIcon,
     AutoFixHigh as FormatIcon,
     Download as DownloadIcon,
+    Logout as LogoutIcon,
+    FolderOpen as ManageIcon,
     FolderZip as ZipIcon,
 } from '@mui/icons-material';
-import { Tooltip, Avatar, CircularProgress } from '@mui/material';
+import { Tooltip, Avatar, CircularProgress, Menu, MenuItem, Divider } from '@mui/material';
+import { getPalette } from '../../theme/colors';
 
 interface NppToolbarProps {
     onNewFile: () => void;
@@ -58,6 +61,8 @@ interface NppToolbarProps {
     onThemeToggle: () => void;
     onGoogleLogin: () => void;
     onGoogleLogout: () => void;
+    onDevLogin?: () => void;
+    onManageWorkspaces?: () => void;
     onDownloadFile: () => void;
     onDownloadAllAsZip: () => void;
     wordWrap: boolean;
@@ -139,34 +144,35 @@ const NppToolbar: React.FC<NppToolbarProps> = ({
     onFind, onReplace, onCompare, onZoomIn, onZoomOut,
     onToggleWordWrap, onToggleShowAllChars,
     onIndent, onUnindent, onFormatText, onSyncDrive, onThemeToggle,
-    onGoogleLogin, onGoogleLogout,
+    onGoogleLogin, onGoogleLogout, onDevLogin, onManageWorkspaces,
     onDownloadFile, onDownloadAllAsZip,
     wordWrap, showAllChars, theme, syncing, syncStatus, user,
 }) => {
+    const p = getPalette(theme);
     const isDark = theme === 'dark';
     const iconSx = { fontSize: 18 };
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const menuOpen = Boolean(anchorEl);
+    const handleUserClick = (e: React.MouseEvent<HTMLElement>) => setAnchorEl(e.currentTarget);
+    const handleMenuClose = () => setAnchorEl(null);
+    const handleLogoutClick = () => { handleMenuClose(); onGoogleLogout(); };
 
     return (
         <>
         <style>{`
-            .npp-toolbar::-webkit-scrollbar { height: 3px; }
+                    .npp-toolbar::-webkit-scrollbar { height: 3px; }
             .npp-toolbar::-webkit-scrollbar-track { background: transparent; }
-            .npp-toolbar::-webkit-scrollbar-thumb { background: ${isDark ? '#555' : '#bbb'}; border-radius: 2px; }
+            .npp-toolbar::-webkit-scrollbar-thumb { background: ${p.scrollbar}; border-radius: 2px; }
         `}</style>
         <div
             className="npp-toolbar"
             style={{
-                display: 'flex',
-                alignItems: 'center',
-                height: 30,
-                background: isDark ? '#202020' : '#f0f0f0',
-                borderBottom: `1px solid ${isDark ? '#555' : '#bcbcbc'}`,
-                padding: '0 4px',
-                gap: 1,
-                userSelect: 'none',
-                overflowX: 'auto',
-                WebkitOverflowScrolling: 'touch',
-                scrollbarWidth: 'thin',
+                display: 'flex', alignItems: 'center', height: 32,
+                background: p.panel,
+                borderBottom: `1px solid ${p.border}`,
+                padding: '0 6px', gap: 1, userSelect: 'none',
+                overflowX: 'auto', flexShrink: 0,
+                WebkitOverflowScrolling: 'touch', scrollbarWidth: 'thin',
             }}
         >
             {/* File operations */}
@@ -255,25 +261,129 @@ const NppToolbar: React.FC<NppToolbarProps> = ({
             {/* Google Auth */}
             {user ? (
                 <>
-                    <Tooltip title={user.name}>
-                        <button
-                            onClick={onGoogleLogout}
-                            style={{
-                                background: 'none', border: 'none', cursor: 'pointer',
-                                padding: '2px', display: 'flex', alignItems: 'center',
-                            }}
+                    {/* Name + Avatar chip */}
+                    <button
+                        onClick={handleUserClick}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 5,
+                            background: isDark ? '#2a2d2e' : '#e0e8f0',
+                            border: `1px solid ${isDark ? '#555' : '#b0c4d8'}`,
+                            borderRadius: 12,
+                            padding: '2px 8px 2px 3px',
+                            cursor: 'pointer',
+                            color: isDark ? '#d0d0d0' : '#222',
+                            fontSize: 12,
+                            fontWeight: 500,
+                            whiteSpace: 'nowrap',
+                            maxWidth: 160,
+                            overflow: 'hidden',
+                            flexShrink: 0,
+                        }}
+                        title={user.name}
+                    >
+                        <Avatar src={user.picture} alt={user.name} sx={{ width: 20, height: 20, flexShrink: 0 }} />
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 120 }}>
+                            {user.name}
+                        </span>
+                    </button>
+
+                    {/* Logout dropdown */}
+                    <Menu
+                        anchorEl={anchorEl}
+                        open={menuOpen}
+                        onClose={handleMenuClose}
+                        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                        PaperProps={{
+                            style: {
+                                background: isDark ? '#252526' : '#f5f5f5',
+                                color: isDark ? '#e0e0e0' : '#111',
+                                border: `1px solid ${isDark ? '#3c3c3c' : '#ccc'}`,
+                                borderRadius: 4,
+                                minWidth: 180,
+                            }
+                        }}
+                    >
+                        {/* Header */}
+                        <div style={{ padding: '8px 14px 6px', pointerEvents: 'none' }}>
+                            <div style={{ fontWeight: 600, fontSize: 13 }}>{user.name}</div>
+                        </div>
+                        <Divider style={{ borderColor: isDark ? '#3c3c3c' : '#ddd', margin: 0 }} />
+                        {onManageWorkspaces && (
+                            <MenuItem
+                                onClick={() => { handleMenuClose(); onManageWorkspaces(); }}
+                                style={{ fontSize: 13, gap: 8, color: isDark ? '#e0e0e0' : '#111' }}
+                            >
+                                <ManageIcon sx={{ fontSize: 16 }} />
+                                Manage Workspaces
+                            </MenuItem>
+                        )}
+                        <Divider style={{ borderColor: isDark ? '#3c3c3c' : '#ddd', margin: 0 }} />
+                        <MenuItem
+                            onClick={handleLogoutClick}
+                            style={{ fontSize: 13, gap: 8, color: isDark ? '#e0e0e0' : '#111' }}
                         >
-                            <Avatar src={user.picture} alt={user.name} sx={{ width: 22, height: 22 }} />
-                        </button>
-                    </Tooltip>
+                            <LogoutIcon sx={{ fontSize: 16 }} />
+                            Sign out
+                        </MenuItem>
+                    </Menu>
                 </>
             ) : (
-                <TBtn
-                    icon={<GoogleIcon sx={iconSx} />}
-                    tooltip="Sign in with Google"
-                    onClick={onGoogleLogin}
-                    isDark={isDark}
-                />
+                <>
+                    {/* DEV-only mock login button */}
+                    {onDevLogin && (
+                        <button
+                            onClick={onDevLogin}
+                            title="[DEV ONLY] Mock login for testing"
+                            style={{
+                                background: '#7c3aed',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: 3,
+                                padding: '2px 7px',
+                                fontSize: 10,
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                letterSpacing: '0.5px',
+                                flexShrink: 0,
+                            }}
+                        >
+                            DEV
+                        </button>
+                    )}
+                    <button
+                        onClick={onGoogleLogin}
+                        title="Sign in with Google"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            background: isDark ? '#2a2d2e' : '#fff',
+                            color: isDark ? '#d0d0d0' : '#3c4043',
+                            border: `1px solid ${isDark ? '#555' : '#dadce0'}`,
+                            borderRadius: 12,
+                            padding: '2px 10px 2px 4px',
+                            fontSize: 12,
+                            fontWeight: 500,
+                            cursor: 'pointer',
+                            whiteSpace: 'nowrap',
+                            flexShrink: 0,
+                        }}
+                        onMouseOver={e => {
+                            (e.currentTarget as HTMLElement).style.background = isDark ? '#3a3d3e' : '#f1f3f4';
+                            (e.currentTarget as HTMLElement).style.borderColor = isDark ? '#888' : '#aaa';
+                        }}
+                        onMouseOut={e => {
+                            (e.currentTarget as HTMLElement).style.background = isDark ? '#2a2d2e' : '#fff';
+                            (e.currentTarget as HTMLElement).style.borderColor = isDark ? '#555' : '#dadce0';
+                        }}
+                    >
+                        <GoogleIcon sx={{ fontSize: 16, color: '#4285f4' }} />
+                        Sign in with Google
+                    </button>
+                </>
             )}
         </div>
         </>

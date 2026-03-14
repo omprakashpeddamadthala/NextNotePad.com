@@ -2,7 +2,7 @@
 // Requires the user to be signed in via Google Identity Services.
 // Uses the Google Drive REST API v3 via fetch.
 
-const FOLDER_NAME = 'NextNotePad Backup';
+export const ROOT_FOLDER_NAME = 'NextNotePad.com';
 const DRIVE_API = 'https://www.googleapis.com/drive/v3';
 const UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3';
 
@@ -23,7 +23,7 @@ export async function getOrCreateBackupFolder(accessToken: string): Promise<stri
     const headers = await getHeaders(accessToken);
 
     // Search for existing folder
-    const query = `name='${FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+    const query = `name='${ROOT_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
     const searchRes = await fetch(
         `${DRIVE_API}/files?q=${encodeURIComponent(query)}&fields=files(id,name)`,
         { headers }
@@ -39,7 +39,7 @@ export async function getOrCreateBackupFolder(accessToken: string): Promise<stri
         method: 'POST',
         headers,
         body: JSON.stringify({
-            name: FOLDER_NAME,
+            name: ROOT_FOLDER_NAME,
             mimeType: 'application/vnd.google-apps.folder',
         }),
     });
@@ -52,7 +52,7 @@ export async function listDriveNotes(
     folderId: string
 ): Promise<DriveFile[]> {
     const headers = await getHeaders(accessToken);
-    const query = `'${folderId}' in parents and trashed=false`;
+    const query = `'${folderId}' in parents and trashed=false and mimeType!='application/vnd.google-apps.folder'`;
     const res = await fetch(
         `${DRIVE_API}/files?q=${encodeURIComponent(query)}&fields=files(id,name,modifiedTime)&orderBy=modifiedTime desc`,
         { headers }
@@ -129,4 +129,115 @@ export async function deleteNoteFromDrive(
         method: 'DELETE',
         headers: { Authorization: `Bearer ${accessToken}` },
     });
+}
+
+/** List all workspace subfolders inside the root NextNotePad.com folder */
+export async function listWorkspaceFolders(
+    accessToken: string,
+    rootFolderId: string
+): Promise<DriveFile[]> {
+    const headers = await getHeaders(accessToken);
+    const query = `'${rootFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+    const res = await fetch(
+        `${DRIVE_API}/files?q=${encodeURIComponent(query)}&fields=files(id,name)`,
+        { headers }
+    );
+    const data = await res.json();
+    return data.files || [];
+}
+
+/** Create a subfolder inside the root NextNotePad.com folder for a new workspace */
+export async function createWorkspaceFolder(
+    accessToken: string,
+    rootFolderId: string,
+    workspaceName: string
+): Promise<string> {
+    const headers = await getHeaders(accessToken);
+    const res = await fetch(`${DRIVE_API}/files`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+            name: workspaceName,
+            mimeType: 'application/vnd.google-apps.folder',
+            parents: [rootFolderId],
+        }),
+    });
+    const data = await res.json();
+    return data.id;
+}
+
+// ── SETTINGS SYNC ──────────────────────────────────────────────────────────
+const SETTINGS_FILENAME = '.settings';
+
+export interface DriveSettings {
+    theme: 'light' | 'dark';
+    wordWrap: boolean;
+    fontSize: number;
+    sidebarOpen: boolean;
+}
+
+/** Upload (create or overwrite) .settings JSON in the root folder */
+export async function uploadSettings(
+    accessToken: string,
+    rootFolderId: string,
+    settings: DriveSettings
+): Promise<void> {
+    const headers = await getHeaders(accessToken);
+    const content = JSON.stringify(settings, null, 2);
+
+    // Check if file already exists
+    const query = `name='${SETTINGS_FILENAME}' and '${rootFolderId}' in parents and trashed=false`;
+    const searchRes = await fetch(
+        `${DRIVE_API}/files?q=${encodeURIComponent(query)}&fields=files(id)`,
+        { headers }
+    );
+    const searchData = await searchRes.json();
+    const existingId: string | undefined = searchData.files?.[0]?.id;
+
+    if (existingId) {
+        // Update content
+        await fetch(`https://www.googleapis.com/upload/drive/v3/files/${existingId}?uploadType=media`, {
+            method: 'PATCH',
+            headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+            body: content,
+        });
+    } else {
+        // Create new file with multipart
+        const boundary = 'settings_boundary';
+        const metadata = JSON.stringify({ name: SETTINGS_FILENAME, parents: [rootFolderId] });
+        const body =
+            `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadata}\r\n` +
+            `--${boundary}\r\nContent-Type: application/json\r\n\r\n${content}\r\n` +
+            `--${boundary}--`;
+        await fetch(`https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': `multipart/related; boundary=${boundary}` },
+            body,
+        });
+    }
+}
+
+/** Download .settings from root folder. Returns null if not found. */
+export async function downloadSettings(
+    accessToken: string,
+    rootFolderId: string
+): Promise<DriveSettings | null> {
+    const headers = await getHeaders(accessToken);
+    const query = `name='${SETTINGS_FILENAME}' and '${rootFolderId}' in parents and trashed=false`;
+    const searchRes = await fetch(
+        `${DRIVE_API}/files?q=${encodeURIComponent(query)}&fields=files(id)`,
+        { headers }
+    );
+    const searchData = await searchRes.json();
+    const fileId: string | undefined = searchData.files?.[0]?.id;
+    if (!fileId) return null;
+
+    const res = await fetch(`${DRIVE_API}/files/${fileId}?alt=media`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    try {
+        return await res.json() as DriveSettings;
+    } catch {
+        return null;
+    }
 }

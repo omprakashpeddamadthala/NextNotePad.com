@@ -1,3 +1,9 @@
+export interface Workspace {
+    id: string;
+    name: string;
+    driveId?: string; // Drive subfolder ID
+}
+
 export interface Note {
     id: string;
     name: string;
@@ -5,6 +11,7 @@ export interface Note {
     language: string;
     lastModified: number;
     driveFileId?: string;
+    workspaceId?: string; // which workspace this file belongs to
 }
 
 export interface AppSettings {
@@ -13,7 +20,12 @@ export interface AppSettings {
     activeTabId: string | null;
     sidebarOpen: boolean;
     wordWrap: boolean;
+    activeWorkspaceId: string | null;
+    fontSize: number;
 }
+
+export const DEFAULT_WORKSPACE_ID = 'default';
+export const DEFAULT_FONT_SIZE = 14;
 
 export const DEFAULT_SETTINGS: AppSettings = {
     theme: 'dark',
@@ -21,7 +33,10 @@ export const DEFAULT_SETTINGS: AppSettings = {
     activeTabId: null,
     sidebarOpen: true,
     wordWrap: true,
+    activeWorkspaceId: DEFAULT_WORKSPACE_ID,
+    fontSize: DEFAULT_FONT_SIZE,
 };
+
 
 export const LANGUAGE_MAP: Record<string, string> = {
     txt: 'plaintext',

@@ -9,8 +9,10 @@ import Tabs from '../components/Tabs/Tabs';
 import Editor from '../components/Editor/Editor';
 import Sidebar from '../components/Sidebar/Sidebar';
 import CompareDialog from '../components/CompareDialog/CompareDialog';
+import WorkspaceDialog from '../components/WorkspaceDialog/WorkspaceDialog';
 import { DiffEditor } from '@monaco-editor/react';
 import { useNotes } from '../hooks/useNotes';
+import { useWorkspaces } from '../hooks/useWorkspaces';
 import { useGoogleLogin } from '@react-oauth/google';
 import type { GoogleUser } from '../services/authService';
 import {
@@ -18,6 +20,7 @@ import {
 } from '../services/authService';
 import {
     getOrCreateBackupFolder, uploadNoteToDrive, listDriveNotes, downloadNoteFromDrive,
+    uploadSettings, downloadSettings,
 } from '../services/googleDriveService';
 import { downloadFile, downloadAllAsZip } from '../services/fileExportService';
 import type * as monaco from 'monaco-editor';
@@ -25,16 +28,24 @@ import type * as monaco from 'monaco-editor';
 const AUTO_SYNC_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
 const EditorPage: React.FC = () => {
+    // Workspace state (must come before useNotes so we have activeWorkspaceId)
+    const [rootDriveFolderId, setRootDriveFolderId] = useState<string | null>(null);
     const {
-        notes, setNotes, activeNote, openTabs, dirtyIds, settings,
+        workspaces, activeWorkspaceId, activeWorkspace,
+        createWorkspace, switchWorkspace, syncWorkspacesFromDrive,
+    } = useWorkspaces(rootDriveFolderId);
+
+    const {
+        notes, setNotes, workspaceNotes, activeNote, openTabs, dirtyIds, settings,
         createNote, deleteNote, renameNote, updateContent,
         openTab, closeTab, setActiveTab, reorderTabs,
-        toggleWordWrap, toggleSidebar, setTheme,
-    } = useNotes();
+        toggleWordWrap, toggleSidebar, setTheme, setFontSize, applyDriveSettings,
+    } = useNotes(activeWorkspaceId);
 
     const isMobile = useMediaQuery('(max-width: 600px)');
 
-    const [fontSize, setFontSize] = useState(14);
+    // fontSize from settings (no longer local state)
+    const fontSize = settings.fontSize;
     const [showAllChars, setShowAllChars] = useState(false);
     const [showMinimap, setShowMinimap] = useState(false);
     const [cursorLine, setCursorLine] = useState(1);
@@ -52,6 +63,7 @@ const EditorPage: React.FC = () => {
     const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' }>({ open: false, message: '', severity: 'info' });
     const [aboutOpen, setAboutOpen] = useState(false);
+    const [workspaceDialogOpen, setWorkspaceDialogOpen] = useState(false);
     const [compareDialogOpen, setCompareDialogOpen] = useState(false);
     const [compareMode, setCompareMode] = useState(false);
     const [compareTargetId, setCompareTargetId] = useState<string | null>(null);
@@ -91,7 +103,17 @@ const EditorPage: React.FC = () => {
                 setUser(profile);
                 showSnackbar(`Signed in as ${profile.name}`, 'success');
                 // Hybrid mode: auto-sync on login
-                setTimeout(() => {
+                setTimeout(async () => {
+                    const folderId = await getOrCreateBackupFolder(tokenResponse.access_token).catch(() => null);
+                    if (folderId) {
+                        setRootDriveFolderId(folderId);
+                        // Download and apply saved settings from Drive
+                        try {
+                            const remote = await downloadSettings(tokenResponse.access_token, folderId);
+                            if (remote) applyDriveSettings(remote);
+                        } catch { /* ignore */ }
+                        await syncWorkspacesFromDrive();
+                    }
                     handleSync();
                 }, 500);
             } catch {
@@ -107,11 +129,25 @@ const EditorPage: React.FC = () => {
         setUser(null);
         setSyncStatus('idle');
         setLastSyncTime(null);
+        setRootDriveFolderId(null);
         if (autoSyncTimerRef.current) {
             clearInterval(autoSyncTimerRef.current);
             autoSyncTimerRef.current = null;
         }
-        showSnackbar('Signed out', 'info');
+        // Remove any Drive-synced notes — keep only locally-created ones
+        setNotes((prev) => prev.filter((n) => !n.driveFileId));
+        showSnackbar('Signed out — Drive files removed', 'info');
+    }, [setNotes]);
+
+    // DEV-ONLY: mock login to test logged-in UI without real Google OAuth
+    const handleDevLogin = useCallback(() => {
+        if (!import.meta.env.DEV) return;
+        setUser({
+            name: 'Dev User',
+            email: 'dev@localhost',
+            picture: 'https://ui-avatars.com/api/?name=Dev+User&background=007acc&color=fff&size=64',
+        });
+        showSnackbar('[DEV] Logged in as Dev User', 'info');
     }, []);
 
     const handleSync = useCallback(async () => {
@@ -446,9 +482,25 @@ const EditorPage: React.FC = () => {
     const handleToggleMinimap = useCallback(() => setShowMinimap((prev) => !prev), []);
 
     // Zoom
-    const handleZoomIn = useCallback(() => setFontSize((prev) => Math.min(prev + 2, 40)), []);
-    const handleZoomOut = useCallback(() => setFontSize((prev) => Math.max(prev - 2, 8)), []);
-    const handleZoomReset = useCallback(() => setFontSize(14), []);
+    const handleZoomIn = useCallback(() => setFontSize(Math.min(fontSize + 2, 40)), [fontSize, setFontSize]);
+    const handleZoomOut = useCallback(() => setFontSize(Math.max(fontSize - 2, 8)), [fontSize, setFontSize]);
+    const handleZoomReset = useCallback(() => setFontSize(14), [setFontSize]);
+    // Upload settings to Drive whenever they change (debounced 2 s)
+    const settingsUploadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    useEffect(() => {
+        const token = getAccessToken();
+        if (!token || !rootDriveFolderId) return;
+        if (settingsUploadTimer.current) clearTimeout(settingsUploadTimer.current);
+        settingsUploadTimer.current = setTimeout(() => {
+            uploadSettings(token, rootDriveFolderId, {
+                theme: settings.theme,
+                wordWrap: settings.wordWrap,
+                fontSize: settings.fontSize,
+                sidebarOpen: settings.sidebarOpen,
+            }).catch(() => { /* silent */ });
+        }, 2000);
+        return () => { if (settingsUploadTimer.current) clearTimeout(settingsUploadTimer.current); };
+    }, [settings.theme, settings.wordWrap, settings.fontSize, settings.sidebarOpen, rootDriveFolderId]);
 
     // File operations
     const handleNewFile = useCallback(() => createNote(), [createNote]);
@@ -826,6 +878,8 @@ const EditorPage: React.FC = () => {
                 onThemeToggle={handleThemeToggle}
                 onGoogleLogin={() => googleLogin()}
                 onGoogleLogout={handleLogout}
+                onDevLogin={import.meta.env.DEV ? handleDevLogin : undefined}
+                onManageWorkspaces={user ? () => setWorkspaceDialogOpen(true) : undefined}
                 onDownloadFile={handleDownloadFile}
                 onDownloadAllAsZip={handleDownloadAllAsZip}
                 wordWrap={settings.wordWrap}
@@ -848,7 +902,7 @@ const EditorPage: React.FC = () => {
                 
                 {/* Sidebar */}
                 <Sidebar
-                    notes={notes}
+                    notes={workspaceNotes}
                     activeId={settings.activeTabId}
                     onFileClick={openTab}
                     onNewFile={handleNewFile}
@@ -857,6 +911,7 @@ const EditorPage: React.FC = () => {
                     theme={settings.theme}
                     visible={settings.sidebarOpen}
                     isMobile={isMobile}
+                    activeWorkspaceName={activeWorkspace?.name}
                 />
 
                 {/* Tabs + Editor column */}
@@ -1000,6 +1055,17 @@ const EditorPage: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            {/* Workspace Dialog */}
+            <WorkspaceDialog
+                open={workspaceDialogOpen}
+                onClose={() => setWorkspaceDialogOpen(false)}
+                workspaces={workspaces}
+                activeWorkspaceId={activeWorkspaceId}
+                onSwitch={switchWorkspace}
+                onCreate={async (name) => { await createWorkspace(name); }}
+                theme={settings.theme}
+            />
 
             {/* About Dialog */}
             <Dialog
