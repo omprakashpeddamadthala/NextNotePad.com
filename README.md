@@ -147,7 +147,7 @@ To enable Google Sign-In and Google Drive sync:
 Create a `.env` file in the project root:
 
 ```env
-VITE_GOOGLE_CLIENT_ID=your-client-id-here.apps.googleusercontent.com
+VITE_GOOGLE_CLIENT_ID=257847266541-iaqa70vcvoo61fbuk2aontn2edrpcagb.apps.googleusercontent.com
 ```
 
 > ⚠️ **Note:** Never commit `.env` files to version control. The `.gitignore` file already excludes it.
@@ -216,7 +216,7 @@ Stage 2 (serve):   nginx:stable-alpine → serves static dist/
 docker build -t nextnotepad .
 
 # Build with Google OAuth (optional)
-docker build --build-arg VITE_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com -t nextnotepad .
+docker build --build-arg VITE_GOOGLE_CLIENT_ID=257847266541-iaqa70vcvoo61fbuk2aontn2edrpcagb.apps.googleusercontent.com -t nextnotepad .
 
 # Run the container
 docker run -d -p 8080:8080 --name nextnotepad nextnotepad

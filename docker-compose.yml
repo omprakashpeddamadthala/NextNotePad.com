@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-257847266541-iaqa70vcvoo61fbuk2aontn2edrpcagb.apps.googleusercontent.com}
     container_name: nextnotepad
     ports:
       - "8080:8080"

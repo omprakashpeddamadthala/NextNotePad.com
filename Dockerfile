@@ -8,7 +8,7 @@ RUN npm ci --silent
 
 # Copy source and build
 COPY . .
-ARG VITE_GOOGLE_CLIENT_ID=""
+ARG VITE_GOOGLE_CLIENT_ID="257847266541-iaqa70vcvoo61fbuk2aontn2edrpcagb.apps.googleusercontent.com"
 ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 RUN npm run build
 

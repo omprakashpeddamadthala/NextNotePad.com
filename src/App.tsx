@@ -5,7 +5,7 @@ import { getSettings } from './services/localStorageService';
 import EditorPage from './pages/EditorPage';
 
 // Replace with your actual Google OAuth Client ID
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID';
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '257847266541-iaqa70vcvoo61fbuk2aontn2edrpcagb.apps.googleusercontent.com';
 
 function App() {
   const savedTheme = getSettings().theme;

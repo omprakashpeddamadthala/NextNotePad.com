@@ -8,6 +8,8 @@ import NppToolbar from '../components/NppToolbar/NppToolbar';
 import Tabs from '../components/Tabs/Tabs';
 import Editor from '../components/Editor/Editor';
 import Sidebar from '../components/Sidebar/Sidebar';
+import CompareDialog from '../components/CompareDialog/CompareDialog';
+import { DiffEditor } from '@monaco-editor/react';
 import { useNotes } from '../hooks/useNotes';
 import { useGoogleLogin } from '@react-oauth/google';
 import type { GoogleUser } from '../services/authService';
@@ -50,6 +52,9 @@ const EditorPage: React.FC = () => {
     const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' }>({ open: false, message: '', severity: 'info' });
     const [aboutOpen, setAboutOpen] = useState(false);
+    const [compareDialogOpen, setCompareDialogOpen] = useState(false);
+    const [compareMode, setCompareMode] = useState(false);
+    const [compareTargetId, setCompareTargetId] = useState<string | null>(null);
     const [renameDialog, setRenameDialog] = useState<{ open: boolean; noteId: string; name: string }>({ open: false, noteId: '', name: '' });
     const [isDragging, setIsDragging] = useState(false);
 
@@ -628,13 +633,26 @@ const EditorPage: React.FC = () => {
         showSnackbar(`Running ${activeNote.name} in browser`, 'success');
     }, [activeNote]);
 
+    const handleCompareOpen = useCallback(() => {
+        setCompareDialogOpen(true);
+    }, []);
+
+    const handleCompareProcess = useCallback((targetId: string) => {
+        setCompareTargetId(targetId);
+        setCompareMode(true);
+    }, []);
+
+    const handleCompareExit = useCallback(() => {
+        setCompareMode(false);
+        setCompareTargetId(null);
+    }, []);
+
     // Encoding/Language/EOL
     const handleSetEncoding = useCallback((enc: string) => setEncoding(enc), []);
     const handleSetLanguage = useCallback((lang: string) => {
         if (activeNote) {
             renameNote(activeNote.id, activeNote.name); // Keep same name
             // Update language through renaming with the correct extension isn't great,
-            // so we just update the note's language in the notes array
             setNotes((prev) =>
                 prev.map((n) => n.id === activeNote.id ? { ...n, language: lang } : n)
             );
@@ -764,6 +782,7 @@ const EditorPage: React.FC = () => {
                         onUpperCase={handleUpperCase}
                         onLowerCase={handleLowerCase}
                         onRunInBrowser={handleRunInBrowser}
+                        onCompare={handleCompareOpen}
                     />
                 </div>
                 {!isMobile && (
@@ -795,6 +814,7 @@ const EditorPage: React.FC = () => {
                 onRedo={handleRedo}
                 onFind={handleFind}
                 onReplace={handleReplace}
+                onCompare={handleCompareOpen}
                 onZoomIn={handleZoomIn}
                 onZoomOut={handleZoomOut}
                 onToggleWordWrap={toggleWordWrap}
@@ -841,32 +861,68 @@ const EditorPage: React.FC = () => {
 
                 {/* Tabs + Editor column */}
                 <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-                    {/* Tab Bar */}
-                    <Tabs
-                        tabs={openTabs}
-                        activeId={settings.activeTabId}
-                        dirtyIds={dirtyIds}
-                        onTabClick={setActiveTab}
-                        onTabClose={closeTab}
-                        onCloseAll={handleCloseAllFiles}
-                        onCloseOthers={handleCloseOthers}
-                        onReorder={reorderTabs}
-                        onRename={handleRenameOpen}
-                        theme={settings.theme}
-                    />
+                    {!compareMode ? (
+                        <>
+                            {/* Tab Bar */}
+                            <Tabs
+                                tabs={openTabs}
+                                activeId={settings.activeTabId}
+                                dirtyIds={dirtyIds}
+                                onTabClick={setActiveTab}
+                                onTabClose={closeTab}
+                                onCloseAll={handleCloseAllFiles}
+                                onCloseOthers={handleCloseOthers}
+                                onReorder={reorderTabs}
+                                onRename={handleRenameOpen}
+                                theme={settings.theme}
+                            />
 
-                    {/* Editor */}
-                    <Editor
-                        note={activeNote}
-                        theme={settings.theme}
-                        wordWrap={settings.wordWrap}
-                        fontSize={fontSize}
-                        showAllChars={showAllChars}
-                        showMinimap={showMinimap}
-                        onChange={updateContent}
-                        onCursorChange={handleCursorChange}
-                        editorRef={editorRef}
-                    />
+                            {/* Editor */}
+                            <Editor
+                                note={activeNote}
+                                theme={settings.theme}
+                                wordWrap={settings.wordWrap}
+                                fontSize={fontSize}
+                                showAllChars={showAllChars}
+                                showMinimap={showMinimap}
+                                onChange={updateContent}
+                                onCursorChange={handleCursorChange}
+                                editorRef={editorRef}
+                            />
+                        </>
+                    ) : (() => {
+                        const targetNote = notes.find(n => n.id === compareTargetId);
+                        return (
+                            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+                                <div style={{
+                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                    padding: '4px 16px', background: isDark ? '#252526' : '#f0f0f0',
+                                    borderBottom: `1px solid ${isDark ? '#3c3c3c' : '#bcbcbc'}`, fontSize: 13
+                                }}>
+                                    <div style={{ color: isDark ? '#e0e0e0' : '#333' }}>
+                                        <strong>{targetNote?.name}</strong> (Original) <span>&rarr;</span> <strong>{activeNote?.name}</strong> (Modified)
+                                    </div>
+                                    <Button size="small" variant="contained" color="primary" onClick={handleCompareExit} disableElevation style={{ borderRadius: 0, textTransform: 'none', height: 24, padding: '0 8px' }}>
+                                        Close Compare Mode
+                                    </Button>
+                                </div>
+                                <DiffEditor
+                                    theme={isDark ? 'vs-dark' : 'light'}
+                                    original={targetNote?.content || ''}
+                                    modified={activeNote?.content || ''}
+                                    language={activeNote?.language || 'plaintext'}
+                                    options={{
+                                        readOnly: true,
+                                        wordWrap: settings.wordWrap ? 'on' : 'off',
+                                        fontSize,
+                                        fontFamily: "'Courier New', 'Consolas', monospace",
+                                        minimap: { enabled: showMinimap },
+                                        renderWhitespace: showAllChars ? 'all' : 'none',
+                                    }}
+                                />
+                            </div>
+                        );
+                    })()}
                 </div>
             </div>
 
@@ -1076,6 +1132,16 @@ const EditorPage: React.FC = () => {
                     {snackbar.message}
                 </Alert>
             </Snackbar>
+
+            {/* Compare Dialog */}
+            <CompareDialog
+                open={compareDialogOpen}
+                onClose={() => setCompareDialogOpen(false)}
+                currentNote={activeNote}
+                notes={notes}
+                onCompare={handleCompareProcess}
+                theme={settings.theme}
+            />
         </div>
     );
 };

@@ -42,6 +42,7 @@ interface MenuBarProps {
     onUpperCase: () => void;
     onLowerCase: () => void;
     onRunInBrowser: () => void;
+    onCompare: () => void;
 }
 
 interface MenuDef {
@@ -87,7 +88,7 @@ const MenuBar: React.FC<MenuBarProps> = ({
     onDownloadFile, onDownloadAllAsZip,
     showMinimap, onToggleMinimap,
     onWordCount, onSortLines, onRemoveDuplicateLines, onTrimWhitespace,
-    onUpperCase, onLowerCase, onRunInBrowser,
+    onUpperCase, onLowerCase, onRunInBrowser, onCompare,
 }) => {
     const [openMenu, setOpenMenu] = useState<string | null>(null);
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -421,6 +422,10 @@ const MenuBar: React.FC<MenuBarProps> = ({
             >
                 <MenuItem sx={menuItemSx} onClick={menuAction(onSyncDrive)}>
                     <ListItemText><Typography sx={{ fontSize: '13px' }}>Sync to Google Drive</Typography></ListItemText>
+                </MenuItem>
+                <Divider sx={{ my: '2px!important' }} />
+                <MenuItem sx={menuItemSx} onClick={menuAction(onCompare)}>
+                    <ListItemText><Typography sx={{ fontSize: '13px' }}>Compare Files...</Typography></ListItemText>
                 </MenuItem>
             </Menu>
 

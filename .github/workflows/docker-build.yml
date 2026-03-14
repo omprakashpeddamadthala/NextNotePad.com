@@ -26,6 +26,10 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Generate current date tag
+        id: datestamp
+        run: echo "date=$(date +'%m%d%Y')" >> $GITHUB_OUTPUT
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
@@ -35,5 +39,6 @@ jobs:
           tags: |
             omprakashornold/nextnotepad:latest
             omprakashornold/nextnotepad:${{ github.sha }}
+            omprakashornold/nextnotepad:${{ steps.datestamp.outputs.date }}
           build-args: |
             VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID }}

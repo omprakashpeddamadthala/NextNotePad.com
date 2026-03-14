@@ -12,6 +12,7 @@ import {
     Redo as RedoIcon,
     Search as FindIcon,
     FindReplace as ReplaceIcon,
+    CompareArrows as CompareIcon,
     ZoomIn as ZoomInIcon,
     ZoomOut as ZoomOutIcon,
     WrapText as WrapTextIcon,
@@ -45,6 +46,7 @@ interface NppToolbarProps {
     onRedo: () => void;
     onFind: () => void;
     onReplace: () => void;
+    onCompare: () => void;
     onZoomIn: () => void;
     onZoomOut: () => void;
     onToggleWordWrap: () => void;
@@ -134,7 +136,7 @@ const TBtn: React.FC<TBtnProps> = ({ icon, tooltip, onClick, active, isDark, dis
 const NppToolbar: React.FC<NppToolbarProps> = ({
     onNewFile, onOpenFile, onSaveFile, onSaveAll, onCloseFile, onPrint,
     onCut, onCopy, onPaste, onUndo, onRedo,
-    onFind, onReplace, onZoomIn, onZoomOut,
+    onFind, onReplace, onCompare, onZoomIn, onZoomOut,
     onToggleWordWrap, onToggleShowAllChars,
     onIndent, onUnindent, onFormatText, onSyncDrive, onThemeToggle,
     onGoogleLogin, onGoogleLogout,
@@ -145,7 +147,14 @@ const NppToolbar: React.FC<NppToolbarProps> = ({
     const iconSx = { fontSize: 18 };
 
     return (
+        <>
+        <style>{`
+            .npp-toolbar::-webkit-scrollbar { height: 3px; }
+            .npp-toolbar::-webkit-scrollbar-track { background: transparent; }
+            .npp-toolbar::-webkit-scrollbar-thumb { background: ${isDark ? '#555' : '#bbb'}; border-radius: 2px; }
+        `}</style>
         <div
+            className="npp-toolbar"
             style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -157,7 +166,7 @@ const NppToolbar: React.FC<NppToolbarProps> = ({
                 userSelect: 'none',
                 overflowX: 'auto',
                 WebkitOverflowScrolling: 'touch',
-                scrollbarWidth: 'none',
+                scrollbarWidth: 'thin',
             }}
         >
             {/* File operations */}
@@ -167,6 +176,7 @@ const NppToolbar: React.FC<NppToolbarProps> = ({
             <TBtn icon={<SaveAllIcon sx={iconSx} />} tooltip="Save All (Ctrl+Shift+S)" onClick={onSaveAll} isDark={isDark} />
             <TBtn icon={<CloseIcon sx={iconSx} />} tooltip="Close (Ctrl+W)" onClick={onCloseFile} isDark={isDark} />
             <TBtn icon={<PrintIcon sx={iconSx} />} tooltip="Print (Ctrl+P)" onClick={onPrint} isDark={isDark} />
+            <TBtn icon={<CompareIcon sx={iconSx} />} tooltip="Compare Files" onClick={onCompare} isDark={isDark} />
 
             <ToolbarSeparator isDark={isDark} />
 
@@ -266,6 +276,7 @@ const NppToolbar: React.FC<NppToolbarProps> = ({
                 />
             )}
         </div>
+        </>
     );
 };
 
