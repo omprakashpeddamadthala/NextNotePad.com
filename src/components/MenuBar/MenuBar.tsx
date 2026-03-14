@@ -168,7 +168,9 @@ const MenuBar: React.FC<MenuBarProps> = ({
                     height: 24,
                     padding: '0 2px',
                     userSelect: 'none',
-                    flexShrink: 0,
+                    overflowX: 'auto',
+                    WebkitOverflowScrolling: 'touch',
+                    scrollbarWidth: 'none',
                 }}
             >
                 {MENUS.map((menu) => (
@@ -190,7 +192,7 @@ const MenuBar: React.FC<MenuBarProps> = ({
                         }}
                         onMouseOver={(e) => {
                             if (openMenu !== menu.id) {
-                                (e.currentTarget as HTMLElement).style.background = isDark ? '#454545' : '#d6e4f2';
+                                (e.currentTarget as HTMLElement).style.background = isDark ? '#454545' : '#c8daf0';
                             }
                         }}
                         onMouseOut={(e) => {

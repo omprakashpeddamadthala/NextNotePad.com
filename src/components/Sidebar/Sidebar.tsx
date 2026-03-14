@@ -10,6 +10,7 @@ interface SidebarProps {
     onDelete: (id: string) => void;
     theme: 'light' | 'dark';
     visible: boolean;
+    isMobile?: boolean;
 }
 
 function getFileIconColor(name: string): string {
@@ -42,7 +43,7 @@ function formatTime(ts: number): string {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
-    notes, activeId, onFileClick, onNewFile, onRename, onDelete, theme, visible,
+    notes, activeId, onFileClick, onNewFile, onRename, onDelete, theme, visible, isMobile,
 }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number; noteId: string } | null>(null);
@@ -66,12 +67,19 @@ const Sidebar: React.FC<SidebarProps> = ({
                     height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
-                    background: isDark ? '#252526' : '#f0f0f0',
+                    background: isDark ? '#252526' : '#ffffff',
                     borderRight: `1px solid ${isDark ? '#3c3c3c' : '#bcbcbc'}`,
                     fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif",
                     fontSize: '13px',
                     flexShrink: 0,
                     userSelect: 'none',
+                    ...(isMobile ? {
+                        position: 'absolute',
+                        left: 0,
+                        top: 0,
+                        zIndex: 10,
+                        boxShadow: '2px 0 8px rgba(0,0,0,0.5)',
+                    } : {}),
                 }}
             >
                 {/* Header */}
@@ -118,7 +126,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                             padding: '0 8px',
                             fontSize: '12px',
                             border: `1px solid ${isDark ? '#555' : '#bcbcbc'}`,
-                            borderRadius: 2,
+                            borderRadius: 0,
                             background: isDark ? '#3c3c3c' : '#ffffff',
                             color: isDark ? '#e0e0e0' : '#1a1a1a',
                             outline: 'none',
@@ -158,16 +166,16 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     padding: '5px 10px',
                                     cursor: 'default',
                                     background: isActive
-                                        ? isDark ? '#37373d' : '#d6e4f2'
+                                        ? isDark ? '#37373d' : '#e8e8e8'
                                         : 'transparent',
-                                    color: isDark ? '#e0e0e0' : '#1a1a1a',
+                                    color: isDark ? '#e0e0e0' : '#000000',
                                     borderLeft: isActive
-                                        ? `3px solid ${isDark ? '#007acc' : '#0078d4'}`
+                                        ? `3px solid #ff8c00`
                                         : '3px solid transparent',
                                 }}
                                 onMouseOver={(e) => {
                                     if (!isActive) {
-                                        (e.currentTarget as HTMLElement).style.background = isDark ? '#2a2d2e' : '#e4e6f1';
+                                        (e.currentTarget as HTMLElement).style.background = isDark ? '#2a2d2e' : '#f0f0f0';
                                     }
                                 }}
                                 onMouseOut={(e) => {

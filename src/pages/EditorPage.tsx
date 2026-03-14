@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     Snackbar, Alert, Dialog, DialogTitle, DialogContent,
-    DialogActions, Button, TextField,
+    DialogActions, Button, TextField, useMediaQuery,
 } from '@mui/material';
 import MenuBar from '../components/MenuBar/MenuBar';
 import NppToolbar from '../components/NppToolbar/NppToolbar';
@@ -29,6 +29,8 @@ const EditorPage: React.FC = () => {
         openTab, closeTab, setActiveTab, reorderTabs,
         toggleWordWrap, toggleSidebar, setTheme,
     } = useNotes();
+
+    const isMobile = useMediaQuery('(max-width: 600px)');
 
     const [fontSize, setFontSize] = useState(14);
     const [showAllChars, setShowAllChars] = useState(false);
@@ -190,7 +192,7 @@ const EditorPage: React.FC = () => {
                 clearInterval(autoSyncTimerRef.current);
             }
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     }, [user]);
 
     // Keyboard shortcuts
@@ -716,8 +718,11 @@ const EditorPage: React.FC = () => {
                 background: isDark ? '#3b3b3b' : '#e8e8e8',
                 borderBottom: `1px solid ${isDark ? '#555' : '#bcbcbc'}`,
                 flexShrink: 0,
+                overflowX: 'auto',
+                WebkitOverflowScrolling: 'touch',
+                scrollbarWidth: 'none', // Hide scrollbar for a cleaner look
             }}>
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, minWidth: 'min-content' }}>
                     <MenuBar
                         onNewFile={handleNewFile}
                         onCloseFile={handleCloseFile}
@@ -761,16 +766,18 @@ const EditorPage: React.FC = () => {
                         onRunInBrowser={handleRunInBrowser}
                     />
                 </div>
-                <div style={{
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: isDark ? '#c0c0c0' : '#444',
-                    padding: '0 10px',
-                    whiteSpace: 'nowrap',
-                    fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif",
-                }}>
-                    {clock}
-                </div>
+                {!isMobile && (
+                    <div style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: isDark ? '#c0c0c0' : '#444',
+                        padding: '0 10px',
+                        whiteSpace: 'nowrap',
+                        fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif",
+                    }}>
+                        {clock}
+                    </div>
+                )}
             </div>
 
             {/* Icon Toolbar */}
@@ -810,7 +817,15 @@ const EditorPage: React.FC = () => {
             />
 
             {/* Main content area: Sidebar + (Tabs + Editor) */}
-            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
+                {/* Sidebar Overlay (Mobile only) */}
+                {isMobile && settings.sidebarOpen && (
+                    <div 
+                        style={{ position: 'absolute', inset: 0, zIndex: 9, background: 'rgba(0,0,0,0.5)' }} 
+                        onClick={toggleSidebar} 
+                    />
+                )}
+                
                 {/* Sidebar */}
                 <Sidebar
                     notes={notes}
@@ -821,6 +836,7 @@ const EditorPage: React.FC = () => {
                     onDelete={deleteNote}
                     theme={settings.theme}
                     visible={settings.sidebarOpen}
+                    isMobile={isMobile}
                 />
 
                 {/* Tabs + Editor column */}
@@ -861,42 +877,49 @@ const EditorPage: React.FC = () => {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     height: 24,
-                    background: isDark ? '#333333' : '#e8e8e8',
-                    borderTop: `1px solid ${isDark ? '#555' : '#bcbcbc'}`,
+                    background: isDark ? '#202020' : '#f0f0f0',
+                    borderTop: `1px solid ${isDark ? '#555' : '#a0a0a0'}`,
                     padding: '0 8px',
                     fontSize: '12px',
                     fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif",
-                    color: isDark ? '#c0c0c0' : '#444',
+                    color: isDark ? '#c0c0c0' : '#000',
                     flexShrink: 0,
                     userSelect: 'none',
-                    gap: 4,
+                    gap: 1,
+                    overflowX: 'auto',
+                    scrollbarWidth: 'none',
                 }}
             >
                 {/* Left: Ln, Col, Sel */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 0 }}>
+                <div style={{
+                    display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 16, minWidth: 0,
+                    borderRight: `1px solid ${isDark ? '#555' : '#a0a0a0'}`,
+                    paddingRight: 8,
+                }}>
                     <span>Ln : {cursorLine}</span>
                     <span>Col : {cursorCol}</span>
-                    <span>Sel : {selChars}{selLines > 0 ? ` | ${selLines}` : ''}</span>
+                    {!isMobile && <span>Sel : {selChars}{selLines > 0 ? ` | ${selLines}` : ''}</span>}
                 </div>
 
                 {/* Center: Doc stats + Sync status */}
                 <div style={{
-                    display: 'flex', alignItems: 'center', gap: 16,
-                    borderLeft: `1px solid ${isDark ? '#555' : '#bcbcbc'}`,
-                    borderRight: `1px solid ${isDark ? '#555' : '#bcbcbc'}`,
-                    padding: '0 16px',
+                    display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 16,
+                    borderLeft: `1px solid ${isDark ? '#444' : '#ffffff'}`,
+                    borderRight: isMobile ? 'none' : `1px solid ${isDark ? '#555' : '#a0a0a0'}`,
+                    padding: isMobile ? '0 8px' : '0 16px',
                 }}>
-                    <span>length : {docLength}</span>
-                    <span>lines : {docLines}</span>
+                    {!isMobile && <span>length : {docLength}</span>}
+                    {!isMobile && <span>lines : {docLines}</span>}
                     {user && (
                         <span style={{
                             color: syncStatus === 'synced' ? '#4caf50' :
                                 syncStatus === 'syncing' ? '#ff9800' :
                                 syncStatus === 'error' ? '#f44336' :
                                 isDark ? '#888' : '#999',
+                            whiteSpace: 'nowrap'
                         }}>
                             {syncStatus === 'syncing' ? 'Syncing...' :
-                             syncStatus === 'synced' ? `Synced ${formatSyncTime(lastSyncTime)}` :
+                             syncStatus === 'synced' ? (isMobile ? 'Synced' : `Synced ${formatSyncTime(lastSyncTime)}`) :
                              syncStatus === 'error' ? 'Sync error' :
                              'Not synced'}
                         </span>
@@ -904,16 +927,22 @@ const EditorPage: React.FC = () => {
                 </div>
 
                 {/* Right: EOL, Encoding, INS/OVR */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 0 }}>
-                    <span>{eol}</span>
-                    <span>{encoding}</span>
-                    <span
-                        style={{ cursor: 'pointer' }}
-                        onClick={() => setInsertMode(!insertMode)}
-                    >
-                        {insertMode ? 'INS' : 'OVR'}
-                    </span>
-                </div>
+                {!isMobile && (
+                    <div style={{
+                        display: 'flex', alignItems: 'center', gap: 16, minWidth: 0,
+                        borderLeft: `1px solid ${isDark ? '#444' : '#ffffff'}`,
+                        paddingLeft: 16,
+                    }}>
+                        <span>{eol}</span>
+                        <span>{encoding}</span>
+                        <span
+                            style={{ cursor: 'pointer', minWidth: 32 }}
+                            onClick={() => setInsertMode(!insertMode)}
+                        >
+                            {insertMode ? 'INS' : 'OVR'}
+                        </span>
+                    </div>
+                )}
             </div>
 
             {/* About Dialog */}

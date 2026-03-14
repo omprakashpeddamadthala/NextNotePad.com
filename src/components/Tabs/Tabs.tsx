@@ -91,8 +91,9 @@ const TabsComponent: React.FC<TabsProps> = ({
                     alignItems: 'flex-end',
                     overflowX: 'auto',
                     overflowY: 'hidden',
-                    background: isDark ? '#2d2d2d' : '#d4d4d4',
-                    minHeight: 30,
+                    background: isDark ? '#202020' : '#f0f0f0',
+                    minHeight: 26,
+                    borderBottom: `1px solid ${isDark ? '#555' : '#bcbcbc'}`,
                     flexShrink: 0,
                     scrollbarWidth: 'thin',
                 }}
@@ -120,33 +121,33 @@ const TabsComponent: React.FC<TabsProps> = ({
                                 cursor: 'default',
                                 userSelect: 'none',
                                 flexShrink: 0,
-                                height: isActive ? 30 : 28,
+                                height: isActive ? 27 : 24,
                                 fontSize: '12px',
                                 fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif",
                                 background: isActive
                                     ? isDark ? '#1e1e1e' : '#ffffff'
-                                    : isDark ? '#2d2d2d' : '#d4d4d4',
+                                    : isDark ? '#333333' : '#e8e8e8',
                                 color: isActive
-                                    ? isDark ? '#e0e0e0' : '#1a1a1a'
-                                    : isDark ? '#999' : '#666',
+                                    ? isDark ? '#e0e0e0' : '#000000'
+                                    : isDark ? '#999' : '#555',
                                 borderTop: isActive
-                                    ? '2px solid #ff8c00'
-                                    : '2px solid transparent',
-                                borderLeft: `1px solid ${isDark ? '#3c3c3c' : '#bcbcbc'}`,
-                                borderRight: `1px solid ${isDark ? '#3c3c3c' : '#bcbcbc'}`,
-                                borderBottom: isActive ? 'none' : `1px solid ${isDark ? '#3c3c3c' : '#bcbcbc'}`,
+                                    ? '3px solid #ff8c00'
+                                    : '3px solid transparent',
+                                borderLeft: `1px solid ${isDark ? '#555' : '#bcbcbc'}`,
+                                borderRight: `1px solid ${isDark ? '#555' : '#bcbcbc'}`,
+                                borderBottom: isActive ? '1px solid transparent' : `1px solid ${isDark ? '#555' : '#bcbcbc'}`,
                                 marginBottom: isActive ? -1 : 0,
                                 position: 'relative',
                                 zIndex: isActive ? 2 : 1,
                             }}
                             onMouseOver={(e) => {
                                 if (!isActive) {
-                                    (e.currentTarget as HTMLElement).style.background = isDark ? '#383838' : '#e0e0e0';
+                                    (e.currentTarget as HTMLElement).style.background = isDark ? '#444' : '#f8f8f8';
                                 }
                             }}
                             onMouseOut={(e) => {
                                 if (!isActive) {
-                                    (e.currentTarget as HTMLElement).style.background = isDark ? '#2d2d2d' : '#d4d4d4';
+                                    (e.currentTarget as HTMLElement).style.background = isDark ? '#333333' : '#e8e8e8';
                                 }
                             }}
                         >

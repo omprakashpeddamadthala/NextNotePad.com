@@ -69,9 +69,11 @@ interface NppToolbarProps {
 const ToolbarSeparator = ({ isDark }: { isDark: boolean }) => (
     <div
         style={{
-            width: 1,
+            width: 2,
             height: 22,
-            background: isDark ? '#555' : '#b0b0b0',
+            background: 'transparent',
+            borderLeft: `1px solid ${isDark ? '#555' : '#a0a0a0'}`,
+            borderRight: `1px solid ${isDark ? '#333' : '#ffffff'}`,
             margin: '0 3px',
             flexShrink: 0,
         }}
@@ -96,12 +98,12 @@ const TBtn: React.FC<TBtnProps> = ({ icon, tooltip, onClick, active, isDark, dis
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: 26,
-                height: 26,
-                border: 'none',
-                borderRadius: 2,
+                width: 24,
+                height: 24,
+                border: active ? `1px solid ${isDark ? '#555' : '#a0a0a0'}` : '1px solid transparent',
+                borderRadius: 0,
                 background: active
-                    ? isDark ? '#505050' : '#c8daf0'
+                    ? isDark ? '#505050' : '#d8e6f3'
                     : 'transparent',
                 cursor: disabled ? 'default' : 'pointer',
                 color: disabled
@@ -113,14 +115,14 @@ const TBtn: React.FC<TBtnProps> = ({ icon, tooltip, onClick, active, isDark, dis
             }}
             onMouseOver={(e) => {
                 if (!disabled && !active) {
-                    (e.currentTarget as HTMLElement).style.background = isDark ? '#454545' : '#d6e4f2';
+                    (e.currentTarget as HTMLElement).style.background = isDark ? '#454545' : '#c8daf0';
+                    (e.currentTarget as HTMLElement).style.border = `1px solid ${isDark ? '#555' : '#a0a0a0'}`;
                 }
             }}
             onMouseOut={(e) => {
                 if (!active) {
-                    (e.currentTarget as HTMLElement).style.background = active
-                        ? isDark ? '#505050' : '#c8daf0'
-                        : 'transparent';
+                    (e.currentTarget as HTMLElement).style.background = 'transparent';
+                    (e.currentTarget as HTMLElement).style.border = '1px solid transparent';
                 }
             }}
         >
@@ -147,13 +149,15 @@ const NppToolbar: React.FC<NppToolbarProps> = ({
             style={{
                 display: 'flex',
                 alignItems: 'center',
-                height: 32,
-                background: isDark ? '#3b3b3b' : '#e8e8e8',
+                height: 30,
+                background: isDark ? '#202020' : '#f0f0f0',
                 borderBottom: `1px solid ${isDark ? '#555' : '#bcbcbc'}`,
                 padding: '0 4px',
                 gap: 1,
                 userSelect: 'none',
-                flexShrink: 0,
+                overflowX: 'auto',
+                WebkitOverflowScrolling: 'touch',
+                scrollbarWidth: 'none',
             }}
         >
             {/* File operations */}

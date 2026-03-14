@@ -1,4 +1,4 @@
-const CACHE_NAME = 'notepad-web-v1';
+const CACHE_NAME = 'notepad-web-v2';
 const STATIC_ASSETS = ['/', '/index.html', '/vite.svg'];
 
 // Install: cache app shell

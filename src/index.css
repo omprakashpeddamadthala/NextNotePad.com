@@ -31,7 +31,8 @@ body,
 
 ::-webkit-scrollbar-thumb {
   background: #c1c1c1;
-  border: 1px solid #a8a8a8;
+  border: 1px solid #f0f0f0;
+  border-radius: 0 !important;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -49,7 +50,8 @@ body,
 
 .dark-scrollbar::-webkit-scrollbar-thumb {
   background: #555;
-  border: 1px solid #444;
+  border: 1px solid #2d2d2d;
+  border-radius: 0 !important;
 }
 
 .dark-scrollbar::-webkit-scrollbar-thumb:hover {
@@ -68,14 +70,31 @@ div[style*="overflow-x: auto"]::-webkit-scrollbar {
 
 div[style*="overflow-x: auto"]::-webkit-scrollbar-thumb {
   background: rgba(128, 128, 128, 0.4);
-  border-radius: 2px;
+  border-radius: 0 !important;
 }
 
 /* MUI Menu overrides for NextNotePad look */
 .MuiMenu-paper {
-  border-radius: 2px !important;
+  border-radius: 0 !important;
   border: 1px solid #bcbcbc !important;
   box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Force zero border radius across MUI buttons, dialogs, inputs */
+.MuiButtonBase-root,
+.MuiPaper-root,
+.MuiDialog-paper,
+.MuiInputBase-root {
+  border-radius: 0 !important;
+}
+
+/* Win32 Dialog styling */
+.MuiDialogTitle-root {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+}
+.MuiDialogContent-root {
+  font-size: 13px !important;
 }
 
 /* Print styles */
