@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import type { Workspace } from '../types/Note';
 import { DEFAULT_WORKSPACE_ID } from '../types/Note';
 import * as storage from '../services/localStorageService';
-import { createWorkspaceFolder, listWorkspaceFolders } from '../services/googleDriveService';
+import { createWorkspaceFolder, listWorkspaceFolders, renameWorkspaceFolder, deleteWorkspaceFolder } from '../services/googleDriveService';
 import { getAccessToken } from '../services/authService';
 
 export function useWorkspaces(rootDriveFolderId: string | null) {
@@ -64,6 +64,62 @@ export function useWorkspaces(rootDriveFolderId: string | null) {
         setActiveWorkspaceId(id);
     }, []);
 
+    const updateWorkspace = useCallback((id: string, updates: Partial<Workspace>) => {
+        setWorkspaces((prev) => prev.map((w) => w.id === id ? { ...w, ...updates } : w));
+    }, []);
+
+    const renameWorkspace = useCallback(async (id: string, newName: string) => {
+        const trimmed = newName.trim();
+        if (!trimmed) return;
+        
+        // Find existing workspace
+        const wsData = workspaces.find((w) => w.id === id);
+        if (!wsData) return;
+        
+        // Update locally
+        updateWorkspace(id, { name: trimmed });
+        
+        // Update on Drive if applicable
+        const token = getAccessToken();
+        if (token && wsData.driveId) {
+            try {
+                await renameWorkspaceFolder(token, wsData.driveId, trimmed);
+            } catch (e) {
+                console.error('Failed to rename workspace on Drive', e);
+            }
+        }
+    }, [workspaces, updateWorkspace]);
+
+    const deleteWorkspace = useCallback(async (id: string) => {
+        // Prevent deleting the very last workspace
+        if (workspaces.length <= 1) return;
+        
+        // Find existing workspace
+        const wsData = workspaces.find((w) => w.id === id);
+        if (!wsData) return;
+        
+        // If the active workspace is being deleted, fallback to another one
+        if (activeWorkspaceId === id) {
+            const fallback = workspaces.find((w) => w.id !== id);
+            if (fallback) {
+                setActiveWorkspaceId(fallback.id);
+            }
+        }
+        
+        // Update locally
+        setWorkspaces((prev) => prev.filter((w) => w.id !== id));
+        
+        // Update on Drive if applicable
+        const token = getAccessToken();
+        if (token && wsData.driveId) {
+            try {
+                await deleteWorkspaceFolder(token, wsData.driveId);
+            } catch (e) {
+                console.error('Failed to delete workspace on Drive', e);
+            }
+        }
+    }, [workspaces, activeWorkspaceId]);
+
     const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId) || workspaces[0];
 
     return {
@@ -72,6 +128,9 @@ export function useWorkspaces(rootDriveFolderId: string | null) {
         activeWorkspace,
         createWorkspace,
         switchWorkspace,
+        updateWorkspace,
+        renameWorkspace,
+        deleteWorkspace,
         syncWorkspacesFromDrive,
     };
 }

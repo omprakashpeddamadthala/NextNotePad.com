@@ -1,6 +1,7 @@
 import React, { useRef, useCallback, useState } from 'react';
 import { Menu, MenuItem, ListItemText, Typography, Divider } from '@mui/material';
 import type { Note } from '../../types/Note';
+import { getPalette } from '../../theme/colors';
 
 interface TabsProps {
     tabs: Note[];
@@ -48,7 +49,7 @@ const TabsComponent: React.FC<TabsProps> = ({
     const [contextMenu, setContextMenu] = useState<{ mouseX: number; mouseY: number; tabId: string } | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
 
-    const isDark = theme === 'dark';
+    const palette = getPalette(theme);
 
     const handleDragStart = useCallback((index: number) => {
         dragItemRef.current = index;
@@ -91,9 +92,9 @@ const TabsComponent: React.FC<TabsProps> = ({
                     alignItems: 'flex-end',
                     overflowX: 'auto',
                     overflowY: 'hidden',
-                    background: isDark ? '#202020' : '#f0f0f0',
+                    background: palette.panel,
                     minHeight: 26,
-                    borderBottom: `1px solid ${isDark ? '#555' : '#bcbcbc'}`,
+                    borderBottom: `1px solid ${palette.border}`,
                     flexShrink: 0,
                     scrollbarWidth: 'thin',
                 }}
@@ -124,30 +125,24 @@ const TabsComponent: React.FC<TabsProps> = ({
                                 height: isActive ? 27 : 24,
                                 fontSize: '12px',
                                 fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif",
-                                background: isActive
-                                    ? isDark ? '#1e1e1e' : '#ffffff'
-                                    : isDark ? '#333333' : '#e8e8e8',
-                                color: isActive
-                                    ? isDark ? '#e0e0e0' : '#000000'
-                                    : isDark ? '#999' : '#555',
-                                borderTop: isActive
-                                    ? '3px solid #ff8c00'
-                                    : '3px solid transparent',
-                                borderLeft: `1px solid ${isDark ? '#555' : '#bcbcbc'}`,
-                                borderRight: `1px solid ${isDark ? '#555' : '#bcbcbc'}`,
-                                borderBottom: isActive ? '1px solid transparent' : `1px solid ${isDark ? '#555' : '#bcbcbc'}`,
+                                background: isActive ? palette.bg : palette.panelAlt,
+                                color: isActive ? palette.text : palette.textDim,
+                                borderTop: isActive ? `3px solid ${palette.tabActiveBorder}` : '3px solid transparent',
+                                borderLeft: `1px solid ${palette.border}`,
+                                borderRight: `1px solid ${palette.border}`,
+                                borderBottom: isActive ? '1px solid transparent' : `1px solid ${palette.border}`,
                                 marginBottom: isActive ? -1 : 0,
                                 position: 'relative',
                                 zIndex: isActive ? 2 : 1,
                             }}
                             onMouseOver={(e) => {
                                 if (!isActive) {
-                                    (e.currentTarget as HTMLElement).style.background = isDark ? '#444' : '#f8f8f8';
+                                    (e.currentTarget as HTMLElement).style.background = palette.hover;
                                 }
                             }}
                             onMouseOut={(e) => {
                                 if (!isActive) {
-                                    (e.currentTarget as HTMLElement).style.background = isDark ? '#333333' : '#e8e8e8';
+                                    (e.currentTarget as HTMLElement).style.background = palette.panelAlt;
                                 }
                             }}
                         >
@@ -164,7 +159,7 @@ const TabsComponent: React.FC<TabsProps> = ({
                             {isDirty && (
                                 <span style={{
                                     width: 8, height: 8, borderRadius: '50%',
-                                    background: '#e74c3c', flexShrink: 0,
+                                    background: palette.danger, flexShrink: 0,
                                 }} />
                             )}
 
@@ -179,16 +174,16 @@ const TabsComponent: React.FC<TabsProps> = ({
                                     width: 16, height: 16, border: 'none', borderRadius: 2,
                                     background: 'transparent', cursor: 'pointer',
                                     fontSize: '14px', lineHeight: 1,
-                                    color: isDark ? '#999' : '#888',
+                                    color: palette.textMute,
                                     padding: 0, flexShrink: 0,
                                 }}
                                 onMouseOver={(e) => {
-                                    (e.currentTarget as HTMLElement).style.background = isDark ? '#444' : '#ccc';
-                                    (e.currentTarget as HTMLElement).style.color = isDark ? '#fff' : '#333';
+                                    (e.currentTarget as HTMLElement).style.background = palette.hover;
+                                    (e.currentTarget as HTMLElement).style.color = palette.text;
                                 }}
                                 onMouseOut={(e) => {
                                     (e.currentTarget as HTMLElement).style.background = 'transparent';
-                                    (e.currentTarget as HTMLElement).style.color = isDark ? '#999' : '#888';
+                                    (e.currentTarget as HTMLElement).style.color = palette.textMute;
                                 }}
                             >
                                 ×

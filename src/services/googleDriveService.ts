@@ -166,6 +166,37 @@ export async function createWorkspaceFolder(
     return data.id;
 }
 
+/** Rename an existing workspace folder in Google Drive */
+export async function renameWorkspaceFolder(
+    accessToken: string,
+    folderId: string,
+    newName: string
+): Promise<void> {
+    await fetch(`${DRIVE_API}/files/${folderId}`, {
+        method: 'PATCH',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: newName }),
+    });
+}
+
+/** Delete (trash) a workspace folder in Google Drive */
+export async function deleteWorkspaceFolder(
+    accessToken: string,
+    folderId: string
+): Promise<void> {
+    // Note: To permanently delete, use DELETE method.
+    // Changing trashed to true is safer. Let's use the DELETE method as requested,
+    // or just call deleteNoteFromDrive which already does DELETE method.
+    // Actually, we'll use DELETE method to be consistent with deleteNoteFromDrive.
+    await fetch(`${DRIVE_API}/files/${folderId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${accessToken}` },
+    });
+}
+
 // ── SETTINGS SYNC ──────────────────────────────────────────────────────────
 const SETTINGS_FILENAME = '.settings';
 

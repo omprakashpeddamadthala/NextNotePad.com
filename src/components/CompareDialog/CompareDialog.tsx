@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import type { Note } from '../../types/Note';
+import { getPalette } from '../../theme/colors';
 
 interface CompareDialogProps {
     open: boolean;
@@ -12,7 +13,7 @@ interface CompareDialogProps {
 }
 
 const CompareDialog: React.FC<CompareDialogProps> = ({ open, onClose, currentNote, notes, onCompare, theme }) => {
-    const isDark = theme === 'dark';
+    const palette = getPalette(theme);
     const [selectedId, setSelectedId] = useState<string>('');
 
     // other files to compare with (memoized so the reference is stable between renders)
@@ -44,10 +45,10 @@ const CompareDialog: React.FC<CompareDialogProps> = ({ open, onClose, currentNot
             fullWidth
             PaperProps={{
                 style: {
-                    background: isDark ? '#252526' : '#f0f0f0',
-                    color: isDark ? '#e0e0e0' : '#000000',
+                    background: palette.panel,
+                    color: palette.text,
                     borderRadius: 0,
-                    border: `1px solid ${isDark ? '#3c3c3c' : '#a0a0a0'}`,
+                    border: `1px solid ${palette.border}`,
                 }
             }}
         >
@@ -57,12 +58,12 @@ const CompareDialog: React.FC<CompareDialogProps> = ({ open, onClose, currentNot
                     Current File: <strong>{currentNote?.name || 'None'}</strong>
                 </div>
                 {availableNotes.length === 0 ? (
-                    <div style={{ fontSize: 13, color: isDark ? '#aaa' : '#666' }}>
+                    <div style={{ fontSize: 13, color: palette.textDim }}>
                         No other files available to compare.
                     </div>
                 ) : (
                     <FormControl fullWidth size="small" style={{ marginTop: 8 }}>
-                        <InputLabel id="compare-select-label" style={{ color: isDark ? '#aaa' : '#666' }}>Compare with...</InputLabel>
+                        <InputLabel id="compare-select-label" style={{ color: palette.textDim }}>Compare with...</InputLabel>
                         <Select
                             labelId="compare-select-label"
                             value={selectedId}
@@ -70,8 +71,8 @@ const CompareDialog: React.FC<CompareDialogProps> = ({ open, onClose, currentNot
                             onChange={(e) => setSelectedId(e.target.value)}
                             style={{
                                 borderRadius: 0,
-                                color: isDark ? '#e0e0e0' : '#000000',
-                                background: isDark ? '#333' : '#fff',
+                                color: palette.text,
+                                background: palette.bg,
                             }}
                         >
                             {availableNotes.map((note) => (
@@ -87,11 +88,11 @@ const CompareDialog: React.FC<CompareDialogProps> = ({ open, onClose, currentNot
                 <Button 
                     onClick={onClose} 
                     style={{ 
-                        color: isDark ? '#ccc' : '#333',
+                        color: palette.textDim,
                         textTransform: 'none',
                         borderRadius: 0,
-                        border: `1px solid ${isDark ? '#555' : '#ccc'}`,
-                        background: isDark ? '#333' : '#e1e1e1',
+                        border: `1px solid ${palette.border}`,
+                        background: palette.bg,
                     }}
                 >
                     Cancel
@@ -100,11 +101,11 @@ const CompareDialog: React.FC<CompareDialogProps> = ({ open, onClose, currentNot
                     onClick={handleCompare} 
                     disabled={!selectedId}
                     style={{ 
-                        color: selectedId ? (isDark ? '#fff' : '#000') : (isDark ? '#555' : '#999'),
+                        color: selectedId ? palette.text : palette.textDim,
                         textTransform: 'none',
                         borderRadius: 0,
-                        border: `1px solid ${isDark ? '#555' : '#ccc'}`,
-                        background: selectedId ? (isDark ? '#007acc' : '#c8daf0') : (isDark ? '#2d2d2d' : '#f0f0f0'),
+                        border: `1px solid ${palette.border}`,
+                        background: selectedId ? palette.accentHover : palette.panelAlt,
                     }}
                 >
                     Compare

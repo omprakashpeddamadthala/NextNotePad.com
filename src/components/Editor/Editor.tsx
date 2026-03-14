@@ -1,34 +1,39 @@
 import React, { useCallback, useRef } from 'react';
-import MonacoEditor from '@monaco-editor/react';
+import MonacoEditor, { useMonaco } from '@monaco-editor/react';
 import type { Note } from '../../types/Note';
 import type * as monaco from 'monaco-editor';
+import { getPalette } from '../../theme/colors';
 
-const FeatureCard: React.FC<{ isDark: boolean; icon: string; title: string; children: React.ReactNode }> = ({
-    isDark, icon, title, children,
-}) => (
-    <div style={{
-        background: isDark ? '#252526' : '#f8f8f8',
-        border: `1px solid ${isDark ? '#3c3c3c' : '#e0e0e0'}`,
-        borderRadius: 6,
-        padding: '16px 18px',
-    }}>
+const FeatureCard: React.FC<{ theme: 'light' | 'dark'; icon: string; title: string; children: React.ReactNode }> = ({
+    theme, icon, title, children,
+}) => {
+    const p = getPalette(theme);
+    return (
         <div style={{
-            fontSize: 15, fontWeight: 600, marginBottom: 10,
-            color: isDark ? '#e0e0e0' : '#333',
-            display: 'flex', alignItems: 'center', gap: 8,
+            background: p.panelAlt,
+            border: `1px solid ${p.border}`,
+            borderRadius: 6,
+            padding: 16,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
         }}>
-            <span>{icon}</span> {title}
+            <div style={{
+                fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8,
+                color: p.text,
+            }}>
+                <span style={{ fontSize: 18 }}>{icon}</span>
+                {title}
+            </div>
+            <div style={{
+                fontSize: 12, lineHeight: 1.5,
+                color: p.textDim,
+            }}>
+                {children}
+            </div>
         </div>
-        <ul style={{
-            margin: 0, paddingLeft: 18,
-            fontSize: 12, lineHeight: 1.8,
-            color: isDark ? '#aaa' : '#666',
-            listStyleType: '•',
-        }}>
-            {children}
-        </ul>
-    </div>
-);
+    );
+};
 
 interface EditorProps {
     note: Note | null;
@@ -45,7 +50,8 @@ interface EditorProps {
 const EditorComponent: React.FC<EditorProps> = ({
     note, theme, wordWrap, fontSize, showAllChars, showMinimap = false, onChange, onCursorChange, editorRef,
 }) => {
-    const isDark = theme === 'dark';
+    const monaco = useMonaco();
+    const p = getPalette(theme);
     const monacoRef = useRef<typeof monaco | null>(null);
 
     const handleChange = useCallback(
@@ -108,7 +114,7 @@ const EditorComponent: React.FC<EditorProps> = ({
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    background: isDark ? '#1e1e1e' : '#ffffff',
+                    background: p.bg,
                     fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif",
                     overflowY: 'auto',
                     padding: '40px 20px',
@@ -116,72 +122,48 @@ const EditorComponent: React.FC<EditorProps> = ({
             >
                 <div style={{
                     fontSize: 32, fontWeight: 300, marginBottom: 4,
-                    color: isDark ? '#d4d4d4' : '#333',
+                    color: p.text,
                 }}>
                     NextNotePad.com
                 </div>
                 <div style={{
-                    fontSize: 13, color: isDark ? '#888' : '#888',
+                    fontSize: 13, color: p.textMute,
                     marginBottom: 32,
                 }}>
                     Write. Code. Create — Anywhere.
                 </div>
 
+                {/* Features grid */}
                 <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-                    gap: 20,
-                    maxWidth: 800,
-                    width: '100%',
+                    display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                    gap: 16, width: '100%', maxWidth: 1000, marginBottom: 60,
+                    textAlign: 'left',
                 }}>
-                    {/* Editor Features */}
-                    <FeatureCard isDark={isDark} icon="✏️" title="Code Editor">
-                        <li>Syntax highlighting for 50+ languages</li>
-                        <li>Line numbers &amp; code folding</li>
-                        <li>Bracket matching &amp; auto-indent</li>
-                        <li>Find &amp; Replace (Ctrl+F / Ctrl+H)</li>
-                        <li>Go to Line (Ctrl+G)</li>
-                        <li>Word wrap toggle</li>
-                        <li>Show all characters (whitespace)</li>
-                        <li>Zoom in/out (Ctrl+Plus/Minus)</li>
+                    <FeatureCard theme={theme} icon="✏️" title="Code Editor">
+                        Powered by Monaco Editor (the same engine as VS Code). Includes syntax highlighting for 50+ languages, auto-completion, and multiple cursors.
                     </FeatureCard>
 
-                    {/* File Management */}
-                    <FeatureCard isDark={isDark} icon="📁" title="File Management">
-                        <li>Create, rename &amp; delete files</li>
-                        <li>Open files from your computer</li>
-                        <li>Multi-tab editing with drag reorder</li>
-                        <li>File explorer sidebar with search</li>
-                        <li>Right-click context menus</li>
-                        <li>Auto-save to browser storage</li>
-                        <li>Files persist across sessions</li>
+                    <FeatureCard theme={theme} icon="📁" title="File Management">
+                        Work with multiple files at once. Files are auto-saved locally in your browser's storage, ensuring you never lose your work.
                     </FeatureCard>
 
-                    {/* Cloud & Sync */}
-                    <FeatureCard isDark={isDark} icon="☁️" title="Cloud Sync">
-                        <li>Google Sign-In authentication</li>
-                        <li>Sync files to Google Drive</li>
-                        <li>Backup &amp; restore from cloud</li>
-                        <li>Access your files anywhere</li>
+                    <FeatureCard theme={theme} icon="☁️" title="Cloud Sync">
+                        Sign in with Google to seamlessly sync your files to Google Drive. Keep your workspaces synchronized across all your devices.
                     </FeatureCard>
 
-                    {/* Customization */}
-                    <FeatureCard isDark={isDark} icon="🎨" title="Customization">
-                        <li>Dark &amp; Light themes</li>
-                        <li>Multiple encoding support (UTF-8, ANSI...)</li>
-                        <li>Line ending options (CR LF, LF, CR)</li>
-                        <li>Language selection for any file</li>
-                        <li>Toggle sidebar visibility</li>
-                        <li>Adjustable font size</li>
+                    <FeatureCard theme={theme} icon="🎨" title="Customization">
+                        Toggle between Light and Dark mode. Customize word wrap, indent settings, and more to perfectly suit your coding style.
                     </FeatureCard>
                 </div>
 
+                {/* Quick start footer */}
                 <div style={{
-                    marginTop: 32, fontSize: 12,
-                    color: isDark ? '#555' : '#bbb',
-                    textAlign: 'center',
+                    display: 'flex', gap: 16, alignItems: 'center',
+                    fontSize: 13, color: p.textMute,
                 }}>
-                    Click <strong>+</strong> in the sidebar or press <strong>Ctrl+N</strong> to get started
+                    <span><strong>Ctrl+N</strong> New File</span>
+                    <span><strong>Ctrl+O</strong> Open File</span>
+                    <span><strong>Ctrl+S</strong> Save File</span>
                 </div>
             </div>
         );
@@ -194,13 +176,29 @@ const EditorComponent: React.FC<EditorProps> = ({
                 height="100%"
                 language={note.language}
                 value={note.content}
-                theme={isDark ? 'vs-dark' : 'vs'}
+                beforeMount={(monaco) => {
+                    // Define light mode custom theme
+                    monaco.editor.defineTheme('npp-light', {
+                        base: 'vs',
+                        inherit: true,
+                        rules: [],
+                        colors: {
+                            'editor.background': p.bg,
+                            'editor.foreground': p.text,
+                            'editor.lineHighlightBackground': p.lineHighlightBackground,
+                            'editorLineNumber.foreground': p.lineNumberForeground,
+                            'editorIndentGuide.background': p.indentGuideBackground,
+                            'editorGutter.background': p.bg,
+                        }
+                    });
+                }}
+                theme={theme === 'dark' ? 'vs-dark' : 'npp-light'}
                 onChange={handleChange}
                 onMount={handleEditorDidMount}
                 loading={
                     <div style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        height: '100%', color: isDark ? '#888' : '#666',
+                        height: '100%', color: p.textMute,
                     }}>
                         Loading editor...
                     </div>

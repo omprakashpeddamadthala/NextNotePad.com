@@ -1,49 +1,30 @@
 import { useMemo } from 'react';
 import type { Theme } from '@mui/material/styles';
 import { createTheme } from '@mui/material/styles';
+import { getPalette } from '../theme/colors';
 
 export function useAppTheme(mode: 'light' | 'dark'): Theme {
-    return useMemo(
-        () =>
-            createTheme({
-                palette: {
-                    mode,
-                    ...(mode === 'dark'
-                        ? {
-                            background: {
-                                default: '#1e1e1e',
-                                paper: '#2d2d2d',
-                            },
-                            primary: {
-                                main: '#569cd6',
-                            },
-                            secondary: {
-                                main: '#c586c0',
-                            },
-                            text: {
-                                primary: '#d4d4d4',
-                                secondary: '#808080',
-                            },
-                            divider: '#555',
-                        }
-                        : {
-                            background: {
-                                default: '#ffffff',
-                                paper: '#f0f0f0',
-                            },
-                            primary: {
-                                main: '#0078d4',
-                            },
-                            secondary: {
-                                main: '#a626a4',
-                            },
-                            text: {
-                                primary: '#1a1a1a',
-                                secondary: '#666',
-                            },
-                            divider: '#bcbcbc',
-                        }),
+    return useMemo(() => {
+        const p = getPalette(mode);
+        return createTheme({
+            palette: {
+                mode,
+                background: {
+                    default: p.bg,
+                    paper: p.panel,
                 },
+                primary: {
+                    main: p.accent,
+                },
+                secondary: {
+                    main: p.accentHover,
+                },
+                text: {
+                    primary: p.text,
+                    secondary: p.textDim,
+                },
+                divider: p.border,
+            },
                 typography: {
                     fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif",
                     fontSize: 13,
@@ -90,7 +71,6 @@ export function useAppTheme(mode: 'light' | 'dark'): Theme {
                         },
                     },
                 },
-            }),
-        [mode]
-    );
+            });
+    }, [mode]);
 }

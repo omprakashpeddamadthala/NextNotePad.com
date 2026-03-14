@@ -19,11 +19,13 @@ import {
     fetchUserProfile, setAccessToken, getAccessToken, clearAccessToken,
 } from '../services/authService';
 import {
-    getOrCreateBackupFolder, uploadNoteToDrive, listDriveNotes, downloadNoteFromDrive,
-    uploadSettings, downloadSettings,
+    getOrCreateBackupFolder, listDriveNotes, uploadNoteToDrive,
+    downloadNoteFromDrive, downloadSettings, uploadSettings,
+    createWorkspaceFolder
 } from '../services/googleDriveService';
 import { downloadFile, downloadAllAsZip } from '../services/fileExportService';
 import type * as monaco from 'monaco-editor';
+import { getPalette } from '../theme/colors';
 
 const AUTO_SYNC_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
@@ -32,7 +34,10 @@ const EditorPage: React.FC = () => {
     const [rootDriveFolderId, setRootDriveFolderId] = useState<string | null>(null);
     const {
         workspaces, activeWorkspaceId, activeWorkspace,
-        createWorkspace, switchWorkspace, syncWorkspacesFromDrive,
+        createWorkspace, switchWorkspace, updateWorkspace,
+        renameWorkspace,
+        deleteWorkspace,
+        syncWorkspacesFromDrive,
     } = useWorkspaces(rootDriveFolderId);
 
     const {
@@ -73,6 +78,7 @@ const EditorPage: React.FC = () => {
     const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
     const autoSyncTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const handleSyncRef = useRef<(() => void) | null>(null);
+    const p = getPalette(settings.theme);
     const isDark = settings.theme === 'dark';
 
     const showSnackbar = (message: string, severity: 'success' | 'error' | 'info') => {
@@ -160,9 +166,20 @@ const EditorPage: React.FC = () => {
         setSyncing(true);
         setSyncStatus('syncing');
         try {
-            const folderId = await getOrCreateBackupFolder(accessToken);
+            // Ensure the active workspace has a Drive folder mapped
+            if (!activeWorkspace?.driveId) {
+                showSnackbar('Workspace not synced. Creating remote folder...', 'info');
+                const rootFolderId = await getOrCreateBackupFolder(accessToken);
+                const folderId = await createWorkspaceFolder(accessToken, rootFolderId, activeWorkspace?.name || 'My Workspace');
+                updateWorkspace(activeWorkspaceId, { driveId: folderId });
+                fetchUserProfile(accessToken).then(() => handleSync()); // Re-run sync
+                setSyncing(false);
+                return;
+            }
+
+            const folderId = activeWorkspace.driveId;
             const driveFiles = await listDriveNotes(accessToken, folderId);
-            const updatedNotes = [...notes];
+            const updatedNotes = [...workspaceNotes];
             for (let i = 0; i < updatedNotes.length; i++) {
                 const note = updatedNotes[i];
                 const existingDriveFile = driveFiles.find((f) => f.name === note.name);
@@ -748,7 +765,7 @@ const EditorPage: React.FC = () => {
                 width: '100vw',
                 display: 'flex',
                 flexDirection: 'column',
-                background: isDark ? '#1e1e1e' : '#ffffff',
+                background: p.bg,
                 fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif",
                 overflow: 'hidden',
                 position: 'relative',
@@ -759,8 +776,8 @@ const EditorPage: React.FC = () => {
                 <div style={{
                     position: 'absolute',
                     inset: 0,
-                    background: isDark ? 'rgba(0, 122, 204, 0.15)' : 'rgba(0, 120, 212, 0.1)',
-                    border: `3px dashed ${isDark ? '#007acc' : '#0078d4'}`,
+                    background: p.active,
+                    border: `3px dashed ${p.accent}`,
                     zIndex: 9999,
                     display: 'flex',
                     alignItems: 'center',
@@ -962,7 +979,21 @@ const EditorPage: React.FC = () => {
                                     </Button>
                                 </div>
                                 <DiffEditor
-                                    theme={isDark ? 'vs-dark' : 'light'}
+                                    theme={isDark ? 'vs-dark' : 'eye-protection'}
+                                    beforeMount={(monaco) => {
+                                        monaco.editor.defineTheme('eye-protection', {
+                                            base: 'vs',
+                                            inherit: true,
+                                            rules: [],
+                                            colors: {
+                                                'editor.background': '#DFEEDD',
+                                                'editor.lineHighlightBackground': '#CFE6CD',
+                                                'editorLineNumber.foreground': '#7A997A',
+                                                'editorIndentGuide.background': '#BCE2C1',
+                                                'editorGutter.background': '#DFEEDD',
+                                            }
+                                        });
+                                    }}
                                     original={targetNote?.content || ''}
                                     modified={activeNote?.content || ''}
                                     language={activeNote?.language || 'plaintext'}
@@ -1064,6 +1095,8 @@ const EditorPage: React.FC = () => {
                 activeWorkspaceId={activeWorkspaceId}
                 onSwitch={switchWorkspace}
                 onCreate={async (name) => { await createWorkspace(name); }}
+                onRename={renameWorkspace}
+                onDelete={deleteWorkspace}
                 theme={settings.theme}
             />
 
@@ -1075,16 +1108,16 @@ const EditorPage: React.FC = () => {
                 fullWidth
                 PaperProps={{
                     sx: {
-                        background: isDark ? '#1e1e1e' : '#ffffff',
-                        color: isDark ? '#e0e0e0' : '#1a1a1a',
-                        border: `1px solid ${isDark ? '#444' : '#ddd'}`,
+                        background: p.panel,
+                        color: p.text,
+                        border: `1px solid ${p.border}`,
                     },
                 }}
             >
                 <DialogTitle sx={{
                     fontFamily: "'Segoe UI', sans-serif",
-                    color: isDark ? '#e0e0e0' : '#1a1a1a',
-                    borderBottom: `1px solid ${isDark ? '#333' : '#eee'}`,
+                    color: p.text,
+                    borderBottom: `1px solid ${p.border}`,
                     pb: 1.5,
                 }}>
                     About NextNotePad.com
@@ -1094,24 +1127,24 @@ const EditorPage: React.FC = () => {
                         textAlign: 'center',
                         marginBottom: 16,
                         padding: '12px 0',
-                        borderBottom: `1px solid ${isDark ? '#333' : '#eee'}`,
+                        borderBottom: `1px solid ${p.border}`,
                     }}>
                         <div style={{
                             fontSize: 22, fontWeight: 700,
-                            color: isDark ? '#e0e0e0' : '#222',
+                            color: p.text,
                         }}>
                             NextNotePad.com
                         </div>
                         <div style={{
                             fontSize: 13, marginTop: 4,
-                            color: isDark ? '#007acc' : '#0078d4',
+                            color: p.accent,
                             fontWeight: 500,
                         }}>
                             Version 2.0.0
                         </div>
                         <div style={{
                             fontSize: 12, marginTop: 6,
-                            color: isDark ? '#888' : '#888',
+                            color: p.textMute,
                         }}>
                             Write. Code. Create — Anywhere.
                             <br />A powerful browser-based code editor built with React, Monaco Editor &amp; Material-UI.
@@ -1129,14 +1162,14 @@ const EditorPage: React.FC = () => {
                         <div key={section.title} style={{ marginBottom: 12 }}>
                             <div style={{
                                 fontSize: 13, fontWeight: 600,
-                                color: isDark ? '#e0e0e0' : '#222',
+                                color: p.text,
                                 marginBottom: 3,
                             }}>
                                 {section.icon} {section.title}
                             </div>
                             <div style={{
                                 fontSize: 12, lineHeight: 1.6,
-                                color: isDark ? '#999' : '#666',
+                                color: p.textDim,
                                 paddingLeft: 8,
                             }}>
                                 {section.desc}
@@ -1146,16 +1179,16 @@ const EditorPage: React.FC = () => {
 
                     <div style={{
                         textAlign: 'center', marginTop: 16, paddingTop: 12,
-                        borderTop: `1px solid ${isDark ? '#333' : '#eee'}`,
-                        fontSize: 11, color: isDark ? '#555' : '#bbb',
+                        borderTop: `1px solid ${p.border}`,
+                        fontSize: 11, color: p.textMute,
                     }}>
                         © 2026 NextNotePad.com. All rights reserved.
                     </div>
                 </DialogContent>
-                <DialogActions sx={{ borderTop: `1px solid ${isDark ? '#333' : '#eee'}` }}>
+                <DialogActions sx={{ borderTop: `1px solid ${p.border}` }}>
                     <Button
                         onClick={() => setAboutOpen(false)}
-                        sx={{ color: isDark ? '#007acc' : '#0078d4' }}
+                        sx={{ color: p.accent }}
                     >
                         Close
                     </Button>

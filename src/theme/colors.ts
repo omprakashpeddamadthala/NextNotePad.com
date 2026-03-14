@@ -33,56 +33,68 @@ export interface ThemePalette {
     // Misc
     tabActiveBorder: string;
     scrollbar: string;
+    // Editor specific
+    lineHighlightBackground: string;
+    lineNumberForeground: string;
+    indentGuideBackground: string;
 }
 
 export const darkPalette: ThemePalette = {
-    bg:             '#1a1b26',
-    panel:          '#16161e',
-    panelAlt:       '#13131a',
-    hover:          '#252638',
-    active:         '#2d2f45',
+    bg:             '#1e1e1e', // Npp Editor Background dark
+    panel:          '#202020', // Npp toolbar/sidebar dark
+    panelAlt:       '#333333', // Npp Menu bar dark
+    hover:          '#555555',
+    active:         '#404040', // Selected item
 
-    border:         '#2e3147',
-    borderFocus:    '#7aa2f7',
+    border:         '#555555',
+    borderFocus:    '#ff9900', // Npp often uses orange for active tab top border
 
-    text:           '#c0caf5',
-    textDim:        '#6b7db3',
-    textMute:       '#3b4261',
+    text:           '#e0e0e0',
+    textDim:        '#a0a0a0',
+    textMute:       '#808080',
 
-    accent:         '#7aa2f7',
-    accentHover:    '#89b3ff',
+    accent:         '#ff9900', // Orange accent
+    accentHover:    '#e68a00',
 
-    success:        '#9ece6a',
-    warning:        '#e0af68',
-    danger:         '#f7768e',
+    success:        '#89d185',
+    warning:        '#cca700',
+    danger:         '#f48771',
 
-    tabActiveBorder:'#7aa2f7',
-    scrollbar:      '#3b4261',
+    tabActiveBorder:'#ff9900',
+    scrollbar:      '#424242',
+
+    lineHighlightBackground: '#333333',
+    lineNumberForeground: '#858585',
+    indentGuideBackground: '#404040',
 };
 
 export const lightPalette: ThemePalette = {
-    bg:             '#f7f6f3',
-    panel:          '#eeeae4',
-    panelAlt:       '#e5e1da',
-    hover:          '#ddd9d1',
-    active:         '#d0c9be',
+    bg:             '#ffffff', // Editor Background
+    panel:          '#f0f0f0', // Npp toolbar/sidebar standard Windows grey
+    panelAlt:       '#f5f5f5', // Menu bar
+    hover:          '#e5f1fb', // Windows 10 standard hover light blue
+    active:         '#cce8ff', // Windows 10 standard selected light blue
 
-    border:         '#cbc5bb',
-    borderFocus:    '#2563eb',
+    border:         '#d3d3d3',
+    borderFocus:    '#ff9900',
 
-    text:           '#1e1c1a',
-    textDim:        '#6b6560',
-    textMute:       '#a09890',
+    text:           '#000000',
+    textDim:        '#444444',
+    textMute:       '#888888',
 
-    accent:         '#2563eb',
-    accentHover:    '#1d4ed8',
+    accent:         '#ff9900',
+    accentHover:    '#e68a00',
 
     success:        '#16803c',
     warning:        '#b45309',
     danger:         '#b91c1c',
 
-    tabActiveBorder:'#2563eb',
-    scrollbar:      '#cbc5bb',
+    tabActiveBorder:'#ff9900',
+    scrollbar:      '#f0f0f0',
+
+    lineHighlightBackground: '#e8e8e8',
+    lineNumberForeground: '#2b91af',
+    indentGuideBackground: '#d3d3d3',
 };
 
 export function getPalette(theme: 'light' | 'dark'): ThemePalette {

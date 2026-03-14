@@ -73,70 +73,72 @@ interface NppToolbarProps {
     user: { name: string; picture: string } | null;
 }
 
-const ToolbarSeparator = ({ isDark }: { isDark: boolean }) => (
-    <div
-        style={{
-            width: 2,
-            height: 22,
-            background: 'transparent',
-            borderLeft: `1px solid ${isDark ? '#555' : '#a0a0a0'}`,
-            borderRight: `1px solid ${isDark ? '#333' : '#ffffff'}`,
-            margin: '0 3px',
-            flexShrink: 0,
-        }}
-    />
-);
+const ToolbarSeparator = ({ theme }: { theme: 'light' | 'dark' }) => {
+    const p = getPalette(theme);
+    return (
+        <div
+            style={{
+                width: 2,
+                height: 22,
+                background: 'transparent',
+                borderLeft: `1px solid ${p.border}`,
+                borderRight: `1px solid ${theme === 'dark' ? '#333' : '#ffffff'}`,
+                margin: '0 3px',
+                flexShrink: 0,
+            }}
+        />
+    );
+};
 
 interface TBtnProps {
     icon: React.ReactNode;
     tooltip: string;
     onClick: () => void;
     active?: boolean;
-    isDark: boolean;
+    theme: 'light' | 'dark';
     disabled?: boolean;
 }
 
-const TBtn: React.FC<TBtnProps> = ({ icon, tooltip, onClick, active, isDark, disabled }) => (
-    <Tooltip title={tooltip} arrow enterDelay={600}>
-        <button
-            onClick={onClick}
-            disabled={disabled}
-            style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 24,
-                height: 24,
-                border: active ? `1px solid ${isDark ? '#555' : '#a0a0a0'}` : '1px solid transparent',
-                borderRadius: 0,
-                background: active
-                    ? isDark ? '#505050' : '#d8e6f3'
-                    : 'transparent',
-                cursor: disabled ? 'default' : 'pointer',
-                color: disabled
-                    ? isDark ? '#666' : '#aaa'
-                    : isDark ? '#d0d0d0' : '#333',
-                padding: 0,
-                flexShrink: 0,
-                opacity: disabled ? 0.5 : 1,
-            }}
-            onMouseOver={(e) => {
-                if (!disabled && !active) {
-                    (e.currentTarget as HTMLElement).style.background = isDark ? '#454545' : '#c8daf0';
-                    (e.currentTarget as HTMLElement).style.border = `1px solid ${isDark ? '#555' : '#a0a0a0'}`;
-                }
-            }}
-            onMouseOut={(e) => {
-                if (!active) {
-                    (e.currentTarget as HTMLElement).style.background = 'transparent';
-                    (e.currentTarget as HTMLElement).style.border = '1px solid transparent';
-                }
-            }}
-        >
-            {icon}
-        </button>
-    </Tooltip>
-);
+const TBtn: React.FC<TBtnProps> = ({ icon, tooltip, onClick, active, theme, disabled }) => {
+    const p = getPalette(theme);
+    return (
+        <Tooltip title={tooltip} arrow enterDelay={600}>
+            <button
+                onClick={onClick}
+                disabled={disabled}
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 24,
+                    height: 24,
+                    border: active ? `1px solid ${p.border}` : '1px solid transparent',
+                    borderRadius: 0,
+                    background: active ? p.active : 'transparent',
+                    cursor: disabled ? 'default' : 'pointer',
+                    color: disabled ? p.textMute : p.text,
+                    padding: 0,
+                    flexShrink: 0,
+                    opacity: disabled ? 0.5 : 1,
+                }}
+                onMouseOver={(e) => {
+                    if (!disabled && !active) {
+                        (e.currentTarget as HTMLElement).style.background = p.hover;
+                        (e.currentTarget as HTMLElement).style.border = `1px solid ${p.border}`;
+                    }
+                }}
+                onMouseOut={(e) => {
+                    if (!active) {
+                        (e.currentTarget as HTMLElement).style.background = 'transparent';
+                        (e.currentTarget as HTMLElement).style.border = '1px solid transparent';
+                    }
+                }}
+            >
+                {icon}
+            </button>
+        </Tooltip>
+    );
+};
 
 const NppToolbar: React.FC<NppToolbarProps> = ({
     onNewFile, onOpenFile, onSaveFile, onSaveAll, onCloseFile, onPrint,
@@ -149,7 +151,6 @@ const NppToolbar: React.FC<NppToolbarProps> = ({
     wordWrap, showAllChars, theme, syncing, syncStatus, user,
 }) => {
     const p = getPalette(theme);
-    const isDark = theme === 'dark';
     const iconSx = { fontSize: 18 };
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const menuOpen = Boolean(anchorEl);
@@ -176,61 +177,61 @@ const NppToolbar: React.FC<NppToolbarProps> = ({
             }}
         >
             {/* File operations */}
-            <TBtn icon={<NewIcon sx={iconSx} />} tooltip="New (Ctrl+N)" onClick={onNewFile} isDark={isDark} />
-            <TBtn icon={<OpenIcon sx={iconSx} />} tooltip="Open (Ctrl+O)" onClick={onOpenFile} isDark={isDark} />
-            <TBtn icon={<SaveIcon sx={iconSx} />} tooltip="Save (Ctrl+S)" onClick={onSaveFile} isDark={isDark} />
-            <TBtn icon={<SaveAllIcon sx={iconSx} />} tooltip="Save All (Ctrl+Shift+S)" onClick={onSaveAll} isDark={isDark} />
-            <TBtn icon={<CloseIcon sx={iconSx} />} tooltip="Close (Ctrl+W)" onClick={onCloseFile} isDark={isDark} />
-            <TBtn icon={<PrintIcon sx={iconSx} />} tooltip="Print (Ctrl+P)" onClick={onPrint} isDark={isDark} />
-            <TBtn icon={<CompareIcon sx={iconSx} />} tooltip="Compare Files" onClick={onCompare} isDark={isDark} />
+            <TBtn icon={<NewIcon sx={iconSx} />} tooltip="New (Ctrl+N)" onClick={onNewFile} theme={theme} />
+            <TBtn icon={<OpenIcon sx={iconSx} />} tooltip="Open (Ctrl+O)" onClick={onOpenFile} theme={theme} />
+            <TBtn icon={<SaveIcon sx={iconSx} />} tooltip="Save (Ctrl+S)" onClick={onSaveFile} theme={theme} />
+            <TBtn icon={<SaveAllIcon sx={iconSx} />} tooltip="Save All (Ctrl+Shift+S)" onClick={onSaveAll} theme={theme} />
+            <TBtn icon={<CloseIcon sx={iconSx} />} tooltip="Close (Ctrl+W)" onClick={onCloseFile} theme={theme} />
+            <TBtn icon={<PrintIcon sx={iconSx} />} tooltip="Print (Ctrl+P)" onClick={onPrint} theme={theme} />
+            <TBtn icon={<CompareIcon sx={iconSx} />} tooltip="Compare Files" onClick={onCompare} theme={theme} />
 
-            <ToolbarSeparator isDark={isDark} />
+            <ToolbarSeparator theme={theme} />
 
             {/* Clipboard */}
-            <TBtn icon={<CutIcon sx={iconSx} />} tooltip="Cut (Ctrl+X)" onClick={onCut} isDark={isDark} />
-            <TBtn icon={<CopyIcon sx={iconSx} />} tooltip="Copy (Ctrl+C)" onClick={onCopy} isDark={isDark} />
-            <TBtn icon={<PasteIcon sx={iconSx} />} tooltip="Paste (Ctrl+V)" onClick={onPaste} isDark={isDark} />
+            <TBtn icon={<CutIcon sx={iconSx} />} tooltip="Cut (Ctrl+X)" onClick={onCut} theme={theme} />
+            <TBtn icon={<CopyIcon sx={iconSx} />} tooltip="Copy (Ctrl+C)" onClick={onCopy} theme={theme} />
+            <TBtn icon={<PasteIcon sx={iconSx} />} tooltip="Paste (Ctrl+V)" onClick={onPaste} theme={theme} />
 
-            <ToolbarSeparator isDark={isDark} />
+            <ToolbarSeparator theme={theme} />
 
             {/* Undo/Redo */}
-            <TBtn icon={<UndoIcon sx={iconSx} />} tooltip="Undo (Ctrl+Z)" onClick={onUndo} isDark={isDark} />
-            <TBtn icon={<RedoIcon sx={iconSx} />} tooltip="Redo (Ctrl+Y)" onClick={onRedo} isDark={isDark} />
+            <TBtn icon={<UndoIcon sx={iconSx} />} tooltip="Undo (Ctrl+Z)" onClick={onUndo} theme={theme} />
+            <TBtn icon={<RedoIcon sx={iconSx} />} tooltip="Redo (Ctrl+Y)" onClick={onRedo} theme={theme} />
 
-            <ToolbarSeparator isDark={isDark} />
+            <ToolbarSeparator theme={theme} />
 
             {/* Search */}
-            <TBtn icon={<FindIcon sx={iconSx} />} tooltip="Find (Ctrl+F)" onClick={onFind} isDark={isDark} />
-            <TBtn icon={<ReplaceIcon sx={iconSx} />} tooltip="Replace (Ctrl+H)" onClick={onReplace} isDark={isDark} />
+            <TBtn icon={<FindIcon sx={iconSx} />} tooltip="Find (Ctrl+F)" onClick={onFind} theme={theme} />
+            <TBtn icon={<ReplaceIcon sx={iconSx} />} tooltip="Replace (Ctrl+H)" onClick={onReplace} theme={theme} />
 
-            <ToolbarSeparator isDark={isDark} />
+            <ToolbarSeparator theme={theme} />
 
             {/* Zoom */}
-            <TBtn icon={<ZoomInIcon sx={iconSx} />} tooltip="Zoom In (Ctrl+Num+)" onClick={onZoomIn} isDark={isDark} />
-            <TBtn icon={<ZoomOutIcon sx={iconSx} />} tooltip="Zoom Out (Ctrl+Num-)" onClick={onZoomOut} isDark={isDark} />
+            <TBtn icon={<ZoomInIcon sx={iconSx} />} tooltip="Zoom In (Ctrl+Num+)" onClick={onZoomIn} theme={theme} />
+            <TBtn icon={<ZoomOutIcon sx={iconSx} />} tooltip="Zoom Out (Ctrl+Num-)" onClick={onZoomOut} theme={theme} />
 
-            <ToolbarSeparator isDark={isDark} />
+            <ToolbarSeparator theme={theme} />
 
             {/* View */}
-            <TBtn icon={<WrapTextIcon sx={iconSx} />} tooltip="Word Wrap" onClick={onToggleWordWrap} active={wordWrap} isDark={isDark} />
-            <TBtn icon={<ShowCharsIcon sx={iconSx} />} tooltip="Show All Characters" onClick={onToggleShowAllChars} active={showAllChars} isDark={isDark} />
+            <TBtn icon={<WrapTextIcon sx={iconSx} />} tooltip="Word Wrap" onClick={onToggleWordWrap} active={wordWrap} theme={theme} />
+            <TBtn icon={<ShowCharsIcon sx={iconSx} />} tooltip="Show All Characters" onClick={onToggleShowAllChars} active={showAllChars} theme={theme} />
 
-            <ToolbarSeparator isDark={isDark} />
+            <ToolbarSeparator theme={theme} />
 
             {/* Indent */}
-            <TBtn icon={<IndentIcon sx={iconSx} />} tooltip="Indent (Tab)" onClick={onIndent} isDark={isDark} />
-            <TBtn icon={<UnindentIcon sx={iconSx} />} tooltip="Unindent (Shift+Tab)" onClick={onUnindent} isDark={isDark} />
+            <TBtn icon={<IndentIcon sx={iconSx} />} tooltip="Indent (Tab)" onClick={onIndent} theme={theme} />
+            <TBtn icon={<UnindentIcon sx={iconSx} />} tooltip="Unindent (Shift+Tab)" onClick={onUnindent} theme={theme} />
 
-            <ToolbarSeparator isDark={isDark} />
+            <ToolbarSeparator theme={theme} />
 
             {/* Format */}
-            <TBtn icon={<FormatIcon sx={iconSx} />} tooltip="Format Text (JSON, XML, HTML, CSS, SQL)" onClick={onFormatText} isDark={isDark} />
+            <TBtn icon={<FormatIcon sx={iconSx} />} tooltip="Format Text (JSON, XML, HTML, CSS, SQL)" onClick={onFormatText} theme={theme} />
 
-            <ToolbarSeparator isDark={isDark} />
+            <ToolbarSeparator theme={theme} />
 
             {/* Download */}
-            <TBtn icon={<DownloadIcon sx={iconSx} />} tooltip="Download File" onClick={onDownloadFile} isDark={isDark} />
-            <TBtn icon={<ZipIcon sx={iconSx} />} tooltip="Download All as ZIP" onClick={onDownloadAllAsZip} isDark={isDark} />
+            <TBtn icon={<DownloadIcon sx={iconSx} />} tooltip="Download File" onClick={onDownloadFile} theme={theme} />
+            <TBtn icon={<ZipIcon sx={iconSx} />} tooltip="Download All as ZIP" onClick={onDownloadAllAsZip} theme={theme} />
 
             {/* Spacer */}
             <div style={{ flex: 1 }} />
@@ -238,15 +239,15 @@ const NppToolbar: React.FC<NppToolbarProps> = ({
             {/* Cloud Sync with status */}
             <TBtn
                 icon={syncing ? <CircularProgress size={16} /> :
-                    syncStatus === 'synced' ? <SyncedIcon sx={{ ...iconSx, color: '#4caf50' }} /> :
-                    syncStatus === 'error' ? <SyncErrorIcon sx={{ ...iconSx, color: '#f44336' }} /> :
+                    syncStatus === 'synced' ? <SyncedIcon sx={{ ...iconSx, color: p.success }} /> :
+                    syncStatus === 'error' ? <SyncErrorIcon sx={{ ...iconSx, color: p.danger }} /> :
                     <SyncIcon sx={iconSx} />}
                 tooltip={syncing ? 'Syncing...' :
                     syncStatus === 'synced' ? 'Synced with Google Drive' :
                     syncStatus === 'error' ? 'Sync error - click to retry' :
                     'Sync to Google Drive'}
                 onClick={onSyncDrive}
-                isDark={isDark}
+                theme={theme}
                 disabled={syncing}
             />
 
@@ -255,7 +256,7 @@ const NppToolbar: React.FC<NppToolbarProps> = ({
                 icon={theme === 'dark' ? <LightModeIcon sx={iconSx} /> : <DarkModeIcon sx={iconSx} />}
                 tooltip={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
                 onClick={onThemeToggle}
-                isDark={isDark}
+                theme={theme}
             />
 
             {/* Google Auth */}
@@ -268,12 +269,12 @@ const NppToolbar: React.FC<NppToolbarProps> = ({
                             display: 'flex',
                             alignItems: 'center',
                             gap: 5,
-                            background: isDark ? '#2a2d2e' : '#e0e8f0',
-                            border: `1px solid ${isDark ? '#555' : '#b0c4d8'}`,
+                            background: p.panelAlt,
+                            border: `1px solid ${p.border}`,
                             borderRadius: 12,
                             padding: '2px 8px 2px 3px',
                             cursor: 'pointer',
-                            color: isDark ? '#d0d0d0' : '#222',
+                            color: p.text,
                             fontSize: 12,
                             fontWeight: 500,
                             whiteSpace: 'nowrap',
@@ -298,9 +299,9 @@ const NppToolbar: React.FC<NppToolbarProps> = ({
                         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                         PaperProps={{
                             style: {
-                                background: isDark ? '#252526' : '#f5f5f5',
-                                color: isDark ? '#e0e0e0' : '#111',
-                                border: `1px solid ${isDark ? '#3c3c3c' : '#ccc'}`,
+                                background: p.panel,
+                                color: p.text,
+                                border: `1px solid ${p.border}`,
                                 borderRadius: 4,
                                 minWidth: 180,
                             }
@@ -310,20 +311,20 @@ const NppToolbar: React.FC<NppToolbarProps> = ({
                         <div style={{ padding: '8px 14px 6px', pointerEvents: 'none' }}>
                             <div style={{ fontWeight: 600, fontSize: 13 }}>{user.name}</div>
                         </div>
-                        <Divider style={{ borderColor: isDark ? '#3c3c3c' : '#ddd', margin: 0 }} />
+                        <Divider style={{ borderColor: p.border, margin: 0 }} />
                         {onManageWorkspaces && (
                             <MenuItem
                                 onClick={() => { handleMenuClose(); onManageWorkspaces(); }}
-                                style={{ fontSize: 13, gap: 8, color: isDark ? '#e0e0e0' : '#111' }}
+                                style={{ fontSize: 13, gap: 8, color: p.text }}
                             >
                                 <ManageIcon sx={{ fontSize: 16 }} />
                                 Manage Workspaces
                             </MenuItem>
                         )}
-                        <Divider style={{ borderColor: isDark ? '#3c3c3c' : '#ddd', margin: 0 }} />
+                        <Divider style={{ borderColor: p.border, margin: 0 }} />
                         <MenuItem
                             onClick={handleLogoutClick}
-                            style={{ fontSize: 13, gap: 8, color: isDark ? '#e0e0e0' : '#111' }}
+                            style={{ fontSize: 13, gap: 8, color: p.text }}
                         >
                             <LogoutIcon sx={{ fontSize: 16 }} />
                             Sign out
@@ -360,9 +361,9 @@ const NppToolbar: React.FC<NppToolbarProps> = ({
                             display: 'flex',
                             alignItems: 'center',
                             gap: 6,
-                            background: isDark ? '#2a2d2e' : '#fff',
-                            color: isDark ? '#d0d0d0' : '#3c4043',
-                            border: `1px solid ${isDark ? '#555' : '#dadce0'}`,
+                            background: p.panelAlt,
+                            color: p.text,
+                            border: `1px solid ${p.border}`,
                             borderRadius: 12,
                             padding: '2px 10px 2px 4px',
                             fontSize: 12,
@@ -372,12 +373,12 @@ const NppToolbar: React.FC<NppToolbarProps> = ({
                             flexShrink: 0,
                         }}
                         onMouseOver={e => {
-                            (e.currentTarget as HTMLElement).style.background = isDark ? '#3a3d3e' : '#f1f3f4';
-                            (e.currentTarget as HTMLElement).style.borderColor = isDark ? '#888' : '#aaa';
+                            (e.currentTarget as HTMLElement).style.background = p.hover;
+                            (e.currentTarget as HTMLElement).style.borderColor = p.accentHover;
                         }}
                         onMouseOut={e => {
-                            (e.currentTarget as HTMLElement).style.background = isDark ? '#2a2d2e' : '#fff';
-                            (e.currentTarget as HTMLElement).style.borderColor = isDark ? '#555' : '#dadce0';
+                            (e.currentTarget as HTMLElement).style.background = p.panelAlt;
+                            (e.currentTarget as HTMLElement).style.borderColor = p.border;
                         }}
                     >
                         <GoogleIcon sx={{ fontSize: 16, color: '#4285f4' }} />

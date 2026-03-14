@@ -11,6 +11,11 @@ export function useNotes(activeWorkspaceId: string = DEFAULT_WORKSPACE_ID) {
     const [searchQuery, setSearchQuery] = useState('');
     const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    const notesRef = useRef(notes);
+    useEffect(() => {
+        notesRef.current = notes;
+    }, [notes]);
+
     // Persist notes to localStorage whenever they change
     useEffect(() => { storage.saveNotes(notes); }, [notes]);
 
@@ -33,10 +38,19 @@ export function useNotes(activeWorkspaceId: string = DEFAULT_WORKSPACE_ID) {
     }, []);
 
     const createNote = useCallback((name?: string, workspaceId?: string) => {
-        const now = new Date();
-        const pad = (n: number) => String(n).padStart(2, '0');
-        const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
-        const fileName = name || `note ${dateStr}.txt`;
+        let fileName = name;
+        if (!fileName) {
+            let maxNew = 0;
+            notesRef.current.forEach(n => {
+                const match = n.name.match(/^new (\d+)$/i);
+                if (match) {
+                    const num = parseInt(match[1], 10);
+                    if (num > maxNew) maxNew = num;
+                }
+            });
+            fileName = `new ${maxNew + 1}`;
+        }
+        
         const newNote: Note = {
             id: uuidv4(),
             name: fileName,
