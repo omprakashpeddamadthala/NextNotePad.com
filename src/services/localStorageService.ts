@@ -4,6 +4,7 @@ import { DEFAULT_SETTINGS, DEFAULT_WORKSPACE_ID } from '../types/Note';
 const NOTES_KEY = 'notepad_web_notes';
 const SETTINGS_KEY = 'notepad_web_settings';
 const WORKSPACES_KEY = 'notepad_web_workspaces';
+const ACTIVE_WORKSPACE_KEY = 'notepad_web_active_workspace';
 
 export function getNotes(): Note[] {
     try {
@@ -67,5 +68,22 @@ export function saveWorkspaces(workspaces: Workspace[]): void {
         localStorage.setItem(WORKSPACES_KEY, JSON.stringify(workspaces));
     } catch (e) {
         console.error('Failed to save workspaces to localStorage', e);
+    }
+}
+
+export function getActiveWorkspaceId(): string {
+    try {
+        const raw = localStorage.getItem(ACTIVE_WORKSPACE_KEY);
+        return raw || DEFAULT_WORKSPACE_ID;
+    } catch {
+        return DEFAULT_WORKSPACE_ID;
+    }
+}
+
+export function saveActiveWorkspaceId(id: string): void {
+    try {
+        localStorage.setItem(ACTIVE_WORKSPACE_KEY, id);
+    } catch (e) {
+        console.error('Failed to save active workspace ID to localStorage', e);
     }
 }
