@@ -144,6 +144,13 @@ export function useNotes(activeWorkspaceId: string = DEFAULT_WORKSPACE_ID) {
         setSettings((prev) => ({ ...prev, fontSize: Math.max(8, Math.min(40, size)) }));
     }, []);
 
+    /** Move all notes from one workspace to another (used when deleting a workspace) */
+    const reassignNotesToWorkspace = useCallback((fromWorkspaceId: string, toWorkspaceId: string) => {
+        setNotes((prev) => prev.map((n) =>
+            n.workspaceId === fromWorkspaceId ? { ...n, workspaceId: toWorkspaceId } : n
+        ));
+    }, []);
+
     /** Apply settings downloaded from Drive (theme, wordWrap, fontSize, sidebarOpen) */
     const applyDriveSettings = useCallback((remote: { theme?: 'light' | 'dark'; wordWrap?: boolean; fontSize?: number; sidebarOpen?: boolean }) => {
         setSettings((prev) => ({
@@ -190,5 +197,6 @@ export function useNotes(activeWorkspaceId: string = DEFAULT_WORKSPACE_ID) {
         setTheme,
         setFontSize,
         applyDriveSettings,
+        reassignNotesToWorkspace,
     };
 }

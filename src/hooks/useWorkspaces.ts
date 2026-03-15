@@ -3,13 +3,19 @@ import { v4 as uuidv4 } from 'uuid';
 import type { Workspace } from '../types/Note';
 import { DEFAULT_WORKSPACE_ID } from '../types/Note';
 import * as storage from '../services/localStorageService';
+import { getActiveWorkspaceId, saveActiveWorkspaceId } from '../services/localStorageService';
 import { createWorkspaceFolder, listWorkspaceFolders, renameWorkspaceFolder, deleteWorkspaceFolder } from '../services/googleDriveService';
 import { getAccessToken } from '../services/authService';
 
 export function useWorkspaces(rootDriveFolderId: string | null) {
     const [workspaces, setWorkspaces] = useState<Workspace[]>(() => storage.getWorkspaces());
     const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>(
-        () => DEFAULT_WORKSPACE_ID
+        () => {
+            const saved = getActiveWorkspaceId();
+            // Validate that the saved workspace still exists
+            const ws = storage.getWorkspaces();
+            return ws.some((w) => w.id === saved) ? saved : DEFAULT_WORKSPACE_ID;
+        }
     );
 
     // Persist workspace list whenever it changes
@@ -62,6 +68,7 @@ export function useWorkspaces(rootDriveFolderId: string | null) {
 
     const switchWorkspace = useCallback((id: string) => {
         setActiveWorkspaceId(id);
+        saveActiveWorkspaceId(id);
     }, []);
 
     const updateWorkspace = useCallback((id: string, updates: Partial<Workspace>) => {
@@ -103,6 +110,7 @@ export function useWorkspaces(rootDriveFolderId: string | null) {
             const fallback = workspaces.find((w) => w.id !== id);
             if (fallback) {
                 setActiveWorkspaceId(fallback.id);
+                saveActiveWorkspaceId(fallback.id);
             }
         }
         

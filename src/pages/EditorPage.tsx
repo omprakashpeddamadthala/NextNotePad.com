@@ -45,6 +45,7 @@ const EditorPage: React.FC = () => {
         createNote, deleteNote, renameNote, updateContent,
         openTab, closeTab, setActiveTab, reorderTabs,
         toggleWordWrap, toggleSidebar, setTheme, setFontSize, applyDriveSettings,
+        reassignNotesToWorkspace,
     } = useNotes(activeWorkspaceId);
 
     const isMobile = useMediaQuery('(max-width: 600px)');
@@ -200,6 +201,7 @@ const EditorPage: React.FC = () => {
                         language: getLanguageFromFilename(driveFile.name),
                         lastModified: new Date(driveFile.modifiedTime).getTime(),
                         driveFileId: driveFile.id,
+                        workspaceId: activeWorkspaceId,
                     });
                 }
             }
@@ -222,7 +224,7 @@ const EditorPage: React.FC = () => {
         } finally {
             setSyncing(false);
         }
-    }, [notes, setNotes, googleLogin]);
+    }, [notes, setNotes, googleLogin, workspaceNotes, activeWorkspace, activeWorkspaceId, updateWorkspace]);
 
     // Keep handleSyncRef up-to-date so the stable timer always calls latest handleSync
     useEffect(() => {
@@ -1096,7 +1098,13 @@ const EditorPage: React.FC = () => {
                 onSwitch={switchWorkspace}
                 onCreate={async (name) => { await createWorkspace(name); }}
                 onRename={renameWorkspace}
-                onDelete={deleteWorkspace}
+                onDelete={(id: string) => {
+                    const fallback = workspaces.find((w) => w.id !== id);
+                    if (fallback) {
+                        reassignNotesToWorkspace(id, fallback.id);
+                    }
+                    deleteWorkspace(id);
+                }}
                 theme={settings.theme}
             />
 
