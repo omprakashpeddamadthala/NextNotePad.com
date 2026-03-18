@@ -259,6 +259,16 @@ const NppToolbar: React.FC<NppToolbarProps> = ({
                 theme={theme}
             />
 
+            {/* Workspace Management — always visible (guest + logged-in) */}
+            {onManageWorkspaces && (
+                <TBtn
+                    icon={<ManageIcon sx={iconSx} />}
+                    tooltip="Manage Workspaces"
+                    onClick={onManageWorkspaces}
+                    theme={theme}
+                />
+            )}
+
             {/* Google Auth */}
             {user ? (
                 <>
