@@ -89,6 +89,18 @@ export function saveActiveWorkspaceId(id: string): void {
     }
 }
 
+/** Clear all workspace-related data from localStorage (used on logout) */
+export function clearAllWorkspaceData(): void {
+    try {
+        localStorage.removeItem(NOTES_KEY);
+        localStorage.removeItem(WORKSPACES_KEY);
+        localStorage.removeItem(ACTIVE_WORKSPACE_KEY);
+        localStorage.removeItem(SETTINGS_KEY);
+    } catch (e) {
+        console.error('Failed to clear workspace data from localStorage', e);
+    }
+}
+
 // ── Workspace-scoped file helpers ────────────────────────────────────────
 
 /** Return only the notes belonging to a specific workspace */

@@ -131,6 +131,14 @@ export function useWorkspaces(rootDriveFolderId: string | null) {
         }
     }, [workspaces, activeWorkspaceId]);
 
+    /** Reset workspaces to default state (used on logout) */
+    const resetWorkspaces = useCallback(() => {
+        const defaultWs: Workspace[] = [{ id: DEFAULT_WORKSPACE_ID, name: 'Default' }];
+        setWorkspaces(defaultWs);
+        setActiveWorkspaceId(DEFAULT_WORKSPACE_ID);
+        saveActiveWorkspaceId(DEFAULT_WORKSPACE_ID);
+    }, []);
+
     const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId) || workspaces[0];
 
     return {
@@ -143,5 +151,6 @@ export function useWorkspaces(rootDriveFolderId: string | null) {
         renameWorkspace,
         deleteWorkspace,
         syncWorkspacesFromDrive,
+        resetWorkspaces,
     };
 }
