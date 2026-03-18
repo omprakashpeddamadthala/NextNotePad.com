@@ -182,6 +182,22 @@ export async function renameWorkspaceFolder(
     });
 }
 
+/** Rename a file on Google Drive */
+export async function renameNoteOnDrive(
+    accessToken: string,
+    fileId: string,
+    newName: string
+): Promise<void> {
+    await fetch(`${DRIVE_API}/files/${fileId}`, {
+        method: 'PATCH',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: newName }),
+    });
+}
+
 /** Delete (trash) a workspace folder in Google Drive */
 export async function deleteWorkspaceFolder(
     accessToken: string,
