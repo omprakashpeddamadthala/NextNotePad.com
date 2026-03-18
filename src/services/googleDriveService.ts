@@ -19,6 +19,13 @@ async function getHeaders(accessToken: string) {
     };
 }
 
+/** Throw a descriptive error when Drive API returns a non-OK status */
+async function assertOk(res: Response, action: string): Promise<void> {
+    if (res.ok) return;
+    const text = await res.text().catch(() => '');
+    throw new Error(`Drive ${action} failed (${res.status}): ${text}`);
+}
+
 export async function getOrCreateBackupFolder(accessToken: string): Promise<string> {
     const headers = await getHeaders(accessToken);
 
@@ -28,6 +35,7 @@ export async function getOrCreateBackupFolder(accessToken: string): Promise<stri
         `${DRIVE_API}/files?q=${encodeURIComponent(query)}&fields=files(id,name)`,
         { headers }
     );
+    await assertOk(searchRes, 'list root folder');
     const searchData = await searchRes.json();
 
     if (searchData.files && searchData.files.length > 0) {
@@ -43,6 +51,7 @@ export async function getOrCreateBackupFolder(accessToken: string): Promise<stri
             mimeType: 'application/vnd.google-apps.folder',
         }),
     });
+    await assertOk(createRes, 'create root folder');
     const createData = await createRes.json();
     return createData.id;
 }
@@ -57,6 +66,7 @@ export async function listDriveNotes(
         `${DRIVE_API}/files?q=${encodeURIComponent(query)}&fields=files(id,name,modifiedTime)&orderBy=modifiedTime desc`,
         { headers }
     );
+    await assertOk(res, 'list notes');
     const data = await res.json();
     return data.files || [];
 }
