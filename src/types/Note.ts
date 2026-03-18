@@ -11,7 +11,7 @@ export interface Note {
     language: string;
     lastModified: number;
     driveFileId?: string;
-    workspaceId?: string; // which workspace this file belongs to
+    workspaceId: string; // which workspace this file belongs to
 }
 
 export interface AppSettings {

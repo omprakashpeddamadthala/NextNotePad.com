@@ -173,13 +173,17 @@ const EditorPage: React.FC = () => {
                 const rootFolderId = await getOrCreateBackupFolder(accessToken);
                 const folderId = await createWorkspaceFolder(accessToken, rootFolderId, activeWorkspace?.name || 'My Workspace');
                 updateWorkspace(activeWorkspaceId, { driveId: folderId });
-                fetchUserProfile(accessToken).then(() => handleSync()); // Re-run sync
+                // Re-run sync after folder is created (short delay so state updates)
+                setTimeout(() => handleSync(), 300);
                 setSyncing(false);
                 return;
             }
 
+            // Use the workspace's own Drive folder — NOT the root folder
             const folderId = activeWorkspace.driveId;
             const driveFiles = await listDriveNotes(accessToken, folderId);
+
+            // Upload local workspace notes to the correct workspace folder
             const updatedNotes = [...workspaceNotes];
             for (let i = 0; i < updatedNotes.length; i++) {
                 const note = updatedNotes[i];
@@ -188,10 +192,14 @@ const EditorPage: React.FC = () => {
                     accessToken, folderId, note.name, note.content,
                     existingDriveFile?.id || note.driveFileId
                 );
-                updatedNotes[i] = { ...note, driveFileId };
+                updatedNotes[i] = { ...note, driveFileId, workspaceId: activeWorkspaceId };
             }
+
+            // Download Drive-only files into the current workspace
             for (const driveFile of driveFiles) {
-                const existsLocally = updatedNotes.some((n) => n.name === driveFile.name);
+                const existsLocally = updatedNotes.some(
+                    (n) => n.driveFileId === driveFile.id || n.name === driveFile.name
+                );
                 if (!existsLocally) {
                     const content = await downloadNoteFromDrive(accessToken, driveFile.id);
                     const { v4: uuidv4 } = await import('uuid');
@@ -205,12 +213,16 @@ const EditorPage: React.FC = () => {
                     });
                 }
             }
-            // Use functional updater to merge sync results without overwriting concurrent edits
+
+            // Merge sync results without overwriting other workspaces' notes
             setNotes(currentNotes => {
+                // Update driveFileId for notes in the active workspace
                 const merged = currentNotes.map(n => {
+                    if (n.workspaceId !== activeWorkspaceId) return n;
                     const synced = updatedNotes.find(u => u.id === n.id);
                     return synced ? { ...n, driveFileId: synced.driveFileId } : n;
                 });
+                // Add new files from Drive that don't exist locally
                 const newFromDrive = updatedNotes.filter(u => !currentNotes.some(n => n.id === u.id));
                 return [...merged, ...newFromDrive];
             });
@@ -224,7 +236,7 @@ const EditorPage: React.FC = () => {
         } finally {
             setSyncing(false);
         }
-    }, [notes, setNotes, googleLogin, workspaceNotes, activeWorkspace, activeWorkspaceId, updateWorkspace]);
+    }, [setNotes, googleLogin, workspaceNotes, activeWorkspace, activeWorkspaceId, updateWorkspace]);
 
     // Keep handleSyncRef up-to-date so the stable timer always calls latest handleSync
     useEffect(() => {
@@ -568,18 +580,18 @@ const EditorPage: React.FC = () => {
     }, [activeNote]);
 
     const handleDownloadAllAsZip = useCallback(async () => {
-        if (notes.length === 0) {
+        if (workspaceNotes.length === 0) {
             showSnackbar('No files to download', 'info');
             return;
         }
         try {
-            await downloadAllAsZip(notes);
-            showSnackbar(`Downloaded ${notes.length} files as ZIP`, 'success');
+            await downloadAllAsZip(workspaceNotes);
+            showSnackbar(`Downloaded ${workspaceNotes.length} files as ZIP`, 'success');
         } catch (err) {
             console.error('ZIP export error:', err);
             showSnackbar('Failed to create ZIP', 'error');
         }
-    }, [notes]);
+    }, [workspaceNotes]);
 
     // Plugins: Word Count
     const handleWordCount = useCallback(() => {
@@ -898,7 +910,7 @@ const EditorPage: React.FC = () => {
                 onGoogleLogin={() => googleLogin()}
                 onGoogleLogout={handleLogout}
                 onDevLogin={import.meta.env.DEV ? handleDevLogin : undefined}
-                onManageWorkspaces={user ? () => setWorkspaceDialogOpen(true) : undefined}
+                onManageWorkspaces={() => setWorkspaceDialogOpen(true)}
                 onDownloadFile={handleDownloadFile}
                 onDownloadAllAsZip={handleDownloadAllAsZip}
                 wordWrap={settings.wordWrap}
@@ -1245,7 +1257,7 @@ const EditorPage: React.FC = () => {
                 open={compareDialogOpen}
                 onClose={() => setCompareDialogOpen(false)}
                 currentNote={activeNote}
-                notes={notes}
+                notes={workspaceNotes}
                 onCompare={handleCompareProcess}
                 theme={settings.theme}
             />
