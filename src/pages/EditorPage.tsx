@@ -9,7 +9,7 @@ import Tabs from '../components/Tabs/Tabs';
 import Editor from '../components/Editor/Editor';
 import Sidebar from '../components/Sidebar/Sidebar';
 import CompareDialog from '../components/CompareDialog/CompareDialog';
-import WorkspaceDialog from '../components/WorkspaceDialog/WorkspaceDialog';
+import WorkspaceLayout from '../components/WorkspaceManagement/WorkspaceLayout';
 import { DiffEditor } from '@monaco-editor/react';
 import { useNotes } from '../hooks/useNotes';
 import { useWorkspaces } from '../hooks/useWorkspaces';
@@ -18,6 +18,7 @@ import type { GoogleUser } from '../services/authService';
 import {
     fetchUserProfile, setAccessToken, getAccessToken, clearAccessToken,
 } from '../services/authService';
+import { clearAllWorkspaceData } from '../services/localStorageService';
 import {
     getOrCreateBackupFolder, listDriveNotes, uploadNoteToDrive,
     downloadNoteFromDrive, deleteNoteFromDrive, renameNoteOnDrive,
@@ -39,6 +40,7 @@ const EditorPage: React.FC = () => {
         renameWorkspace,
         deleteWorkspace,
         syncWorkspacesFromDrive,
+        resetWorkspaces,
     } = useWorkspaces(rootDriveFolderId);
 
     const {
@@ -66,16 +68,18 @@ const EditorPage: React.FC = () => {
 
     const [user, setUser] = useState<GoogleUser | null>(null);
 
-    // User session: 'google' when authenticated, 'guest' when using without sign-in.
-    // Both are considered "logged in" — workspace management is visible for both.
-    const userMode: 'google' | 'guest' = user ? 'google' : 'guest';
-    const isLoggedIn = userMode === 'google' || userMode === 'guest';
+    // User session types: 'google' (OAuth), 'guest' (localStorage-only), null (no session).
+    // Workspace management is only visible when a session exists (google or guest).
+    const [guestMode, setGuestMode] = useState(false);
+    const userMode: 'google' | 'guest' | null = user ? 'google' : guestMode ? 'guest' : null;
+    const isLoggedIn = userMode !== null;
     const [syncing, setSyncing] = useState(false);
     const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'error'>('idle');
     const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' }>({ open: false, message: '', severity: 'info' });
     const [aboutOpen, setAboutOpen] = useState(false);
-    const [workspaceDialogOpen, setWorkspaceDialogOpen] = useState(false);
+    // Current view: 'editor' (normal editor) or 'workspace-management' (full-page workspace view)
+    const [currentView, setCurrentView] = useState<'editor' | 'workspace-management'>('editor');
     const [compareDialogOpen, setCompareDialogOpen] = useState(false);
     const [compareMode, setCompareMode] = useState(false);
     const [compareTargetId, setCompareTargetId] = useState<string | null>(null);
@@ -147,17 +151,27 @@ const EditorPage: React.FC = () => {
     const handleLogout = useCallback(() => {
         clearAccessToken();
         setUser(null);
+        setGuestMode(false);
         setSyncStatus('idle');
         setLastSyncTime(null);
         setRootDriveFolderId(null);
+        setCurrentView('editor');
         if (autoSyncTimerRef.current) {
             clearInterval(autoSyncTimerRef.current);
             autoSyncTimerRef.current = null;
         }
-        // Remove any Drive-synced notes — keep only locally-created ones
-        setNotes((prev) => prev.filter((n) => !n.driveFileId));
-        showSnackbar('Signed out — Drive files removed', 'info');
-    }, [setNotes]);
+        // Clear ALL workspace data from state and localStorage
+        setNotes([]);
+        resetWorkspaces();
+        clearAllWorkspaceData();
+        showSnackbar('Signed out — all data cleared', 'info');
+    }, [setNotes, resetWorkspaces]);
+
+    /** Enter guest mode (localStorage-only, no Google account required) */
+    const handleGuestLogin = useCallback(() => {
+        setGuestMode(true);
+        showSnackbar('Entered as guest — files saved locally', 'info');
+    }, []);
 
     // DEV-ONLY: mock login to test logged-in UI without real Google OAuth
     const handleDevLogin = useCallback(() => {
@@ -862,6 +876,47 @@ const EditorPage: React.FC = () => {
         return new Date(ts).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
     };
 
+    // ── Workspace Management full-page view ──────────────────────────────
+    if (currentView === 'workspace-management') {
+        return (
+            <>
+                <WorkspaceLayout
+                    workspaces={workspaces}
+                    activeWorkspaceId={activeWorkspaceId}
+                    notes={notes}
+                    palette={p}
+                    theme={settings.theme}
+                    onBack={() => setCurrentView('editor')}
+                    onSelect={(id) => { switchWorkspace(id); setCurrentView('editor'); }}
+                    onCreate={async (name) => { await createWorkspace(name); }}
+                    onRename={(id, newName) => renameWorkspace(id, newName)}
+                    onDelete={(id: string) => {
+                        const fallback = workspaces.find((w) => w.id !== id);
+                        if (fallback) {
+                            reassignNotesToWorkspace(id, fallback.id);
+                        }
+                        deleteWorkspace(id);
+                    }}
+                />
+                {/* Snackbar stays visible on workspace management view */}
+                <Snackbar
+                    open={snackbar.open}
+                    autoHideDuration={4000}
+                    onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                >
+                    <Alert
+                        severity={snackbar.severity}
+                        onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+                        variant="filled"
+                    >
+                        {snackbar.message}
+                    </Alert>
+                </Snackbar>
+            </>
+        );
+    }
+
     return (
         <div
             onDragOver={handleDragOver}
@@ -1002,8 +1057,9 @@ const EditorPage: React.FC = () => {
                 onThemeToggle={handleThemeToggle}
                 onGoogleLogin={() => googleLogin()}
                 onGoogleLogout={handleLogout}
+                onGuestLogin={!isLoggedIn ? handleGuestLogin : undefined}
                 onDevLogin={import.meta.env.DEV ? handleDevLogin : undefined}
-                onManageWorkspaces={isLoggedIn ? () => setWorkspaceDialogOpen(true) : undefined}
+                onManageWorkspaces={isLoggedIn ? () => setCurrentView('workspace-management') : undefined}
                 onDownloadFile={handleDownloadFile}
                 onDownloadAllAsZip={handleDownloadAllAsZip}
                 wordWrap={settings.wordWrap}
@@ -1193,25 +1249,6 @@ const EditorPage: React.FC = () => {
                     </div>
                 )}
             </div>
-
-            {/* Workspace Dialog */}
-            <WorkspaceDialog
-                open={workspaceDialogOpen}
-                onClose={() => setWorkspaceDialogOpen(false)}
-                workspaces={workspaces}
-                activeWorkspaceId={activeWorkspaceId}
-                onSwitch={switchWorkspace}
-                onCreate={async (name) => { await createWorkspace(name); }}
-                onRename={renameWorkspace}
-                onDelete={(id: string) => {
-                    const fallback = workspaces.find((w) => w.id !== id);
-                    if (fallback) {
-                        reassignNotesToWorkspace(id, fallback.id);
-                    }
-                    deleteWorkspace(id);
-                }}
-                theme={settings.theme}
-            />
 
             {/* About Dialog */}
             <Dialog

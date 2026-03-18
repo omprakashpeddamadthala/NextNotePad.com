@@ -61,6 +61,7 @@ interface NppToolbarProps {
     onThemeToggle: () => void;
     onGoogleLogin: () => void;
     onGoogleLogout: () => void;
+    onGuestLogin?: () => void;
     onDevLogin?: () => void;
     onManageWorkspaces?: () => void;
     onDownloadFile: () => void;
@@ -146,7 +147,7 @@ const NppToolbar: React.FC<NppToolbarProps> = ({
     onFind, onReplace, onCompare, onZoomIn, onZoomOut,
     onToggleWordWrap, onToggleShowAllChars,
     onIndent, onUnindent, onFormatText, onSyncDrive, onThemeToggle,
-    onGoogleLogin, onGoogleLogout, onDevLogin, onManageWorkspaces,
+    onGoogleLogin, onGoogleLogout, onGuestLogin, onDevLogin, onManageWorkspaces,
     onDownloadFile, onDownloadAllAsZip,
     wordWrap, showAllChars, theme, syncing, syncStatus, user,
 }) => {
@@ -394,6 +395,37 @@ const NppToolbar: React.FC<NppToolbarProps> = ({
                         <GoogleIcon sx={{ fontSize: 16, color: '#4285f4' }} />
                         Sign in with Google
                     </button>
+                    {onGuestLogin && (
+                        <button
+                            onClick={onGuestLogin}
+                            title="Continue as Guest (localStorage only)"
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                background: p.panelAlt,
+                                color: p.textDim,
+                                border: `1px solid ${p.border}`,
+                                borderRadius: 12,
+                                padding: '2px 10px',
+                                fontSize: 11,
+                                fontWeight: 500,
+                                cursor: 'pointer',
+                                whiteSpace: 'nowrap',
+                                flexShrink: 0,
+                            }}
+                            onMouseOver={e => {
+                                (e.currentTarget as HTMLElement).style.background = p.hover;
+                                (e.currentTarget as HTMLElement).style.borderColor = p.accentHover;
+                            }}
+                            onMouseOut={e => {
+                                (e.currentTarget as HTMLElement).style.background = p.panelAlt;
+                                (e.currentTarget as HTMLElement).style.borderColor = p.border;
+                            }}
+                        >
+                            Guest
+                        </button>
+                    )}
                 </>
             )}
         </div>
