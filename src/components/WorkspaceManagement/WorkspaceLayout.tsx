@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import {
-    ArrowBack as BackIcon,
     CreateNewFolder as NewFolderIcon,
     FolderOpen as FolderOpenIcon,
 } from '@mui/icons-material';
-import { IconButton, TextField, Tooltip } from '@mui/material';
+import { IconButton, TextField, Tooltip, CircularProgress } from '@mui/material';
 import FolderGrid from './FolderGrid';
 import type { ThemePalette } from '../../theme/colors';
 import type { Workspace, Note } from '../../types/Note';
@@ -15,6 +14,7 @@ interface WorkspaceLayoutProps {
     notes: Note[];
     palette: ThemePalette;
     theme: 'light' | 'dark';
+    loading?: boolean;
     onBack: () => void;
     onSelect: (id: string) => void;
     onCreate: (name: string) => Promise<void>;
@@ -23,7 +23,7 @@ interface WorkspaceLayoutProps {
 }
 
 const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({
-    workspaces, activeWorkspaceId, notes, palette, theme,
+    workspaces, activeWorkspaceId, notes, palette, theme, loading,
     onBack, onSelect, onCreate, onRename, onDelete,
 }) => {
     const [newName, setNewName] = useState('');
@@ -60,7 +60,7 @@ const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({
             fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif",
             overflow: 'hidden',
         }}>
-            {/* Header */}
+            {/* Header — same style as editor header */}
             <div style={{
                 display: 'flex', alignItems: 'center', gap: 10,
                 height: 48, flexShrink: 0,
@@ -68,18 +68,25 @@ const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({
                 borderBottom: `1px solid ${isDark ? '#555' : '#bcbcbc'}`,
                 padding: '0 16px',
             }}>
-                <Tooltip title="Back to Editor">
-                    <IconButton size="small" onClick={onBack}
-                        sx={{ color: palette.text, p: 0.5 }}>
-                        <BackIcon sx={{ fontSize: 20 }} />
-                    </IconButton>
-                </Tooltip>
                 <FolderOpenIcon sx={{ fontSize: 20, color: palette.accent }} />
                 <span style={{
                     fontSize: 15, fontWeight: 700, color: palette.text,
                 }}>
                     Workspace Management
                 </span>
+                <div style={{ flex: 1 }} />
+                <button
+                    onClick={onBack}
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: 4,
+                        background: palette.accent, color: '#fff',
+                        border: 'none', borderRadius: 4,
+                        padding: '4px 12px', fontSize: 12, fontWeight: 600,
+                        cursor: 'pointer', whiteSpace: 'nowrap',
+                    }}
+                >
+                    Open Editor
+                </button>
             </div>
 
             <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
@@ -185,7 +192,7 @@ const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({
                                 error={!!error}
                                 helperText={error}
                                 disabled={creating}
-                                inputProps={{ maxLength: 64 }}
+                                inputProps={{ maxLength: 64, 'data-workspace-create-input': true }}
                                 sx={{
                                     '& .MuiInputBase-root': {
                                         background: palette.bg, color: palette.text,
@@ -240,16 +247,35 @@ const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({
                         </div>
                     </div>
 
-                    {/* Folder grid */}
-                    <FolderGrid
-                        workspaces={workspaces}
-                        activeWorkspaceId={activeWorkspaceId}
-                        notes={notes}
-                        palette={palette}
-                        onSelect={onSelect}
-                        onRename={onRename}
-                        onDelete={onDelete}
-                    />
+                    {/* Loading state */}
+                    {loading ? (
+                        <div style={{
+                            display: 'flex', flexDirection: 'column',
+                            alignItems: 'center', justifyContent: 'center',
+                            gap: 12, padding: 48,
+                        }}>
+                            <CircularProgress size={32} sx={{ color: palette.accent }} />
+                            <span style={{ fontSize: 13, color: palette.textDim }}>
+                                Loading workspaces from Google Drive...
+                            </span>
+                        </div>
+                    ) : (
+                        /* Folder grid with create button */
+                        <FolderGrid
+                            workspaces={workspaces}
+                            activeWorkspaceId={activeWorkspaceId}
+                            notes={notes}
+                            palette={palette}
+                            onSelect={onSelect}
+                            onRename={onRename}
+                            onDelete={onDelete}
+                            onCreateNew={() => {
+                                // Focus the sidebar create input
+                                const input = document.querySelector<HTMLInputElement>('[data-workspace-create-input]');
+                                if (input) { input.focus(); }
+                            }}
+                        />
+                    )}
                 </div>
             </div>
         </div>

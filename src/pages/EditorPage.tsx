@@ -17,6 +17,7 @@ import { useGoogleLogin } from '@react-oauth/google';
 import type { GoogleUser } from '../services/authService';
 import {
     fetchUserProfile, setAccessToken, getAccessToken, clearAccessToken,
+    saveUserProfile, getSavedUserProfile, validateToken,
 } from '../services/authService';
 import { clearAllWorkspaceData } from '../services/localStorageService';
 import {
@@ -66,7 +67,8 @@ const EditorPage: React.FC = () => {
     const [insertMode, setInsertMode] = useState(true);
     const [clock, setClock] = useState('');
 
-    const [user, setUser] = useState<GoogleUser | null>(null);
+    // Restore user from sessionStorage on mount (survives page refresh)
+    const [user, setUser] = useState<GoogleUser | null>(() => getSavedUserProfile());
 
     // User session types: 'google' (OAuth), 'guest' (localStorage-only), null (no session).
     // Workspace management is only visible when a session exists (google or guest).
@@ -117,6 +119,47 @@ const EditorPage: React.FC = () => {
         return () => clearInterval(timer);
     }, []);
 
+    /** Shared post-login setup: fetch root folder, sync workspaces, start sync timer */
+    const initDriveSession = useCallback(async (accessToken: string) => {
+        try {
+            const folderId = await getOrCreateBackupFolder(accessToken);
+            setRootDriveFolderId(folderId);
+            // Download and apply saved settings from Drive
+            try {
+                const remote = await downloadSettings(accessToken, folderId);
+                if (remote) applyDriveSettings(remote);
+            } catch { /* ignore */ }
+            // Pass folderId directly so we don't depend on stale React state
+            await syncWorkspacesFromDrive(folderId);
+        } catch (err) {
+            console.error('Drive session init failed:', err);
+        }
+    }, [applyDriveSettings, syncWorkspacesFromDrive]);
+
+    // Restore session on mount: if we have a saved token+user, validate and resume
+    useEffect(() => {
+        const savedToken = getAccessToken();
+        const savedUser = getSavedUserProfile();
+        if (!savedToken || !savedUser) return;
+        let cancelled = false;
+        (async () => {
+            const valid = await validateToken(savedToken);
+            if (cancelled) return;
+            if (valid) {
+                setUser(savedUser);
+                showSnackbar(`Welcome back, ${savedUser.name}`, 'info');
+                await initDriveSession(savedToken);
+            } else {
+                // Token expired — clear stale session silently
+                clearAccessToken();
+                setUser(null);
+                showSnackbar('Session expired — please sign in again', 'info');
+            }
+        })();
+        return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     // Google Auth
     const googleLogin = useGoogleLogin({
         onSuccess: async (tokenResponse) => {
@@ -124,22 +167,9 @@ const EditorPage: React.FC = () => {
                 setAccessToken(tokenResponse.access_token);
                 const profile = await fetchUserProfile(tokenResponse.access_token);
                 setUser(profile);
+                saveUserProfile(profile);
                 showSnackbar(`Signed in as ${profile.name}`, 'success');
-                // Hybrid mode: auto-sync on login
-                setTimeout(async () => {
-                    const folderId = await getOrCreateBackupFolder(tokenResponse.access_token).catch(() => null);
-                    if (folderId) {
-                        setRootDriveFolderId(folderId);
-                        // Download and apply saved settings from Drive
-                        try {
-                            const remote = await downloadSettings(tokenResponse.access_token, folderId);
-                            if (remote) applyDriveSettings(remote);
-                        } catch { /* ignore */ }
-                        // Pass folderId directly so we don't depend on stale React state
-                        await syncWorkspacesFromDrive(folderId);
-                    }
-                    handleSync();
-                }, 500);
+                await initDriveSession(tokenResponse.access_token);
             } catch {
                 showSnackbar('Failed to sign in', 'error');
             }
@@ -257,10 +287,19 @@ const EditorPage: React.FC = () => {
             setSyncStatus('synced');
             setLastSyncTime(Date.now());
             showSnackbar(`Synced ${updatedNotes.length} notes with Google Drive`, 'success');
-        } catch (err) {
+        } catch (err: unknown) {
             console.error('Sync error:', err);
-            setSyncStatus('error');
-            showSnackbar('Sync failed. Please try again.', 'error');
+            // Detect expired/revoked token (401) and clear session gracefully
+            const is401 = err instanceof Error && err.message?.includes('401');
+            if (is401) {
+                clearAccessToken();
+                setUser(null);
+                setSyncStatus('idle');
+                showSnackbar('Session expired — please sign in again', 'info');
+            } else {
+                setSyncStatus('error');
+                showSnackbar('Sync failed. Please try again.', 'error');
+            }
         } finally {
             setSyncing(false);
         }
@@ -886,16 +925,25 @@ const EditorPage: React.FC = () => {
                     notes={notes}
                     palette={p}
                     theme={settings.theme}
+                    loading={syncing}
                     onBack={() => setCurrentView('editor')}
                     onSelect={(id) => { switchWorkspace(id); setCurrentView('editor'); }}
-                    onCreate={async (name) => { await createWorkspace(name); }}
-                    onRename={(id, newName) => renameWorkspace(id, newName)}
+                    onCreate={async (name) => {
+                        await createWorkspace(name);
+                        showSnackbar(`Workspace "${name}" created`, 'success');
+                    }}
+                    onRename={(id, newName) => {
+                        renameWorkspace(id, newName);
+                        showSnackbar(`Workspace renamed to "${newName}"`, 'success');
+                    }}
                     onDelete={(id: string) => {
+                        const ws = workspaces.find((w) => w.id === id);
                         const fallback = workspaces.find((w) => w.id !== id);
                         if (fallback) {
                             reassignNotesToWorkspace(id, fallback.id);
                         }
                         deleteWorkspace(id);
+                        showSnackbar(`Workspace "${ws?.name || ''}" deleted`, 'success');
                     }}
                 />
                 {/* Snackbar stays visible on workspace management view */}
