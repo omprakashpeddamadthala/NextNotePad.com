@@ -166,6 +166,18 @@ export async function createWorkspaceFolder(
     return data.id;
 }
 
+/** Idempotent: find an existing workspace folder by name, or create one if missing */
+export async function getOrCreateWorkspaceFolder(
+    accessToken: string,
+    rootFolderId: string,
+    workspaceName: string
+): Promise<string> {
+    const existing = await listWorkspaceFolders(accessToken, rootFolderId);
+    const match = existing.find((f) => f.name === workspaceName);
+    if (match) return match.id;
+    return createWorkspaceFolder(accessToken, rootFolderId, workspaceName);
+}
+
 /** Rename an existing workspace folder in Google Drive */
 export async function renameWorkspaceFolder(
     accessToken: string,
