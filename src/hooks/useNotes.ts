@@ -38,26 +38,31 @@ export function useNotes(activeWorkspaceId: string = DEFAULT_WORKSPACE_ID) {
     }, []);
 
     const createNote = useCallback((name?: string, workspaceId?: string) => {
+        const targetWorkspaceId = workspaceId ?? activeWorkspaceId;
+
         let fileName = name;
         if (!fileName) {
+            // Count "new N" only within the target workspace to avoid cross-workspace collisions
             let maxNew = 0;
-            notesRef.current.forEach(n => {
-                const match = n.name.match(/^new (\d+)$/i);
-                if (match) {
-                    const num = parseInt(match[1], 10);
-                    if (num > maxNew) maxNew = num;
-                }
-            });
+            notesRef.current
+                .filter((n) => n.workspaceId === targetWorkspaceId)
+                .forEach((n) => {
+                    const match = n.name.match(/^new (\d+)$/i);
+                    if (match) {
+                        const num = parseInt(match[1], 10);
+                        if (num > maxNew) maxNew = num;
+                    }
+                });
             fileName = `new ${maxNew + 1}`;
         }
-        
+
         const newNote: Note = {
             id: uuidv4(),
             name: fileName,
             content: '',
             language: getLanguageFromFilename(fileName),
             lastModified: Date.now(),
-            workspaceId: workspaceId ?? activeWorkspaceId,
+            workspaceId: targetWorkspaceId,
         };
         setNotes((prev) => [newNote, ...prev]);
         setSettings((prev) => ({

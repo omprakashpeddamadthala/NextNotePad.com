@@ -1,5 +1,6 @@
 import type { Note, AppSettings, Workspace } from '../types/Note';
-import { DEFAULT_SETTINGS, DEFAULT_WORKSPACE_ID } from '../types/Note';
+import { DEFAULT_SETTINGS, DEFAULT_WORKSPACE_ID, getLanguageFromFilename } from '../types/Note';
+import { v4 as uuidv4 } from 'uuid';
 
 const NOTES_KEY = 'notepad_web_notes';
 const SETTINGS_KEY = 'notepad_web_settings';
@@ -86,4 +87,58 @@ export function saveActiveWorkspaceId(id: string): void {
     } catch (e) {
         console.error('Failed to save active workspace ID to localStorage', e);
     }
+}
+
+// ── Workspace-scoped file helpers ────────────────────────────────────────
+
+/** Return only the notes belonging to a specific workspace */
+export function getNotesByWorkspace(workspaceId: string): Note[] {
+    return getNotes().filter((n) => n.workspaceId === workspaceId);
+}
+
+/** Create a new note inside the given workspace and persist it */
+export function createNoteInWorkspace(
+    workspaceId: string,
+    name: string,
+    content: string = '',
+): Note {
+    const note: Note = {
+        id: uuidv4(),
+        name,
+        content,
+        language: getLanguageFromFilename(name),
+        lastModified: Date.now(),
+        workspaceId,
+    };
+    const all = getNotes();
+    saveNotes([note, ...all]);
+    return note;
+}
+
+/** Update an existing note (content / name) and persist */
+export function updateNoteInWorkspace(
+    noteId: string,
+    updates: Partial<Pick<Note, 'name' | 'content'>>,
+): Note | null {
+    const all = getNotes();
+    const idx = all.findIndex((n) => n.id === noteId);
+    if (idx === -1) return null;
+    const updated: Note = {
+        ...all[idx],
+        ...updates,
+        lastModified: Date.now(),
+        ...(updates.name ? { language: getLanguageFromFilename(updates.name) } : {}),
+    };
+    all[idx] = updated;
+    saveNotes(all);
+    return updated;
+}
+
+/** Delete a note by id and persist */
+export function deleteNoteFromWorkspace(noteId: string): boolean {
+    const all = getNotes();
+    const filtered = all.filter((n) => n.id !== noteId);
+    if (filtered.length === all.length) return false;
+    saveNotes(filtered);
+    return true;
 }
