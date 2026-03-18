@@ -4,7 +4,7 @@ import type { Workspace } from '../types/Note';
 import { DEFAULT_WORKSPACE_ID } from '../types/Note';
 import * as storage from '../services/localStorageService';
 import { getActiveWorkspaceId, saveActiveWorkspaceId } from '../services/localStorageService';
-import { createWorkspaceFolder, listWorkspaceFolders, renameWorkspaceFolder, deleteWorkspaceFolder } from '../services/googleDriveService';
+import { getOrCreateWorkspaceFolder, listWorkspaceFolders, renameWorkspaceFolder, deleteWorkspaceFolder } from '../services/googleDriveService';
 import { getAccessToken } from '../services/authService';
 
 export function useWorkspaces(rootDriveFolderId: string | null) {
@@ -23,12 +23,14 @@ export function useWorkspaces(rootDriveFolderId: string | null) {
         storage.saveWorkspaces(workspaces);
     }, [workspaces]);
 
-    /** Sync workspace list from Drive subfolders after login */
-    const syncWorkspacesFromDrive = useCallback(async () => {
+    /** Sync workspace list from Drive subfolders after login.
+     *  Accepts an optional folderId override so we don't depend on stale React state. */
+    const syncWorkspacesFromDrive = useCallback(async (overrideRootFolderId?: string) => {
         const token = getAccessToken();
-        if (!token || !rootDriveFolderId) return;
+        const folderId = overrideRootFolderId || rootDriveFolderId;
+        if (!token || !folderId) return;
         try {
-            const driveFolders = await listWorkspaceFolders(token, rootDriveFolderId);
+            const driveFolders = await listWorkspaceFolders(token, folderId);
             setWorkspaces((prev) => {
                 const merged = [...prev];
                 for (const folder of driveFolders) {
@@ -47,7 +49,8 @@ export function useWorkspaces(rootDriveFolderId: string | null) {
         }
     }, [rootDriveFolderId]);
 
-    /** Create a new workspace (locally + on Drive if logged in) */
+    /** Create a new workspace (locally + on Drive if logged in).
+     *  Uses idempotent getOrCreateWorkspaceFolder to prevent duplicates. */
     const createWorkspace = useCallback(async (name: string): Promise<Workspace> => {
         const trimmed = name.trim();
         const newWs: Workspace = { id: uuidv4(), name: trimmed };
@@ -55,7 +58,7 @@ export function useWorkspaces(rootDriveFolderId: string | null) {
         const token = getAccessToken();
         if (token && rootDriveFolderId) {
             try {
-                const driveId = await createWorkspaceFolder(token, rootDriveFolderId, trimmed);
+                const driveId = await getOrCreateWorkspaceFolder(token, rootDriveFolderId, trimmed);
                 newWs.driveId = driveId;
             } catch (e) {
                 console.error('Failed to create Drive folder for workspace', e);

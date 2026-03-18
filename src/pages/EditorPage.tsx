@@ -22,7 +22,7 @@ import {
     getOrCreateBackupFolder, listDriveNotes, uploadNoteToDrive,
     downloadNoteFromDrive, deleteNoteFromDrive, renameNoteOnDrive,
     downloadSettings, uploadSettings,
-    createWorkspaceFolder
+    getOrCreateWorkspaceFolder
 } from '../services/googleDriveService';
 import { downloadFile, downloadAllAsZip } from '../services/fileExportService';
 import type * as monaco from 'monaco-editor';
@@ -65,6 +65,11 @@ const EditorPage: React.FC = () => {
     const [clock, setClock] = useState('');
 
     const [user, setUser] = useState<GoogleUser | null>(null);
+
+    // User session: 'google' when authenticated, 'guest' when using without sign-in.
+    // Both are considered "logged in" — workspace management is visible for both.
+    const userMode: 'google' | 'guest' = user ? 'google' : 'guest';
+    const isLoggedIn = userMode === 'google' || userMode === 'guest';
     const [syncing, setSyncing] = useState(false);
     const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'error'>('idle');
     const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
@@ -126,7 +131,8 @@ const EditorPage: React.FC = () => {
                             const remote = await downloadSettings(tokenResponse.access_token, folderId);
                             if (remote) applyDriveSettings(remote);
                         } catch { /* ignore */ }
-                        await syncWorkspacesFromDrive();
+                        // Pass folderId directly so we don't depend on stale React state
+                        await syncWorkspacesFromDrive(folderId);
                     }
                     handleSync();
                 }, 500);
@@ -178,7 +184,8 @@ const EditorPage: React.FC = () => {
             if (!activeWorkspace?.driveId) {
                 showSnackbar('Workspace not synced. Creating remote folder...', 'info');
                 const rootFolderId = await getOrCreateBackupFolder(accessToken);
-                const folderId = await createWorkspaceFolder(accessToken, rootFolderId, activeWorkspace?.name || 'My Workspace');
+                // Idempotent: reuse existing folder if one already exists with this name
+                const folderId = await getOrCreateWorkspaceFolder(accessToken, rootFolderId, activeWorkspace?.name || 'My Workspace');
                 updateWorkspace(activeWorkspaceId, { driveId: folderId });
                 // Re-run sync after folder is created (short delay so state updates)
                 setTimeout(() => handleSync(), 300);
@@ -996,7 +1003,7 @@ const EditorPage: React.FC = () => {
                 onGoogleLogin={() => googleLogin()}
                 onGoogleLogout={handleLogout}
                 onDevLogin={import.meta.env.DEV ? handleDevLogin : undefined}
-                onManageWorkspaces={() => setWorkspaceDialogOpen(true)}
+                onManageWorkspaces={isLoggedIn ? () => setWorkspaceDialogOpen(true) : undefined}
                 onDownloadFile={handleDownloadFile}
                 onDownloadAllAsZip={handleDownloadAllAsZip}
                 wordWrap={settings.wordWrap}
