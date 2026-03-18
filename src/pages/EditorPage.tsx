@@ -20,7 +20,8 @@ import {
 } from '../services/authService';
 import {
     getOrCreateBackupFolder, listDriveNotes, uploadNoteToDrive,
-    downloadNoteFromDrive, downloadSettings, uploadSettings,
+    downloadNoteFromDrive, deleteNoteFromDrive, renameNoteOnDrive,
+    downloadSettings, uploadSettings,
     createWorkspaceFolder
 } from '../services/googleDriveService';
 import { downloadFile, downloadAllAsZip } from '../services/fileExportService';
@@ -79,6 +80,12 @@ const EditorPage: React.FC = () => {
     const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
     const autoSyncTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const handleSyncRef = useRef<(() => void) | null>(null);
+
+    // Refs for Drive auto-save
+    const notesRef = useRef(notes);
+    useEffect(() => { notesRef.current = notes; }, [notes]);
+    const driveUploadTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+    const uploadingNoteIdsRef = useRef<Set<string>>(new Set());
     const p = getPalette(settings.theme);
     const isDark = settings.theme === 'dark';
 
@@ -267,6 +274,85 @@ const EditorPage: React.FC = () => {
      
     }, [user]);
 
+    // ── Drive-aware CRUD wrappers ──────────────────────────────────────────
+    // When logged in, these also push changes to Google Drive in the active
+    // workspace folder. When not logged in they fall back to localStorage only.
+
+    /** Create a note locally and, if logged in, upload it to Drive */
+    const handleCreateNote = useCallback((name?: string, workspaceId?: string) => {
+        const note = createNote(name, workspaceId);
+        const accessToken = getAccessToken();
+        const folderId = activeWorkspace?.driveId;
+        if (accessToken && folderId) {
+            uploadingNoteIdsRef.current.add(note.id);
+            uploadNoteToDrive(accessToken, folderId, note.name, note.content)
+                .then(driveFileId => {
+                    setNotes(prev => prev.map(n => n.id === note.id ? { ...n, driveFileId } : n));
+                    // If content was updated while uploading (e.g. file import), re-upload
+                    const latest = notesRef.current.find(n => n.id === note.id);
+                    if (latest && latest.content !== note.content) {
+                        return uploadNoteToDrive(accessToken, folderId, latest.name, latest.content, driveFileId);
+                    }
+                })
+                .catch(err => console.error('Drive: failed to save new file', err))
+                .finally(() => { uploadingNoteIdsRef.current.delete(note.id); });
+        }
+        return note;
+    }, [createNote, activeWorkspace, setNotes]);
+
+    /** Delete a note locally and, if logged in, remove it from Drive */
+    const handleDeleteNote = useCallback((id: string) => {
+        const note = notes.find(n => n.id === id);
+        deleteNote(id);
+        // Clear any pending Drive upload timer for this note
+        if (driveUploadTimersRef.current[id]) {
+            clearTimeout(driveUploadTimersRef.current[id]);
+            delete driveUploadTimersRef.current[id];
+        }
+        const accessToken = getAccessToken();
+        if (accessToken && note?.driveFileId) {
+            deleteNoteFromDrive(accessToken, note.driveFileId)
+                .catch(err => console.error('Drive: failed to delete file', err));
+        }
+    }, [notes, deleteNote]);
+
+    /** Update note content locally and, if logged in, debounced auto-save to Drive */
+    const handleUpdateContent = useCallback((id: string, content: string) => {
+        updateContent(id, content);
+        const accessToken = getAccessToken();
+        const folderId = activeWorkspace?.driveId;
+        if (!accessToken || !folderId) return;
+
+        if (driveUploadTimersRef.current[id]) {
+            clearTimeout(driveUploadTimersRef.current[id]);
+        }
+        driveUploadTimersRef.current[id] = setTimeout(() => {
+            // Skip if the note is still being created on Drive
+            if (uploadingNoteIdsRef.current.has(id)) return;
+            const note = notesRef.current.find(n => n.id === id);
+            if (!note) return;
+            uploadNoteToDrive(accessToken, folderId, note.name, content, note.driveFileId)
+                .then(driveFileId => {
+                    if (!note.driveFileId) {
+                        setNotes(prev => prev.map(n => n.id === id ? { ...n, driveFileId } : n));
+                    }
+                })
+                .catch(err => console.error('Drive: auto-save error', err));
+            delete driveUploadTimersRef.current[id];
+        }, 3000);
+    }, [updateContent, activeWorkspace, setNotes]);
+
+    /** Rename a note locally and, if logged in, rename on Drive */
+    const handleRenameNote = useCallback((id: string, newName: string) => {
+        renameNote(id, newName);
+        const note = notes.find(n => n.id === id);
+        const accessToken = getAccessToken();
+        if (accessToken && note?.driveFileId) {
+            renameNoteOnDrive(accessToken, note.driveFileId, newName)
+                .catch(err => console.error('Drive: failed to rename file', err));
+        }
+    }, [notes, renameNote]);
+
     // Keyboard shortcuts
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -274,7 +360,7 @@ const EditorPage: React.FC = () => {
                 switch (e.key.toLowerCase()) {
                     case 'n':
                         e.preventDefault();
-                        createNote();
+                        handleCreateNote();
                         break;
                     case 's':
                         e.preventDefault();
@@ -305,7 +391,7 @@ const EditorPage: React.FC = () => {
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [createNote, closeTab, activeNote]);
+    }, [handleCreateNote, closeTab, activeNote]);
 
     // Drag and drop file import
     const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -332,8 +418,8 @@ const EditorPage: React.FC = () => {
         for (const file of Array.from(files)) {
             try {
                 const content = await file.text();
-                const note = createNote(file.name);
-                updateContent(note.id, content);
+                const note = handleCreateNote(file.name);
+                handleUpdateContent(note.id, content);
                 imported++;
             } catch (err) {
                 console.error('Failed to read dropped file:', err);
@@ -341,7 +427,7 @@ const EditorPage: React.FC = () => {
             }
         }
         if (imported > 0) showSnackbar(`Imported ${imported} file(s)`, 'success');
-    }, [createNote, updateContent]);
+    }, [handleCreateNote, handleUpdateContent]);
 
     // Cursor change handler
     const handleCursorChange = useCallback((line: number, col: number, sc: number, sl: number) => {
@@ -495,7 +581,7 @@ const EditorPage: React.FC = () => {
                     text: formatted,
                 }]);
                 if (!hasSelection && activeNote) {
-                    updateContent(activeNote.id, formatted);
+                    handleUpdateContent(activeNote.id, formatted);
                 }
                 const typeLabels: Record<string, string> = {
                     json: 'JSON', xml: 'XML/HTML', css: 'CSS', sql: 'SQL',
@@ -507,7 +593,7 @@ const EditorPage: React.FC = () => {
         } catch (err) {
             showSnackbar(`Format error: ${(err as Error).message}`, 'error');
         }
-    }, [activeNote, updateContent]);
+    }, [activeNote, handleUpdateContent]);
 
     // Minimap toggle
     const handleToggleMinimap = useCallback(() => setShowMinimap((prev) => !prev), []);
@@ -534,7 +620,7 @@ const EditorPage: React.FC = () => {
     }, [settings.theme, settings.wordWrap, settings.fontSize, settings.sidebarOpen, rootDriveFolderId]);
 
     // File operations
-    const handleNewFile = useCallback(() => createNote(), [createNote]);
+    const handleNewFile = useCallback(() => handleCreateNote(), [handleCreateNote]);
     const handleCloseFile = useCallback(() => {
         if (activeNote) closeTab(activeNote.id);
     }, [activeNote, closeTab]);
@@ -559,12 +645,12 @@ const EditorPage: React.FC = () => {
             if (!files) return;
             for (const file of Array.from(files)) {
                 const content = await file.text();
-                const note = createNote(file.name);
-                updateContent(note.id, content);
+                const note = handleCreateNote(file.name);
+                handleUpdateContent(note.id, content);
             }
         };
         input.click();
-    }, [createNote, updateContent]);
+    }, [handleCreateNote, handleUpdateContent]);
     const handlePrint = useCallback(() => {
         window.print();
     }, []);
@@ -621,9 +707,9 @@ const EditorPage: React.FC = () => {
 
         const range = hasSelection ? selection : model.getFullModelRange();
         editor.executeEdits('sort', [{ range, text: sorted }]);
-        if (!hasSelection) updateContent(activeNote.id, sorted);
+        if (!hasSelection) handleUpdateContent(activeNote.id, sorted);
         showSnackbar('Lines sorted', 'success');
-    }, [activeNote, updateContent]);
+    }, [activeNote, handleUpdateContent]);
 
     // Plugins: Remove Duplicate Lines
     const handleRemoveDuplicateLines = useCallback(() => {
@@ -636,9 +722,9 @@ const EditorPage: React.FC = () => {
         const unique = [...new Set(text.split('\n'))].join('\n');
         const range = model.getFullModelRange();
         editor.executeEdits('dedup', [{ range, text: unique }]);
-        updateContent(activeNote.id, unique);
+        handleUpdateContent(activeNote.id, unique);
         showSnackbar('Duplicate lines removed', 'success');
-    }, [activeNote, updateContent]);
+    }, [activeNote, handleUpdateContent]);
 
     // Plugins: Trim Trailing Whitespace
     const handleTrimWhitespace = useCallback(() => {
@@ -651,9 +737,9 @@ const EditorPage: React.FC = () => {
         const trimmed = text.split('\n').map(line => line.trimEnd()).join('\n');
         const range = model.getFullModelRange();
         editor.executeEdits('trim', [{ range, text: trimmed }]);
-        updateContent(activeNote.id, trimmed);
+        handleUpdateContent(activeNote.id, trimmed);
         showSnackbar('Trailing whitespace removed', 'success');
-    }, [activeNote, updateContent]);
+    }, [activeNote, handleUpdateContent]);
 
     // Plugins: Convert Case
     const handleUpperCase = useCallback(() => {
@@ -734,7 +820,7 @@ const EditorPage: React.FC = () => {
     const handleSetEncoding = useCallback((enc: string) => setEncoding(enc), []);
     const handleSetLanguage = useCallback((lang: string) => {
         if (activeNote) {
-            renameNote(activeNote.id, activeNote.name); // Keep same name
+            renameNote(activeNote.id, activeNote.name); // Keep same name (no Drive rename needed)
             // Update language through renaming with the correct extension isn't great,
             setNotes((prev) =>
                 prev.map((n) => n.id === activeNote.id ? { ...n, language: lang } : n)
@@ -751,10 +837,10 @@ const EditorPage: React.FC = () => {
     }, [notes]);
     const handleRenameConfirm = useCallback(() => {
         if (renameDialog.name.trim()) {
-            renameNote(renameDialog.noteId, renameDialog.name.trim());
+            handleRenameNote(renameDialog.noteId, renameDialog.name.trim());
         }
         setRenameDialog({ open: false, noteId: '', name: '' });
-    }, [renameDialog, renameNote]);
+    }, [renameDialog, handleRenameNote]);
 
     // Computed values
     const docLength = activeNote ? activeNote.content.length : 0;
@@ -938,7 +1024,7 @@ const EditorPage: React.FC = () => {
                     onFileClick={openTab}
                     onNewFile={handleNewFile}
                     onRename={handleRenameOpen}
-                    onDelete={deleteNote}
+                    onDelete={handleDeleteNote}
                     theme={settings.theme}
                     visible={settings.sidebarOpen}
                     isMobile={isMobile}
@@ -971,7 +1057,7 @@ const EditorPage: React.FC = () => {
                                 fontSize={fontSize}
                                 showAllChars={showAllChars}
                                 showMinimap={showMinimap}
-                                onChange={updateContent}
+                                onChange={handleUpdateContent}
                                 onCursorChange={handleCursorChange}
                                 editorRef={editorRef}
                             />
