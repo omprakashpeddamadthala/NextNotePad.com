@@ -22,6 +22,9 @@ export interface AppSettings {
     wordWrap: boolean;
     activeWorkspaceId: string | null;
     fontSize: number;
+    showMinimap: boolean;
+    encoding: string;
+    language: string;
 }
 
 export const DEFAULT_WORKSPACE_ID = 'default';
@@ -35,6 +38,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
     wordWrap: true,
     activeWorkspaceId: DEFAULT_WORKSPACE_ID,
     fontSize: DEFAULT_FONT_SIZE,
+    showMinimap: false,
+    encoding: 'UTF-8',
+    language: 'plaintext',
 };
 
 

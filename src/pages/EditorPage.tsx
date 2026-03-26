@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-    Snackbar, Alert, Dialog, DialogTitle, DialogContent,
-    DialogActions, Button, TextField, useMediaQuery,
+    Snackbar, Alert, useMediaQuery, Button
 } from '@mui/material';
 import MenuBar from '../components/MenuBar/MenuBar';
 import NppToolbar from '../components/NppToolbar/NppToolbar';
@@ -9,10 +8,18 @@ import Tabs from '../components/Tabs/Tabs';
 import Editor from '../components/Editor/Editor';
 import Sidebar from '../components/Sidebar/Sidebar';
 import CompareDialog from '../components/CompareDialog/CompareDialog';
+import RenameDialog from '../components/RenameDialog/RenameDialog';
+import AboutDialog from '../components/AboutDialog/AboutDialog';
 import WorkspaceLayout from '../components/WorkspaceManagement/WorkspaceLayout';
+import SettingsDialog from '../components/SettingsDialog/SettingsDialog';
+import MobileLayout from '../components/MobileLayout/MobileLayout';
+import MobileEditor from '../components/MobileLayout/MobileEditor';
 import { DiffEditor } from '@monaco-editor/react';
 import { useNotes } from '../hooks/useNotes';
 import { useWorkspaces } from '../hooks/useWorkspaces';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { useDragAndDrop } from '../hooks/useDragAndDrop';
+import { useEditorSync } from '../hooks/useEditorSync';
 import { useGoogleLogin } from '@react-oauth/google';
 import type { GoogleUser } from '../services/authService';
 import {
@@ -21,16 +28,30 @@ import {
 } from '../services/authService';
 import { clearAllWorkspaceData } from '../services/localStorageService';
 import {
-    getOrCreateBackupFolder, listDriveNotes, uploadNoteToDrive,
-    downloadNoteFromDrive, deleteNoteFromDrive, renameNoteOnDrive,
-    downloadSettings, uploadSettings,
-    getOrCreateWorkspaceFolder
+    getOrCreateBackupFolder, uploadNoteToDrive, deleteNoteFromDrive, renameNoteOnDrive,
+    downloadSettings, uploadSettings
 } from '../services/googleDriveService';
 import { downloadFile, downloadAllAsZip } from '../services/fileExportService';
 import type * as monaco from 'monaco-editor';
 import { getPalette } from '../theme/colors';
 
-const AUTO_SYNC_INTERVAL = 5 * 60 * 1000; // 5 minutes
+const ClockWidget: React.FC = () => {
+    const [clock, setClock] = useState('');
+    useEffect(() => {
+        const formatClock = () => {
+            const now = new Date();
+            const day = now.toLocaleDateString(undefined, { weekday: 'long' });
+            const date = now.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+            const time = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            return `${day}, ${date}  ${time}  (${tz})`;
+        };
+        setClock(formatClock());
+        const timer = setInterval(() => setClock(formatClock()), 1000);
+        return () => clearInterval(timer);
+    }, []);
+    return <>{clock}</>;
+};
 
 const EditorPage: React.FC = () => {
     // Workspace state (must come before useNotes so we have activeWorkspaceId)
@@ -45,7 +66,7 @@ const EditorPage: React.FC = () => {
     } = useWorkspaces(rootDriveFolderId);
 
     const {
-        notes, setNotes, workspaceNotes, activeNote, openTabs, dirtyIds, settings,
+        notes, setNotes, workspaceNotes, activeNote, openTabs, dirtyIds, settings, setSettings,
         createNote, deleteNote, renameNote, updateContent,
         openTab, closeTab, setActiveTab, reorderTabs,
         toggleWordWrap, toggleSidebar, setTheme, setFontSize, applyDriveSettings,
@@ -57,15 +78,14 @@ const EditorPage: React.FC = () => {
     // fontSize from settings (no longer local state)
     const fontSize = settings.fontSize;
     const [showAllChars, setShowAllChars] = useState(false);
-    const [showMinimap, setShowMinimap] = useState(false);
+    const showMinimap = settings.showMinimap;
     const [cursorLine, setCursorLine] = useState(1);
     const [cursorCol, setCursorCol] = useState(1);
     const [selChars, setSelChars] = useState(0);
     const [selLines, setSelLines] = useState(0);
-    const [encoding, setEncoding] = useState('UTF-8');
+    const encoding = settings.encoding;
     const eol = 'Windows (CR LF)';
     const [insertMode, setInsertMode] = useState(true);
-    const [clock, setClock] = useState('');
 
     // Restore user from sessionStorage on mount (survives page refresh)
     const [user, setUser] = useState<GoogleUser | null>(() => getSavedUserProfile());
@@ -86,11 +106,10 @@ const EditorPage: React.FC = () => {
     const [compareMode, setCompareMode] = useState(false);
     const [compareTargetId, setCompareTargetId] = useState<string | null>(null);
     const [renameDialog, setRenameDialog] = useState<{ open: boolean; noteId: string; name: string }>({ open: false, noteId: '', name: '' });
-    const [isDragging, setIsDragging] = useState(false);
+    const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+
 
     const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
-    const autoSyncTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-    const handleSyncRef = useRef<(() => void) | null>(null);
 
     // Refs for Drive auto-save
     const notesRef = useRef(notes);
@@ -104,20 +123,7 @@ const EditorPage: React.FC = () => {
         setSnackbar({ open: true, message, severity });
     };
 
-    // Live clock
-    useEffect(() => {
-        const formatClock = () => {
-            const now = new Date();
-            const day = now.toLocaleDateString(undefined, { weekday: 'long' });
-            const date = now.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
-            const time = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            return `${day}, ${date}  ${time}  (${tz})`;
-        };
-        setClock(formatClock());
-        const timer = setInterval(() => setClock(formatClock()), 1000);
-        return () => clearInterval(timer);
-    }, []);
+
 
     /** Shared post-login setup: fetch root folder, sync workspaces, start sync timer */
     const initDriveSession = useCallback(async (accessToken: string) => {
@@ -186,10 +192,6 @@ const EditorPage: React.FC = () => {
         setLastSyncTime(null);
         setRootDriveFolderId(null);
         setCurrentView('editor');
-        if (autoSyncTimerRef.current) {
-            clearInterval(autoSyncTimerRef.current);
-            autoSyncTimerRef.current = null;
-        }
         // Clear ALL workspace data from state and localStorage
         setNotes([]);
         resetWorkspaces();
@@ -214,125 +216,20 @@ const EditorPage: React.FC = () => {
         showSnackbar('[DEV] Logged in as Dev User', 'info');
     }, []);
 
-    const handleSync = useCallback(async () => {
-        const accessToken = getAccessToken();
-        if (!accessToken) {
-            showSnackbar('Please sign in with Google first', 'info');
-            googleLogin();
-            return;
-        }
-        setSyncing(true);
-        setSyncStatus('syncing');
-        try {
-            // Ensure the active workspace has a Drive folder mapped
-            if (!activeWorkspace?.driveId) {
-                showSnackbar('Workspace not synced. Creating remote folder...', 'info');
-                const rootFolderId = await getOrCreateBackupFolder(accessToken);
-                // Idempotent: reuse existing folder if one already exists with this name
-                const folderId = await getOrCreateWorkspaceFolder(accessToken, rootFolderId, activeWorkspace?.name || 'My Workspace');
-                updateWorkspace(activeWorkspaceId, { driveId: folderId });
-                // Re-run sync after folder is created (short delay so state updates)
-                setTimeout(() => handleSync(), 300);
-                setSyncing(false);
-                return;
-            }
-
-            // Use the workspace's own Drive folder — NOT the root folder
-            const folderId = activeWorkspace.driveId;
-            const driveFiles = await listDriveNotes(accessToken, folderId);
-
-            // Upload local workspace notes to the correct workspace folder
-            const updatedNotes = [...workspaceNotes];
-            for (let i = 0; i < updatedNotes.length; i++) {
-                const note = updatedNotes[i];
-                const existingDriveFile = driveFiles.find((f) => f.name === note.name);
-                const driveFileId = await uploadNoteToDrive(
-                    accessToken, folderId, note.name, note.content,
-                    existingDriveFile?.id || note.driveFileId
-                );
-                updatedNotes[i] = { ...note, driveFileId, workspaceId: activeWorkspaceId };
-            }
-
-            // Download Drive-only files into the current workspace
-            for (const driveFile of driveFiles) {
-                const existsLocally = updatedNotes.some(
-                    (n) => n.driveFileId === driveFile.id || n.name === driveFile.name
-                );
-                if (!existsLocally) {
-                    const content = await downloadNoteFromDrive(accessToken, driveFile.id);
-                    const { v4: uuidv4 } = await import('uuid');
-                    const { getLanguageFromFilename } = await import('../types/Note');
-                    updatedNotes.push({
-                        id: uuidv4(), name: driveFile.name, content,
-                        language: getLanguageFromFilename(driveFile.name),
-                        lastModified: new Date(driveFile.modifiedTime).getTime(),
-                        driveFileId: driveFile.id,
-                        workspaceId: activeWorkspaceId,
-                    });
-                }
-            }
-
-            // Merge sync results without overwriting other workspaces' notes
-            setNotes(currentNotes => {
-                // Update driveFileId for notes in the active workspace
-                const merged = currentNotes.map(n => {
-                    if (n.workspaceId !== activeWorkspaceId) return n;
-                    const synced = updatedNotes.find(u => u.id === n.id);
-                    return synced ? { ...n, driveFileId: synced.driveFileId } : n;
-                });
-                // Add new files from Drive that don't exist locally
-                const newFromDrive = updatedNotes.filter(u => !currentNotes.some(n => n.id === u.id));
-                return [...merged, ...newFromDrive];
-            });
-            setSyncStatus('synced');
-            setLastSyncTime(Date.now());
-            showSnackbar(`Synced ${updatedNotes.length} notes with Google Drive`, 'success');
-        } catch (err: unknown) {
-            console.error('Sync error:', err);
-            // Detect expired/revoked token (401) and clear session gracefully
-            const is401 = err instanceof Error && err.message?.includes('401');
-            if (is401) {
-                clearAccessToken();
-                setUser(null);
-                setSyncStatus('idle');
-                showSnackbar('Session expired — please sign in again', 'info');
-            } else {
-                setSyncStatus('error');
-                showSnackbar('Sync failed. Please try again.', 'error');
-            }
-        } finally {
-            setSyncing(false);
-        }
-    }, [setNotes, googleLogin, workspaceNotes, activeWorkspace, activeWorkspaceId, updateWorkspace]);
-
-    // Keep handleSyncRef up-to-date so the stable timer always calls latest handleSync
-    useEffect(() => {
-        handleSyncRef.current = handleSync;
-    }, [handleSync]);
-
-    // Auto-sync timer: sync every 5 minutes when logged in
-    // Only depends on `user` so the interval is not reset on every keystroke
-    useEffect(() => {
-        if (user && getAccessToken()) {
-            if (autoSyncTimerRef.current) {
-                clearInterval(autoSyncTimerRef.current);
-            }
-            autoSyncTimerRef.current = setInterval(() => {
-                handleSyncRef.current?.();
-            }, AUTO_SYNC_INTERVAL);
-        } else {
-            if (autoSyncTimerRef.current) {
-                clearInterval(autoSyncTimerRef.current);
-                autoSyncTimerRef.current = null;
-            }
-        }
-        return () => {
-            if (autoSyncTimerRef.current) {
-                clearInterval(autoSyncTimerRef.current);
-            }
-        };
-     
-    }, [user]);
+    const { handleSync } = useEditorSync({
+        user,
+        activeWorkspaceId,
+        activeWorkspace,
+        workspaceNotes,
+        setNotes,
+        updateWorkspace,
+        setSyncing,
+        setSyncStatus,
+        setLastSyncTime,
+        showSnackbar,
+        googleLogin,
+        setUser
+    });
 
     // ── Drive-aware CRUD wrappers ──────────────────────────────────────────
     // When logged in, these also push changes to Google Drive in the active
@@ -340,6 +237,11 @@ const EditorPage: React.FC = () => {
 
     /** Create a note locally and, if logged in, upload it to Drive */
     const handleCreateNote = useCallback((name?: string, workspaceId?: string) => {
+        if (!activeWorkspaceId) {
+            showSnackbar('Please create a workspace folder first!', 'info');
+            setCurrentView('workspace-management');
+            return null;
+        }
         const note = createNote(name, workspaceId);
         const accessToken = getAccessToken();
         const folderId = activeWorkspace?.driveId;
@@ -413,81 +315,12 @@ const EditorPage: React.FC = () => {
         }
     }, [notes, renameNote]);
 
-    // Keyboard shortcuts
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.ctrlKey || e.metaKey) {
-                switch (e.key.toLowerCase()) {
-                    case 'n':
-                        e.preventDefault();
-                        handleCreateNote();
-                        break;
-                    case 's':
-                        e.preventDefault();
-                        if (e.shiftKey) {
-                            handleSaveFile();
-                            showSnackbar('All files saved to browser storage', 'success');
-                        } else {
-                            handleSaveFile();
-                        }
-                        break;
-                    case 'o':
-                        e.preventDefault();
-                        handleOpenFile();
-                        break;
-                    case 'w':
-                        e.preventDefault();
-                        if (activeNote) closeTab(activeNote.id);
-                        break;
-                    case 'insert':
-                        setInsertMode((prev) => !prev);
-                        break;
-                }
-            }
-            if (e.key === 'Insert' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
-                setInsertMode((prev) => !prev);
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [handleCreateNote, closeTab, activeNote]);
-
     // Drag and drop file import
-    const handleDragOver = useCallback((e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(true);
-    }, []);
-
-    const handleDragLeave = useCallback((e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(false);
-    }, []);
-
-    const handleDrop = useCallback(async (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(false);
-
-        const files = e.dataTransfer.files;
-        if (!files || files.length === 0) return;
-
-        let imported = 0;
-        for (const file of Array.from(files)) {
-            try {
-                const content = await file.text();
-                const note = handleCreateNote(file.name);
-                handleUpdateContent(note.id, content);
-                imported++;
-            } catch (err) {
-                console.error('Failed to read dropped file:', err);
-                showSnackbar(`Failed to import ${file.name}`, 'error');
-            }
-        }
-        if (imported > 0) showSnackbar(`Imported ${imported} file(s)`, 'success');
-    }, [handleCreateNote, handleUpdateContent]);
+    const { isDragging, handleDragOver, handleDragLeave, handleDrop } = useDragAndDrop({
+        onFileCreate: handleCreateNote,
+        onContentUpdate: handleUpdateContent,
+        onShowSnackbar: showSnackbar
+    });
 
     // Cursor change handler
     const handleCursorChange = useCallback((line: number, col: number, sc: number, sl: number) => {
@@ -656,7 +489,7 @@ const EditorPage: React.FC = () => {
     }, [activeNote, handleUpdateContent]);
 
     // Minimap toggle
-    const handleToggleMinimap = useCallback(() => setShowMinimap((prev) => !prev), []);
+    const handleToggleMinimap = useCallback(() => setSettings((prev) => ({ ...prev, showMinimap: !prev.showMinimap })), [setSettings]);
 
     // Zoom
     const handleZoomIn = useCallback(() => setFontSize(Math.min(fontSize + 2, 40)), [fontSize, setFontSize]);
@@ -706,7 +539,9 @@ const EditorPage: React.FC = () => {
             for (const file of Array.from(files)) {
                 const content = await file.text();
                 const note = handleCreateNote(file.name);
-                handleUpdateContent(note.id, content);
+                if (note) {
+                    handleUpdateContent(note.id, content);
+                }
             }
         };
         input.click();
@@ -877,7 +712,7 @@ const EditorPage: React.FC = () => {
     }, []);
 
     // Encoding/Language/EOL
-    const handleSetEncoding = useCallback((enc: string) => setEncoding(enc), []);
+    const handleSetEncoding = useCallback((enc: string) => setSettings((prev) => ({ ...prev, encoding: enc })), [setSettings]);
     const handleSetLanguage = useCallback((lang: string) => {
         if (activeNote) {
             renameNote(activeNote.id, activeNote.name); // Keep same name (no Drive rename needed)
@@ -895,12 +730,19 @@ const EditorPage: React.FC = () => {
             setRenameDialog({ open: true, noteId, name: note.name });
         }
     }, [notes]);
-    const handleRenameConfirm = useCallback(() => {
-        if (renameDialog.name.trim()) {
-            handleRenameNote(renameDialog.noteId, renameDialog.name.trim());
-        }
-        setRenameDialog({ open: false, noteId: '', name: '' });
-    }, [renameDialog, handleRenameNote]);
+
+    // Keyboard shortcuts
+    useKeyboardShortcuts({
+        onNewFile: () => handleCreateNote(),
+        onSaveFile: handleSaveFile,
+        onSaveAllFiles: () => {
+            handleSaveFile();
+            showSnackbar('All files saved to browser storage', 'success');
+        },
+        onOpenFile: handleOpenFile,
+        onCloseTab: () => { if (activeNote) closeTab(activeNote.id); },
+        onToggleInsertMode: () => setInsertMode((prev) => !prev),
+    });
 
     // Computed values
     const docLength = activeNote ? activeNote.content.length : 0;
@@ -915,49 +757,99 @@ const EditorPage: React.FC = () => {
         return new Date(ts).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
     };
 
-    // ── Workspace Management full-page view ──────────────────────────────
-    if (currentView === 'workspace-management') {
+
+
+    /* ────────────────────────────── MOBILE LAYOUT ──────────────────────────────
+       On mobile, we render a streamlined UI with a hamburger drawer menu,
+       a file-list drawer, and a floating action button. Desktop is unchanged.
+    ────────────────────────────────────────────────────────────────────────── */
+    if (isMobile) {
         return (
             <>
-                <WorkspaceLayout
-                    workspaces={workspaces}
-                    activeWorkspaceId={activeWorkspaceId}
-                    notes={notes}
-                    palette={p}
+                <MobileLayout
                     theme={settings.theme}
-                    loading={syncing}
-                    onBack={() => setCurrentView('editor')}
-                    onSelect={(id) => { switchWorkspace(id); setCurrentView('editor'); }}
-                    onCreate={async (name) => {
-                        await createWorkspace(name);
-                        showSnackbar(`Workspace "${name}" created`, 'success');
-                    }}
-                    onRename={(id, newName) => {
-                        renameWorkspace(id, newName);
-                        showSnackbar(`Workspace renamed to "${newName}"`, 'success');
-                    }}
-                    onDelete={(id: string) => {
-                        const ws = workspaces.find((w) => w.id === id);
-                        const fallback = workspaces.find((w) => w.id !== id);
-                        if (fallback) {
-                            reassignNotesToWorkspace(id, fallback.id);
-                        }
-                        deleteWorkspace(id);
-                        showSnackbar(`Workspace "${ws?.name || ''}" deleted`, 'success');
-                    }}
+                    notes={workspaceNotes}
+                    activeNote={activeNote}
+                    activeId={settings.activeTabId}
+                    wordWrap={settings.wordWrap}
+                    activeWorkspaceName={activeWorkspace?.name}
+                    onNewFile={handleNewFile}
+                    onFileClick={openTab}
+                    onDelete={handleDeleteNote}
+                    onRename={handleRenameOpen}
+                    onSaveFile={handleSaveFile}
+                    onUndo={handleUndo}
+                    onRedo={handleRedo}
+                    onFind={handleFind}
+                    onReplace={handleReplace}
+                    onSyncDrive={handleSync}
+                    onThemeToggle={handleThemeToggle}
+                    onToggleWordWrap={toggleWordWrap}
+                    onAbout={() => setAboutOpen(true)}
+                    onDownloadFile={handleDownloadFile}
+                    onOpenSettingsJson={() => setSettingsDialogOpen(true)}
+                    onManageWorkspaces={isLoggedIn ? () => setCurrentView('workspace-management') : undefined}
+                >
+                    {currentView === 'workspace-management' ? (
+                        <WorkspaceLayout
+                            workspaces={workspaces}
+                            activeWorkspaceId={activeWorkspaceId}
+                            notes={notes}
+                            palette={p}
+                            loading={syncing}
+                            onSelect={(id) => { switchWorkspace(id); setCurrentView('editor'); }}
+                            onCreate={async (name) => {
+                                await createWorkspace(name);
+                                showSnackbar(`Workspace "${name}" created`, 'success');
+                            }}
+                            onRename={(id, newName) => {
+                                renameWorkspace(id, newName);
+                                showSnackbar(`Workspace renamed to "${newName}"`, 'success');
+                            }}
+                            onDelete={(id: string) => {
+                                const ws = workspaces.find((w) => w.id === id);
+                                const fallback = workspaces.find((w) => w.id !== id);
+                                if (fallback) reassignNotesToWorkspace(id, fallback.id);
+                                deleteWorkspace(id);
+                                showSnackbar(`Workspace "${ws?.name || ''}" deleted`, 'success');
+                            }}
+                        />
+                    ) : (
+                        <MobileEditor
+                            note={activeNote}
+                            theme={settings.theme}
+                            wordWrap={settings.wordWrap}
+                            fontSize={fontSize}
+                            onChange={handleUpdateContent}
+                        />
+                    )}
+                </MobileLayout>
+
+                {/* Dialogs shared with desktop */}
+                <RenameDialog
+                    open={renameDialog.open}
+                    initialName={renameDialog.name}
+                    onRename={(newName: string) => { renameNote(renameDialog.noteId, newName); setRenameDialog({ open: false, noteId: '', name: '' }); }}
+                    onClose={() => setRenameDialog({ open: false, noteId: '', name: '' })}
                 />
-                {/* Snackbar stays visible on workspace management view */}
+                <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} theme={settings.theme} />
+                <SettingsDialog
+                    open={settingsDialogOpen}
+                    onClose={() => setSettingsDialogOpen(false)}
+                    settings={settings}
+                    onSaveSettings={(newSettings) => {
+                        setSettings(newSettings);
+                        showSnackbar('Settings updated successfully', 'success');
+                    }}
+                    theme={settings.theme}
+                />
                 <Snackbar
                     open={snackbar.open}
-                    autoHideDuration={4000}
+                    autoHideDuration={3000}
                     onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                    anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
                 >
-                    <Alert
-                        severity={snackbar.severity}
-                        onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-                        variant="filled"
-                    >
+                    <Alert severity={snackbar.severity} variant="filled" sx={{ width: '100%', borderRadius: 0 }}>
                         {snackbar.message}
                     </Alert>
                 </Snackbar>
@@ -965,6 +857,7 @@ const EditorPage: React.FC = () => {
         );
     }
 
+    // ──────────────────────────── DESKTOP LAYOUT ────────────────────────────
     return (
         <div
             onDragOver={handleDragOver}
@@ -1036,6 +929,7 @@ const EditorPage: React.FC = () => {
                         onSelectAll={handleSelectAll}
                         onSetEncoding={handleSetEncoding}
                         onSetLanguage={handleSetLanguage}
+                        onOpenSettingsJson={() => setSettingsDialogOpen(true)}
                         onSaveFile={handleSaveFile}
                         onOpenFile={handleOpenFile}
                         onPrint={handlePrint}
@@ -1073,7 +967,7 @@ const EditorPage: React.FC = () => {
                         whiteSpace: 'nowrap',
                         fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif",
                     }}>
-                        {clock}
+                        <ClockWidget />
                     </div>
                 )}
             </div>
@@ -1144,7 +1038,33 @@ const EditorPage: React.FC = () => {
 
                 {/* Tabs + Editor column */}
                 <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-                    {!compareMode ? (
+                    {currentView === 'workspace-management' ? (
+                        <WorkspaceLayout
+                            workspaces={workspaces}
+                            activeWorkspaceId={activeWorkspaceId}
+                            notes={notes}
+                            palette={p}
+                            loading={syncing}
+                            onSelect={(id) => { switchWorkspace(id); setCurrentView('editor'); }}
+                            onCreate={async (name) => {
+                                await createWorkspace(name);
+                                showSnackbar(`Workspace "${name}" created`, 'success');
+                            }}
+                            onRename={(id, newName) => {
+                                renameWorkspace(id, newName);
+                                showSnackbar(`Workspace renamed to "${newName}"`, 'success');
+                            }}
+                            onDelete={(id: string) => {
+                                const ws = workspaces.find((w) => w.id === id);
+                                const fallback = workspaces.find((w) => w.id !== id);
+                                if (fallback) {
+                                    reassignNotesToWorkspace(id, fallback.id);
+                                }
+                                deleteWorkspace(id);
+                                showSnackbar(`Workspace "${ws?.name || ''}" deleted`, 'success');
+                            }}
+                        />
+                    ) : !compareMode ? (
                         <>
                             {/* Tab Bar */}
                             <Tabs
@@ -1299,127 +1219,42 @@ const EditorPage: React.FC = () => {
             </div>
 
             {/* About Dialog */}
-            <Dialog
+            <AboutDialog
                 open={aboutOpen}
                 onClose={() => setAboutOpen(false)}
-                maxWidth="sm"
-                fullWidth
-                PaperProps={{
-                    sx: {
-                        background: p.panel,
-                        color: p.text,
-                        border: `1px solid ${p.border}`,
-                    },
-                }}
-            >
-                <DialogTitle sx={{
-                    fontFamily: "'Segoe UI', sans-serif",
-                    color: p.text,
-                    borderBottom: `1px solid ${p.border}`,
-                    pb: 1.5,
-                }}>
-                    About NextNotePad.com
-                </DialogTitle>
-                <DialogContent sx={{ pt: '16px !important' }}>
-                    <div style={{
-                        textAlign: 'center',
-                        marginBottom: 16,
-                        padding: '12px 0',
-                        borderBottom: `1px solid ${p.border}`,
-                    }}>
-                        <div style={{
-                            fontSize: 22, fontWeight: 700,
-                            color: p.text,
-                        }}>
-                            NextNotePad.com
-                        </div>
-                        <div style={{
-                            fontSize: 13, marginTop: 4,
-                            color: p.accent,
-                            fontWeight: 500,
-                        }}>
-                            Version 2.0.0
-                        </div>
-                        <div style={{
-                            fontSize: 12, marginTop: 6,
-                            color: p.textMute,
-                        }}>
-                            Write. Code. Create — Anywhere.
-                            <br />A powerful browser-based code editor built with React, Monaco Editor &amp; Material-UI.
-                        </div>
-                    </div>
-
-                    {[
-                        { icon: '✏️', title: 'Code Editor', desc: 'Syntax highlighting for 50+ languages • Line numbers & code folding • Find & Replace (Ctrl+F/H) • Go to Line (Ctrl+G) • Word wrap • Zoom in/out • Auto-indent & bracket matching' },
-                        { icon: '📁', title: 'File Management', desc: 'Create, rename & delete files • Open from computer • Drag & drop import • Multi-tab editing with drag reorder • Sidebar with search • Right-click menus • Auto-save to browser • Download files • Export all as ZIP' },
-                        { icon: '✨', title: 'Format Text', desc: 'Auto-detects & formats JSON, XML, HTML, CSS, SQL • Works on selection or full file • Pretty-print & indentation' },
-                        { icon: '☁️', title: 'Cloud Sync', desc: 'Google Sign-In • Auto-sync to Google Drive every 5 min • Manual sync • Backup & restore • Access files anywhere • Sync status indicator' },
-                        { icon: '🎨', title: 'Customization', desc: 'Dark & Light themes • UTF-8, ANSI, UCS-2 encodings • Line ending options • Language selection • Toggle sidebar & minimap • Font size control' },
-                        { icon: '🔌', title: 'Plugins', desc: 'Word count • Sort lines • Remove duplicates • Trim whitespace • UPPERCASE/lowercase conversion • Run HTML/JS in browser' },
-                    ].map((section) => (
-                        <div key={section.title} style={{ marginBottom: 12 }}>
-                            <div style={{
-                                fontSize: 13, fontWeight: 600,
-                                color: p.text,
-                                marginBottom: 3,
-                            }}>
-                                {section.icon} {section.title}
-                            </div>
-                            <div style={{
-                                fontSize: 12, lineHeight: 1.6,
-                                color: p.textDim,
-                                paddingLeft: 8,
-                            }}>
-                                {section.desc}
-                            </div>
-                        </div>
-                    ))}
-
-                    <div style={{
-                        textAlign: 'center', marginTop: 16, paddingTop: 12,
-                        borderTop: `1px solid ${p.border}`,
-                        fontSize: 11, color: p.textMute,
-                    }}>
-                        © 2026 NextNotePad.com. All rights reserved.
-                    </div>
-                </DialogContent>
-                <DialogActions sx={{ borderTop: `1px solid ${p.border}` }}>
-                    <Button
-                        onClick={() => setAboutOpen(false)}
-                        sx={{ color: p.accent }}
-                    >
-                        Close
-                    </Button>
-                </DialogActions>
-            </Dialog>
+                theme={settings.theme}
+            />
 
             {/* Rename Dialog */}
-            <Dialog
+            <RenameDialog
                 open={renameDialog.open}
+                initialName={renameDialog.name}
                 onClose={() => setRenameDialog({ open: false, noteId: '', name: '' })}
-                maxWidth="xs" fullWidth
-            >
-                <DialogTitle>Rename File</DialogTitle>
-                <DialogContent>
-                    <TextField
-                        autoFocus fullWidth margin="dense" label="File name"
-                        value={renameDialog.name}
-                        onChange={(e) => setRenameDialog((s) => ({ ...s, name: e.target.value }))}
-                        onKeyDown={(e) => e.key === 'Enter' && handleRenameConfirm()}
-                    />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setRenameDialog({ open: false, noteId: '', name: '' })}>Cancel</Button>
-                    <Button onClick={handleRenameConfirm} variant="contained">Rename</Button>
-                </DialogActions>
-            </Dialog>
+                onRename={(newName) => {
+                    handleRenameNote(renameDialog.noteId, newName);
+                    setRenameDialog({ open: false, noteId: '', name: '' });
+                }}
+            />
+
+            {/* Settings Dialog (JSON) */}
+            <SettingsDialog
+                open={settingsDialogOpen}
+                onClose={() => setSettingsDialogOpen(false)}
+                settings={settings}
+                onSaveSettings={(newSettings) => {
+                    setSettings(newSettings);
+                    showSnackbar('Settings updated successfully', 'success');
+                }}
+                theme={settings.theme}
+            />
 
             {/* Snackbar */}
             <Snackbar
                 open={snackbar.open}
                 autoHideDuration={4000}
                 onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                sx={{ mt: 5 }}
             >
                 <Alert
                     severity={snackbar.severity}

@@ -71,7 +71,7 @@ export const darkPalette: ThemePalette = {
 export const lightPalette: ThemePalette = {
     bg:             '#ffffff', // Editor Background
     panel:          '#f0f0f0', // Npp toolbar/sidebar standard Windows grey
-    panelAlt:       '#f5f5f5', // Menu bar
+    panelAlt:       '#f0f0f0', // Menu bar
     hover:          '#e5f1fb', // Windows 10 standard hover light blue
     active:         '#cce8ff', // Windows 10 standard selected light blue
 

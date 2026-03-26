@@ -1,10 +1,10 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { Note, AppSettings } from '../types/Note';
-import { getLanguageFromFilename, DEFAULT_WORKSPACE_ID } from '../types/Note';
+import { getLanguageFromFilename } from '../types/Note';
 import * as storage from '../services/localStorageService';
 
-export function useNotes(activeWorkspaceId: string = DEFAULT_WORKSPACE_ID) {
+export function useNotes(activeWorkspaceId: string = '') {
     const [notes, setNotes] = useState<Note[]>(() => storage.getNotes());
     const [settings, setSettings] = useState<AppSettings>(() => storage.getSettings());
     const [dirtyIds, setDirtyIds] = useState<Set<string>>(new Set());
@@ -17,10 +17,16 @@ export function useNotes(activeWorkspaceId: string = DEFAULT_WORKSPACE_ID) {
     }, [notes]);
 
     // Persist notes to localStorage whenever they change
-    useEffect(() => { storage.saveNotes(notes); }, [notes]);
+    useEffect(() => {
+        const timer = setTimeout(() => storage.saveNotes(notes), 1000);
+        return () => clearTimeout(timer);
+    }, [notes]);
 
     // Persist settings to localStorage whenever they change
-    useEffect(() => { storage.saveSettings(settings); }, [settings]);
+    useEffect(() => {
+        const timer = setTimeout(() => storage.saveSettings(settings), 1000);
+        return () => clearTimeout(timer);
+    }, [settings]);
 
     // Restore last session on mount
     useEffect(() => {
@@ -187,6 +193,7 @@ export function useNotes(activeWorkspaceId: string = DEFAULT_WORKSPACE_ID) {
         openTabs,
         dirtyIds,
         settings,
+        setSettings,
         searchQuery,
         setSearchQuery,
         createNote,

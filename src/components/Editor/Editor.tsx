@@ -4,36 +4,7 @@ import type { Note } from '../../types/Note';
 import type * as monaco from 'monaco-editor';
 import { getPalette } from '../../theme/colors';
 
-const FeatureCard: React.FC<{ theme: 'light' | 'dark'; icon: string; title: string; children: React.ReactNode }> = ({
-    theme, icon, title, children,
-}) => {
-    const p = getPalette(theme);
-    return (
-        <div style={{
-            background: p.panelAlt,
-            border: `1px solid ${p.border}`,
-            borderRadius: 6,
-            padding: 16,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 8,
-        }}>
-            <div style={{
-                fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8,
-                color: p.text,
-            }}>
-                <span style={{ fontSize: 18 }}>{icon}</span>
-                {title}
-            </div>
-            <div style={{
-                fontSize: 12, lineHeight: 1.5,
-                color: p.textDim,
-            }}>
-                {children}
-            </div>
-        </div>
-    );
-};
+
 
 interface EditorProps {
     note: Note | null;
@@ -118,52 +89,14 @@ const EditorComponent: React.FC<EditorProps> = ({
                     fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif",
                     overflowY: 'auto',
                     padding: '40px 20px',
+                    color: '#c0c0c0',
                 }}
             >
-                <div style={{
-                    fontSize: 32, fontWeight: 300, marginBottom: 4,
-                    color: p.text,
-                }}>
-                    NextNotePad.com
+                <div style={{ fontSize: 28, fontWeight: 300, marginBottom: 8, whiteSpace: 'nowrap' }}>
+                    No file is open
                 </div>
-                <div style={{
-                    fontSize: 13, color: p.textMute,
-                    marginBottom: 32,
-                }}>
-                    Write. Code. Create — Anywhere.
-                </div>
-
-                {/* Features grid */}
-                <div style={{
-                    display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                    gap: 16, width: '100%', maxWidth: 1000, marginBottom: 60,
-                    textAlign: 'left',
-                }}>
-                    <FeatureCard theme={theme} icon="✏️" title="Code Editor">
-                        Powered by Monaco Editor (the same engine as VS Code). Includes syntax highlighting for 50+ languages, auto-completion, and multiple cursors.
-                    </FeatureCard>
-
-                    <FeatureCard theme={theme} icon="📁" title="File Management">
-                        Work with multiple files at once. Files are auto-saved locally in your browser's storage, ensuring you never lose your work.
-                    </FeatureCard>
-
-                    <FeatureCard theme={theme} icon="☁️" title="Cloud Sync">
-                        Sign in with Google to seamlessly sync your files to Google Drive. Keep your workspaces synchronized across all your devices.
-                    </FeatureCard>
-
-                    <FeatureCard theme={theme} icon="🎨" title="Customization">
-                        Toggle between Light and Dark mode. Customize word wrap, indent settings, and more to perfectly suit your coding style.
-                    </FeatureCard>
-                </div>
-
-                {/* Quick start footer */}
-                <div style={{
-                    display: 'flex', gap: 16, alignItems: 'center',
-                    fontSize: 13, color: p.textMute,
-                }}>
-                    <span><strong>Ctrl+N</strong> New File</span>
-                    <span><strong>Ctrl+O</strong> Open File</span>
-                    <span><strong>Ctrl+S</strong> Save File</span>
+                <div style={{ fontSize: 14, whiteSpace: 'nowrap' }}>
+                    Ctrl+N to create a new file, or click the Document List
                 </div>
             </div>
         );

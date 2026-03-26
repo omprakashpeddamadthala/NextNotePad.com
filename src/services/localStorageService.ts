@@ -1,5 +1,5 @@
 import type { Note, AppSettings, Workspace } from '../types/Note';
-import { DEFAULT_SETTINGS, DEFAULT_WORKSPACE_ID, getLanguageFromFilename } from '../types/Note';
+import { DEFAULT_SETTINGS, getLanguageFromFilename } from '../types/Note';
 import { v4 as uuidv4 } from 'uuid';
 
 const NOTES_KEY = 'notepad_web_notes';
@@ -13,7 +13,7 @@ export function getNotes(): Note[] {
         if (!raw) return [];
         const notes = JSON.parse(raw) as Note[];
         // Migration: stamp existing notes with default workspace
-        return notes.map((n) => n.workspaceId ? n : { ...n, workspaceId: DEFAULT_WORKSPACE_ID });
+        return notes.map((n) => n.workspaceId ? n : { ...n, workspaceId: '' });
     } catch {
         console.error('Failed to parse notes from localStorage');
         return [];
@@ -50,17 +50,11 @@ export function getWorkspaces(): Workspace[] {
     try {
         const raw = localStorage.getItem(WORKSPACES_KEY);
         if (!raw) {
-            // Default workspace always exists
-            return [{ id: DEFAULT_WORKSPACE_ID, name: 'Default' }];
+            return [];
         }
-        const parsed = JSON.parse(raw) as Workspace[];
-        // Ensure default workspace always present
-        if (!parsed.find((w) => w.id === DEFAULT_WORKSPACE_ID)) {
-            return [{ id: DEFAULT_WORKSPACE_ID, name: 'Default' }, ...parsed];
-        }
-        return parsed;
+        return JSON.parse(raw) as Workspace[];
     } catch {
-        return [{ id: DEFAULT_WORKSPACE_ID, name: 'Default' }];
+        return [];
     }
 }
 
@@ -75,9 +69,9 @@ export function saveWorkspaces(workspaces: Workspace[]): void {
 export function getActiveWorkspaceId(): string {
     try {
         const raw = localStorage.getItem(ACTIVE_WORKSPACE_KEY);
-        return raw || DEFAULT_WORKSPACE_ID;
+        return raw || '';
     } catch {
-        return DEFAULT_WORKSPACE_ID;
+        return '';
     }
 }
 

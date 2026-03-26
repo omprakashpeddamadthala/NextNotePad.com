@@ -44,6 +44,7 @@ interface MenuBarProps {
     onLowerCase: () => void;
     onRunInBrowser: () => void;
     onCompare: () => void;
+    onOpenSettingsJson: () => void;
 }
 
 interface MenuDef {
@@ -51,7 +52,6 @@ interface MenuDef {
     id: string;
 }
 
-// Removed 'Plugins' (merged into Tools) and kept menu order logical
 const MENUS: MenuDef[] = [
     { label: 'File', id: 'file' },
     { label: 'Edit', id: 'edit' },
@@ -61,7 +61,6 @@ const MENUS: MenuDef[] = [
     { label: 'Language', id: 'language' },
     { label: 'Settings', id: 'settings' },
     { label: 'Tools', id: 'tools' },
-    { label: 'Run', id: 'run' },
     { label: '?', id: 'help' },
 ];
 
@@ -82,7 +81,7 @@ const MenuBar: React.FC<MenuBarProps> = ({
     wordWrap, showAllChars, onToggleShowAllChars,
     sidebarOpen, onToggleSidebar,
     currentEncoding, currentLanguage, theme,
-    onSyncDrive, onAbout, onThemeToggle,
+    onSyncDrive, onAbout, onThemeToggle, onOpenSettingsJson,
     onDownloadFile, onDownloadAllAsZip,
     showMinimap, onToggleMinimap,
     onWordCount, onSortLines, onRemoveDuplicateLines, onTrimWhitespace,
@@ -155,7 +154,7 @@ const MenuBar: React.FC<MenuBarProps> = ({
             <div
                 style={{
                     display: 'flex', alignItems: 'center', height: 24,
-                    padding: '0 2px', userSelect: 'none',
+                    padding: '0 0 0 2px', userSelect: 'none', background: p.panelAlt,
                     overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none',
                 }}
             >
@@ -339,6 +338,9 @@ const MenuBar: React.FC<MenuBarProps> = ({
                 sx={{ '& .MuiPaper-root': { minWidth: 220, borderRadius: '2px', mt: 0 } }}>
                 <MenuItem sx={menuItemSx} onClick={menuAction(onThemeToggle)}>
                     <ListItemText><Typography sx={{ fontSize: '13px' }}>Toggle Dark / Light Mode</Typography></ListItemText>
+                </MenuItem>
+                <MenuItem sx={menuItemSx} onClick={menuAction(onOpenSettingsJson)}>
+                    <ListItemText><Typography sx={{ fontSize: '13px' }}>Open Settings (JSON)</Typography></ListItemText>
                 </MenuItem>
                 <Divider sx={{ my: '2px!important' }} />
                 <MenuItem sx={menuItemSx} onClick={menuAction(onZoomIn)}>

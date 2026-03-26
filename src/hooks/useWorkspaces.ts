@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { Workspace } from '../types/Note';
-import { DEFAULT_WORKSPACE_ID } from '../types/Note';
+
 import * as storage from '../services/localStorageService';
 import { getActiveWorkspaceId, saveActiveWorkspaceId } from '../services/localStorageService';
 import { getOrCreateWorkspaceFolder, listWorkspaceFolders, renameWorkspaceFolder, deleteWorkspaceFolder } from '../services/googleDriveService';
@@ -14,7 +14,7 @@ export function useWorkspaces(rootDriveFolderId: string | null) {
             const saved = getActiveWorkspaceId();
             // Validate that the saved workspace still exists
             const ws = storage.getWorkspaces();
-            return ws.some((w) => w.id === saved) ? saved : DEFAULT_WORKSPACE_ID;
+            return ws.some((w) => w.id === saved) ? saved : (ws[0]?.id || '');
         }
     );
 
@@ -66,6 +66,15 @@ export function useWorkspaces(rootDriveFolderId: string | null) {
         }
 
         setWorkspaces((prev) => [...prev, newWs]);
+
+        setActiveWorkspaceId((current) => {
+            if (!current) {
+                saveActiveWorkspaceId(newWs.id);
+                return newWs.id;
+            }
+            return current;
+        });
+
         return newWs;
     }, [rootDriveFolderId]);
 
@@ -133,10 +142,9 @@ export function useWorkspaces(rootDriveFolderId: string | null) {
 
     /** Reset workspaces to default state (used on logout) */
     const resetWorkspaces = useCallback(() => {
-        const defaultWs: Workspace[] = [{ id: DEFAULT_WORKSPACE_ID, name: 'Default' }];
-        setWorkspaces(defaultWs);
-        setActiveWorkspaceId(DEFAULT_WORKSPACE_ID);
-        saveActiveWorkspaceId(DEFAULT_WORKSPACE_ID);
+        setWorkspaces([]);
+        setActiveWorkspaceId('');
+        saveActiveWorkspaceId('');
     }, []);
 
     const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId) || workspaces[0];

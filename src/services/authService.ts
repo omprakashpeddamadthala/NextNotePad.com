@@ -1,6 +1,6 @@
 // Google Authentication Service
 // Uses @react-oauth/google for sign-in flow.
-// The access token is persisted to sessionStorage so it survives page refreshes.
+// The access token is persisted to localStorage so it survives tab closes.
 
 export interface GoogleUser {
     name: string;
@@ -13,17 +13,17 @@ const USER_KEY = 'notepad_user_profile';
 
 let currentAccessToken: string | null = null;
 
-/** Store access token in memory + sessionStorage */
+/** Store access token in memory + localStorage */
 export function setAccessToken(token: string): void {
     currentAccessToken = token;
-    try { sessionStorage.setItem(TOKEN_KEY, token); } catch { /* ignore */ }
+    try { localStorage.setItem(TOKEN_KEY, token); } catch { /* ignore */ }
 }
 
 export function getAccessToken(): string | null {
     if (currentAccessToken) return currentAccessToken;
-    // Restore from sessionStorage on first call (e.g. after page refresh)
+    // Restore from localStorage on first call
     try {
-        const stored = sessionStorage.getItem(TOKEN_KEY);
+        const stored = localStorage.getItem(TOKEN_KEY);
         if (stored) { currentAccessToken = stored; return stored; }
     } catch { /* ignore */ }
     return null;
@@ -32,20 +32,20 @@ export function getAccessToken(): string | null {
 export function clearAccessToken(): void {
     currentAccessToken = null;
     try {
-        sessionStorage.removeItem(TOKEN_KEY);
-        sessionStorage.removeItem(USER_KEY);
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(USER_KEY);
     } catch { /* ignore */ }
 }
 
-/** Persist user profile to sessionStorage */
+/** Persist user profile to localStorage */
 export function saveUserProfile(user: GoogleUser): void {
-    try { sessionStorage.setItem(USER_KEY, JSON.stringify(user)); } catch { /* ignore */ }
+    try { localStorage.setItem(USER_KEY, JSON.stringify(user)); } catch { /* ignore */ }
 }
 
-/** Restore user profile from sessionStorage (returns null if not found) */
+/** Restore user profile from localStorage (returns null if not found) */
 export function getSavedUserProfile(): GoogleUser | null {
     try {
-        const raw = sessionStorage.getItem(USER_KEY);
+        const raw = localStorage.getItem(USER_KEY);
         if (!raw) return null;
         return JSON.parse(raw) as GoogleUser;
     } catch { return null; }

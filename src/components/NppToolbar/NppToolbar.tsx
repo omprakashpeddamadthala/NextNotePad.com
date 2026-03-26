@@ -289,14 +289,14 @@ const NppToolbar: React.FC<NppToolbarProps> = ({
                             fontSize: 12,
                             fontWeight: 500,
                             whiteSpace: 'nowrap',
-                            maxWidth: 160,
-                            overflow: 'hidden',
+
+
                             flexShrink: 0,
                         }}
                         title={user.name}
                     >
                         <Avatar src={user.picture} alt={user.name} sx={{ width: 20, height: 20, flexShrink: 0 }} />
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 120 }}>
+                        <span>
                             {user.name}
                         </span>
                     </button>

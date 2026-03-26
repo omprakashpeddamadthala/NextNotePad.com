@@ -38,25 +38,17 @@ function getFileIconColor(name: string): string {
     }
 }
 
-function formatTime(ts: number): string {
-    const d = new Date(ts);
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
+
 
 const Sidebar: React.FC<SidebarProps> = ({
     notes, activeId, onFileClick, onNewFile, onRename, onDelete, theme, visible, isMobile, activeWorkspaceName,
 }) => {
-    const [searchQuery, setSearchQuery] = useState('');
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number; noteId: string } | null>(null);
     const p = getPalette(theme);
 
     const filteredNotes = useMemo(() => {
-        const q = searchQuery.toLowerCase();
-        return notes
-            .filter((n) => n.name.toLowerCase().includes(q))
-            .sort((a, b) => b.lastModified - a.lastModified);
-    }, [notes, searchQuery]);
+        return [...notes].sort((a, b) => b.lastModified - a.lastModified);
+    }, [notes]);
 
     if (!visible) return null;
 
@@ -74,50 +66,30 @@ const Sidebar: React.FC<SidebarProps> = ({
         }}
             >
                 {/* Header */}
-                <div style={{
+                <div 
+                    title={activeWorkspaceName || 'Workspace'}
+                    style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '6px 10px',
+                    padding: '2px 6px',
                     borderBottom: `1px solid ${p.border}`,
-                    fontSize: '11px', fontWeight: 600,
-                    textTransform: 'uppercase', letterSpacing: '0.5px', color: p.textDim,
+                    background: theme === 'dark' ? '#2d2d2d' : '#e5f1fb',
+                    fontSize: '12px', color: p.text,
                 }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
-                        Files
-                        {activeWorkspaceName && (
-                            <span style={{ maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'inline-block' }}
-                                title={activeWorkspaceName}>
-                                · {activeWorkspaceName}
-                            </span>
-                        )}
-                        <span style={{ color: p.textMute, fontWeight: 400 }}>({filteredNotes.length})</span>
-                    </span>
-                    <button onClick={onNewFile} title="New File"
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', lineHeight: 1, padding: '0 2px', color: p.textDim }}
-                        onMouseOver={(e) => { (e.currentTarget as HTMLElement).style.color = p.text; }}
-                        onMouseOut={(e) => { (e.currentTarget as HTMLElement).style.color = p.textDim; }}
-                    >+</button>
+                    <span style={{ fontWeight: 600 }}>{activeWorkspaceName || 'Workspace'}</span>
+                    <button onClick={() => { /* assume we just hide it by parent */ }} title="Close"
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', lineHeight: 1, padding: '0 2px', color: p.text }}
+                        onMouseOver={(e) => { (e.currentTarget as HTMLElement).style.background = '#e81123'; (e.currentTarget as HTMLElement).style.color = '#fff'; }}
+                        onMouseOut={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = p.text; }}
+                    >×</button>
                 </div>
 
-                {/* Search */}
-                <div style={{ padding: '6px 8px' }}>
-                    <input type="text" placeholder="Search files..."
-                        value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                        style={{
-                            width: '100%', height: 26, padding: '0 8px', fontSize: '12px',
-                            border: `1px solid ${p.border}`, borderRadius: 4,
-                            background: p.bg, color: p.text, outline: 'none',
-                            fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif",
-                        }}
-                        onFocus={(e) => { e.currentTarget.style.borderColor = p.accent; }}
-                        onBlur={(e) => { e.currentTarget.style.borderColor = p.border; }}
-                    />
-                </div>
+
 
                 {/* File List */}
                 <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
                     {filteredNotes.length === 0 && (
                         <div style={{ padding: '20px 16px', textAlign: 'center', color: p.textDim, fontSize: '12px' }}>
-                            {searchQuery ? 'No matching files' : 'No files yet'}
+                            No files yet
                         </div>
                     )}
                     {filteredNotes.map((note) => {
@@ -128,24 +100,37 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 onClick={() => onFileClick(note.id)}
                                 onContextMenu={(e) => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, noteId: note.id }); }}
                                 style={{
-                                    display: 'flex', alignItems: 'center', gap: 8,
-                                    padding: '5px 10px', cursor: 'default',
-                                    background: isActive ? p.active : 'transparent',
-                                    color: p.text,
-                                    borderLeft: isActive ? `3px solid ${p.accent}` : '3px solid transparent',
+                                    display: 'flex', alignItems: 'center', gap: 6,
+                                    padding: '2px 6px', cursor: 'default',
+                                    background: isActive ? '#3b82f6' : 'transparent',
+                                    color: isActive ? '#fff' : p.text,
                                     transition: 'background 0.1s',
                                 }}
                                 onMouseOver={(e) => { if (!isActive) (e.currentTarget as HTMLElement).style.background = p.hover; }}
                                 onMouseOut={(e) => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                             >
-                                <span style={{ width: 8, height: 8, borderRadius: '50%', background: iconColor, flexShrink: 0 }} />
+                                <span style={{ width: 8, height: 8, borderRadius: '0', background: iconColor, flexShrink: 0 }} />
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                     <div style={{ fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{note.name}</div>
-                                    <div style={{ fontSize: '10px', color: p.textDim, marginTop: 1 }}>{formatTime(note.lastModified)}</div>
                                 </div>
                             </div>
                         );
                     })}
+                </div>
+
+                {/* Footer */}
+                <div style={{ padding: '8px', borderTop: `1px solid ${p.border}` }}>
+                    <button onClick={onNewFile}
+                        style={{
+                            width: '100%', padding: '6px', fontSize: '12px',
+                            background: p.panelAlt, border: `1px solid ${p.border}`,
+                            cursor: 'pointer', color: p.text,
+                        }}
+                        onMouseOver={(e) => { (e.currentTarget as HTMLElement).style.background = p.hover; }}
+                        onMouseOut={(e) => { (e.currentTarget as HTMLElement).style.background = p.panelAlt; }}
+                    >
+                        + New
+                    </button>
                 </div>
             </div>
 
