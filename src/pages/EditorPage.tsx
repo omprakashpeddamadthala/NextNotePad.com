@@ -29,7 +29,7 @@ import {
 import { clearAllWorkspaceData } from '../services/localStorageService';
 import {
     getOrCreateBackupFolder, uploadNoteToDrive, deleteNoteFromDrive, renameNoteOnDrive,
-    downloadSettings, uploadSettings
+    downloadSettings, uploadSettings, listWorkspaceFolders, listDriveNotes, downloadNoteFromDrive,
 } from '../services/googleDriveService';
 import { downloadFile, downloadAllAsZip } from '../services/fileExportService';
 import type * as monaco from 'monaco-editor';
@@ -57,7 +57,7 @@ const EditorPage: React.FC = () => {
     // Workspace state (must come before useNotes so we have activeWorkspaceId)
     const [rootDriveFolderId, setRootDriveFolderId] = useState<string | null>(null);
     const {
-        workspaces, activeWorkspaceId, activeWorkspace,
+        workspaces, setWorkspaces, activeWorkspaceId, activeWorkspace,
         createWorkspace, switchWorkspace, updateWorkspace,
         renameWorkspace,
         deleteWorkspace,
@@ -123,24 +123,97 @@ const EditorPage: React.FC = () => {
         setSnackbar({ open: true, message, severity });
     };
 
-
-
-    /** Shared post-login setup: fetch root folder, sync workspaces, start sync timer */
+    /** Shared post-login setup: fetch root folder, sync workspaces, and immediately
+     *  load all files from Drive — no React state dependency, so no stale-closure bug. */
     const initDriveSession = useCallback(async (accessToken: string) => {
         try {
             const folderId = await getOrCreateBackupFolder(accessToken);
             setRootDriveFolderId(folderId);
-            // Download and apply saved settings from Drive
+
+            // Apply saved settings from Drive
             try {
                 const remote = await downloadSettings(accessToken, folderId);
                 if (remote) applyDriveSettings(remote);
             } catch { /* ignore */ }
-            // Pass folderId directly so we don't depend on stale React state
-            await syncWorkspacesFromDrive(folderId);
+
+            // List workspace folders from Drive
+            const driveFolders = await listWorkspaceFolders(accessToken, folderId);
+            if (driveFolders.length === 0) return;
+
+            // Update workspaces state and resolve local IDs in one pass
+            // We need the local workspace IDs to assign workspaceId on notes
+            const { v4: uuidv4 } = await import('uuid');
+            const { getLanguageFromFilename } = await import('../types/Note');
+
+            // Build a map: driveId -> localWorkspaceId
+            const driveIdToLocalId = new Map<string, string>();
+            setWorkspaces((prev) => {
+                const merged = [...prev];
+                for (const folder of driveFolders) {
+                    const exists = merged.find((w) => w.driveId === folder.id || w.name === folder.name);
+                    if (!exists) {
+                        const newId = uuidv4();
+                        merged.push({ id: newId, name: folder.name, driveId: folder.id });
+                        driveIdToLocalId.set(folder.id, newId);
+                    } else {
+                        if (!exists.driveId) exists.driveId = folder.id;
+                        driveIdToLocalId.set(folder.id, exists.id);
+                    }
+                }
+                return merged;
+            });
+
+            // Show loading indicator while fetching files
+            setSyncing(true);
+            setSyncStatus('syncing');
+
+            // Download files from all workspace folders in parallel
+            const noteArrays = await Promise.all(
+                driveFolders.map(async (folder) => {
+                    const localWsId = driveIdToLocalId.get(folder.id) ?? folder.id;
+                    const driveFiles = await listDriveNotes(accessToken, folder.id);
+                    const notes = await Promise.all(
+                        driveFiles.map(async (file) => {
+                            const content = await downloadNoteFromDrive(accessToken, file.id);
+                            return {
+                                id: uuidv4(),
+                                name: file.name,
+                                content,
+                                language: getLanguageFromFilename(file.name),
+                                lastModified: new Date(file.modifiedTime).getTime(),
+                                driveFileId: file.id,
+                                workspaceId: localWsId,
+                            };
+                        })
+                    );
+                    return notes;
+                })
+            );
+
+            const allNotes = noteArrays.flat();
+
+            // Merge downloaded notes with any local-only notes (avoid duplicates by driveFileId/name+workspace)
+            setNotes((prev) => {
+                const merged = [...prev];
+                for (const note of allNotes) {
+                    const duplicate = merged.find(
+                        (n) => n.driveFileId === note.driveFileId ||
+                               (n.name === note.name && n.workspaceId === note.workspaceId)
+                    );
+                    if (!duplicate) merged.push(note);
+                }
+                return merged;
+            });
+
+            setSyncStatus('synced');
+            setLastSyncTime(Date.now());
         } catch (err) {
             console.error('Drive session init failed:', err);
+            setSyncStatus('error');
+        } finally {
+            setSyncing(false);
         }
-    }, [applyDriveSettings, syncWorkspacesFromDrive]);
+    }, [applyDriveSettings, syncWorkspacesFromDrive, setNotes, setSyncing, setSyncStatus, setLastSyncTime, setWorkspaces]);
 
     // Restore session on mount: if we have a saved token+user, validate and resume
     useEffect(() => {
@@ -789,6 +862,7 @@ const EditorPage: React.FC = () => {
                     onDownloadFile={handleDownloadFile}
                     onOpenSettingsJson={() => setSettingsDialogOpen(true)}
                     onManageWorkspaces={isLoggedIn ? () => setCurrentView('workspace-management') : undefined}
+                    loading={syncing}
                 >
                     {currentView === 'workspace-management' ? (
                         <WorkspaceLayout
@@ -1034,6 +1108,7 @@ const EditorPage: React.FC = () => {
                     visible={settings.sidebarOpen}
                     isMobile={isMobile}
                     activeWorkspaceName={activeWorkspace?.name}
+                    loading={syncing}
                 />
 
                 {/* Tabs + Editor column */}

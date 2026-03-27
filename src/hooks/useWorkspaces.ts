@@ -151,6 +151,7 @@ export function useWorkspaces(rootDriveFolderId: string | null) {
 
     return {
         workspaces,
+        setWorkspaces,
         activeWorkspaceId,
         activeWorkspace,
         createWorkspace,

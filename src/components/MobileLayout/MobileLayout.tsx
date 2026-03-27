@@ -78,11 +78,12 @@ export interface MobileLayoutProps {
     onDownloadFile: () => void;
     onOpenSettingsJson: () => void;
     onManageWorkspaces?: () => void;
+    loading?: boolean;
     children: React.ReactNode; // The editor itself
 }
 
 const MobileLayout: React.FC<MobileLayoutProps> = ({
-    theme, notes, activeNote, activeId, wordWrap, activeWorkspaceName,
+    theme, notes, activeNote, activeId, wordWrap, activeWorkspaceName, loading,
     onNewFile, onFileClick, onDelete, onRename, onSaveFile,
     onUndo, onRedo, onFind, onReplace, onSyncDrive, onThemeToggle,
     onToggleWordWrap, onAbout, onDownloadFile, onOpenSettingsJson, onManageWorkspaces,
@@ -225,7 +226,20 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
 
                 {/* File List */}
                 <List dense sx={{ py: 1 }}>
-                    {notes.length === 0 && (
+                    {loading && (
+                        <Box sx={{ px: 2, py: 4, textAlign: 'center', color: isDark ? '#666' : '#aaa' }}>
+                            <Box sx={{
+                                width: 36, height: 36, borderRadius: '50%',
+                                border: `3px solid ${isDark ? '#444' : '#ddd'}`,
+                                borderTopColor: isDark ? '#9cdcfe' : '#0078d4',
+                                animation: 'spin 0.8s linear infinite',
+                                mx: 'auto', mb: 1,
+                            }} />
+                            <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+                            <Typography variant="body2">Loading files...</Typography>
+                        </Box>
+                    )}
+                    {!loading && notes.length === 0 && (
                         <Box sx={{ px: 2, py: 4, textAlign: 'center', color: isDark ? '#666' : '#aaa' }}>
                             <DescriptionIcon sx={{ fontSize: 40, mb: 1, display: 'block', mx: 'auto', opacity: 0.4 }} />
                             <Typography variant="body2">No files yet</Typography>

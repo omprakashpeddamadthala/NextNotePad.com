@@ -13,6 +13,7 @@ interface SidebarProps {
     visible: boolean;
     isMobile?: boolean;
     activeWorkspaceName?: string;
+    loading?: boolean;
 }
 
 function getFileIconColor(name: string): string {
@@ -41,7 +42,7 @@ function getFileIconColor(name: string): string {
 
 
 const Sidebar: React.FC<SidebarProps> = ({
-    notes, activeId, onFileClick, onNewFile, onRename, onDelete, theme, visible, isMobile, activeWorkspaceName,
+    notes, activeId, onFileClick, onNewFile, onRename, onDelete, theme, visible, isMobile, activeWorkspaceName, loading,
 }) => {
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number; noteId: string } | null>(null);
     const p = getPalette(theme);
@@ -87,7 +88,19 @@ const Sidebar: React.FC<SidebarProps> = ({
 
                 {/* File List */}
                 <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
-                    {filteredNotes.length === 0 && (
+                    {loading && (
+                        <div style={{ padding: '20px 16px', textAlign: 'center', color: p.textDim, fontSize: '12px' }}>
+                            <div style={{
+                                width: 16, height: 16, border: `2px solid ${p.textDim}`,
+                                borderTopColor: p.accent || '#007acc', borderRadius: '50%',
+                                animation: 'spin 0.8s linear infinite',
+                                display: 'inline-block', marginBottom: 6,
+                            }} />
+                            <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+                            <div>Loading files...</div>
+                        </div>
+                    )}
+                    {!loading && filteredNotes.length === 0 && (
                         <div style={{ padding: '20px 16px', textAlign: 'center', color: p.textDim, fontSize: '12px' }}>
                             No files yet
                         </div>
