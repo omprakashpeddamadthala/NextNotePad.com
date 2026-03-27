@@ -13,11 +13,12 @@ interface FolderGridProps {
     onRename: (id: string, newName: string) => void;
     onDelete: (id: string) => void;
     onCreateNew?: (name: string) => Promise<void>;
+    viewMode?: 'grid' | 'list';
 }
 
 const FolderGrid: React.FC<FolderGridProps> = ({
     workspaces, activeWorkspaceId, notes, palette,
-    onSelect, onRename, onDelete, onCreateNew,
+    onSelect, onRename, onDelete, onCreateNew, viewMode = 'grid',
 }) => {
     const [isCreating, setIsCreating] = useState(false);
     const [newName, setNewName] = useState('');
@@ -48,17 +49,18 @@ const FolderGrid: React.FC<FolderGridProps> = ({
     };
     return (
         <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
-            gap: 16,
+            display: viewMode === 'grid' ? 'grid' : 'flex',
+            gridTemplateColumns: viewMode === 'grid' ? 'repeat(auto-fill, minmax(160px, 1fr))' : 'none',
+            flexDirection: viewMode === 'list' ? 'column' : 'row',
+            gap: viewMode === 'list' ? 8 : 16,
             padding: 0,
         }}>
             {/* Existing folder cards */}
-            {workspaces.map((ws) => {
+            {workspaces.map((ws, index) => {
                 const fileCount = notes.filter((n) => n.workspaceId === ws.id).length;
                 return (
+                    <div key={ws.id} style={{ animationDelay: `${index * 0.05}s` }}>
                     <FolderCard
-                        key={ws.id}
                         workspace={ws}
                         isActive={ws.id === activeWorkspaceId}
                         fileCount={fileCount}
@@ -67,7 +69,9 @@ const FolderGrid: React.FC<FolderGridProps> = ({
                         onClick={() => onSelect(ws.id)}
                         onRename={(newName) => onRename(ws.id, newName)}
                         onDelete={() => onDelete(ws.id)}
+                        viewMode={viewMode}
                     />
+                    </div>
                 );
             })}
 
@@ -80,15 +84,17 @@ const FolderGrid: React.FC<FolderGridProps> = ({
                         }
                     }}
                     style={{
-                        display: 'flex', flexDirection: 'column',
-                        alignItems: 'center', justifyContent: 'center',
-                        gap: 8, padding: '20px 16px 14px',
+                        display: 'flex',
+                        flexDirection: viewMode === 'list' ? 'row' : 'column',
+                        alignItems: 'center', justifyContent: viewMode === 'list' ? 'flex-start' : 'center',
+                        gap: viewMode === 'list' ? 16 : 8,
+                        padding: viewMode === 'list' ? '12px 16px' : '20px 16px 14px',
                         background: isCreating ? palette.panelAlt : 'transparent',
                         border: `2px dashed ${palette.border}`,
-                        borderRadius: 8,
+                        borderRadius: 10,
                         cursor: isCreating ? 'default' : 'pointer',
                         transition: 'border-color 0.15s, background 0.15s',
-                        minHeight: 120,
+                        minHeight: viewMode === 'list' ? 64 : 120,
                     }}
                     onMouseOver={(e) => {
                         if (!isCreating) {
@@ -134,7 +140,7 @@ const FolderGrid: React.FC<FolderGridProps> = ({
                         />
                     ) : (
                         <>
-                            <AddIcon sx={{ fontSize: 48, color: palette.textDim }} />
+                            <AddIcon sx={{ fontSize: viewMode === 'list' ? 32 : 48, color: palette.textDim }} />
                             <span style={{ fontSize: 13, fontWeight: 600, color: palette.textDim }}>
                                 New Folder
                             </span>

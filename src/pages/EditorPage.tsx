@@ -239,6 +239,14 @@ const EditorPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    // Auto-show workspace management whenever a user logs in or session restores.
+    // This gives them an immediate landing page while Drive files are loading.
+    useEffect(() => {
+        if (user) {
+            setCurrentView('workspace-management');
+        }
+    }, [user]);
+
     // Google Auth
     const googleLogin = useGoogleLogin({
         onSuccess: async (tokenResponse) => {
@@ -1113,6 +1121,13 @@ const EditorPage: React.FC = () => {
 
                 {/* Tabs + Editor column */}
                 <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+                    <style>{`
+                        @keyframes view-fade-in {
+                            from { opacity: 0; transform: translateY(6px); }
+                            to   { opacity: 1; transform: translateY(0); }
+                        }
+                    `}</style>
+                    <div key={currentView} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', animation: 'view-fade-in 0.22s ease both' }}>
                     {currentView === 'workspace-management' ? (
                         <WorkspaceLayout
                             workspaces={workspaces}
@@ -1215,6 +1230,7 @@ const EditorPage: React.FC = () => {
                             </div>
                         );
                     })()}
+                    </div>
                 </div>
             </div>
 

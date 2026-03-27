@@ -85,6 +85,12 @@ const TabsComponent: React.FC<TabsProps> = ({
 
     return (
         <>
+            <style>{`
+                @keyframes tab-slide-in {
+                    from { opacity: 0; transform: translateX(8px); }
+                    to   { opacity: 1; transform: translateX(0); }
+                }
+            `}</style>
             <div
                 ref={scrollRef}
                 style={{
@@ -134,6 +140,8 @@ const TabsComponent: React.FC<TabsProps> = ({
                                 marginBottom: isActive ? -1 : 0,
                                 position: 'relative',
                                 zIndex: isActive ? 2 : 1,
+                                animation: 'tab-slide-in 0.18s ease both',
+                                transition: 'background 0.12s, color 0.12s, height 0.12s',
                             }}
                             onMouseOver={(e) => {
                                 if (!isActive) {
