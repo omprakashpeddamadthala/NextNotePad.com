@@ -8,7 +8,6 @@ import Tabs from '../components/Tabs/Tabs';
 import Editor from '../components/Editor/Editor';
 import Sidebar from '../components/Sidebar/Sidebar';
 import CompareDialog from '../components/CompareDialog/CompareDialog';
-import RenameDialog from '../components/RenameDialog/RenameDialog';
 import AboutDialog from '../components/AboutDialog/AboutDialog';
 import WorkspaceLayout from '../components/WorkspaceManagement/WorkspaceLayout';
 import SettingsDialog from '../components/SettingsDialog/SettingsDialog';
@@ -20,19 +19,12 @@ import { useWorkspaces } from '../hooks/useWorkspaces';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useDragAndDrop } from '../hooks/useDragAndDrop';
 import { useEditorSync } from '../hooks/useEditorSync';
-import { useGoogleLogin } from '@react-oauth/google';
+import { useEditorFormatting } from '../hooks/useEditorFormatting';
+import { useGoogleDriveSync } from '../hooks/useGoogleDriveSync';
 import type { GoogleUser } from '../services/authService';
-import {
-    fetchUserProfile, setAccessToken, getAccessToken, clearAccessToken,
-    saveUserProfile, getSavedUserProfile, validateToken,
-} from '../services/authService';
-import { clearAllWorkspaceData } from '../services/localStorageService';
-import {
-    getOrCreateBackupFolder, uploadNoteToDrive, deleteNoteFromDrive, renameNoteOnDrive,
-    downloadSettings, uploadSettings, listWorkspaceFolders, listDriveNotes, downloadNoteFromDrive,
-} from '../services/googleDriveService';
-import { downloadFile, downloadAllAsZip } from '../services/fileExportService';
+import { getSavedUserProfile } from '../services/authService';
 import type * as monaco from 'monaco-editor';
+import { downloadFile, downloadAllAsZip } from '../services/fileExportService';
 import { getPalette } from '../theme/colors';
 
 const ClockWidget: React.FC = () => {
@@ -58,11 +50,7 @@ const EditorPage: React.FC = () => {
     const [rootDriveFolderId, setRootDriveFolderId] = useState<string | null>(null);
     const {
         workspaces, setWorkspaces, activeWorkspaceId, activeWorkspace,
-        createWorkspace, switchWorkspace, updateWorkspace,
-        renameWorkspace,
-        deleteWorkspace,
-        syncWorkspacesFromDrive,
-        resetWorkspaces,
+        createWorkspace, switchWorkspace, updateWorkspace, renameWorkspace, deleteWorkspace, resetWorkspaces
     } = useWorkspaces(rootDriveFolderId);
 
     const {
@@ -90,11 +78,8 @@ const EditorPage: React.FC = () => {
     // Restore user from sessionStorage on mount (survives page refresh)
     const [user, setUser] = useState<GoogleUser | null>(() => getSavedUserProfile());
 
-    // User session types: 'google' (OAuth), 'guest' (localStorage-only), null (no session).
     // Workspace management is only visible when a session exists (google or guest).
-    const [guestMode, setGuestMode] = useState(false);
-    const userMode: 'google' | 'guest' | null = user ? 'google' : guestMode ? 'guest' : null;
-    const isLoggedIn = userMode !== null;
+    const isLoggedIn = user !== null;
     const [syncing, setSyncing] = useState(false);
     const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'error'>('idle');
     const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
@@ -105,197 +90,27 @@ const EditorPage: React.FC = () => {
     const [compareDialogOpen, setCompareDialogOpen] = useState(false);
     const [compareMode, setCompareMode] = useState(false);
     const [compareTargetId, setCompareTargetId] = useState<string | null>(null);
-    const [renameDialog, setRenameDialog] = useState<{ open: boolean; noteId: string; name: string }>({ open: false, noteId: '', name: '' });
     const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
 
 
     const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
 
-    // Refs for Drive auto-save
-    const notesRef = useRef(notes);
-    useEffect(() => { notesRef.current = notes; }, [notes]);
-    const driveUploadTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
-    const uploadingNoteIdsRef = useRef<Set<string>>(new Set());
     const p = getPalette(settings.theme);
     const isDark = settings.theme === 'dark';
 
-    const showSnackbar = (message: string, severity: 'success' | 'error' | 'info') => {
+    const showSnackbar = useCallback((message: string, severity: 'success' | 'error' | 'info') => {
         setSnackbar({ open: true, message, severity });
-    };
-
-    /** Shared post-login setup: fetch root folder, sync workspaces, and immediately
-     *  load all files from Drive — no React state dependency, so no stale-closure bug. */
-    const initDriveSession = useCallback(async (accessToken: string) => {
-        try {
-            const folderId = await getOrCreateBackupFolder(accessToken);
-            setRootDriveFolderId(folderId);
-
-            // Apply saved settings from Drive
-            try {
-                const remote = await downloadSettings(accessToken, folderId);
-                if (remote) applyDriveSettings(remote);
-            } catch { /* ignore */ }
-
-            // List workspace folders from Drive
-            const driveFolders = await listWorkspaceFolders(accessToken, folderId);
-            if (driveFolders.length === 0) return;
-
-            // Update workspaces state and resolve local IDs in one pass
-            // We need the local workspace IDs to assign workspaceId on notes
-            const { v4: uuidv4 } = await import('uuid');
-            const { getLanguageFromFilename } = await import('../types/Note');
-
-            // Build a map: driveId -> localWorkspaceId
-            const driveIdToLocalId = new Map<string, string>();
-            setWorkspaces((prev) => {
-                const merged = [...prev];
-                for (const folder of driveFolders) {
-                    const exists = merged.find((w) => w.driveId === folder.id || w.name === folder.name);
-                    if (!exists) {
-                        const newId = uuidv4();
-                        merged.push({ id: newId, name: folder.name, driveId: folder.id });
-                        driveIdToLocalId.set(folder.id, newId);
-                    } else {
-                        if (!exists.driveId) exists.driveId = folder.id;
-                        driveIdToLocalId.set(folder.id, exists.id);
-                    }
-                }
-                return merged;
-            });
-
-            // Show loading indicator while fetching files
-            setSyncing(true);
-            setSyncStatus('syncing');
-
-            // Download files from all workspace folders in parallel
-            const noteArrays = await Promise.all(
-                driveFolders.map(async (folder) => {
-                    const localWsId = driveIdToLocalId.get(folder.id) ?? folder.id;
-                    const driveFiles = await listDriveNotes(accessToken, folder.id);
-                    const notes = await Promise.all(
-                        driveFiles.map(async (file) => {
-                            const content = await downloadNoteFromDrive(accessToken, file.id);
-                            return {
-                                id: uuidv4(),
-                                name: file.name,
-                                content,
-                                language: getLanguageFromFilename(file.name),
-                                lastModified: new Date(file.modifiedTime).getTime(),
-                                driveFileId: file.id,
-                                workspaceId: localWsId,
-                            };
-                        })
-                    );
-                    return notes;
-                })
-            );
-
-            const allNotes = noteArrays.flat();
-
-            // Merge downloaded notes with any local-only notes (avoid duplicates by driveFileId/name+workspace)
-            setNotes((prev) => {
-                const merged = [...prev];
-                for (const note of allNotes) {
-                    const duplicate = merged.find(
-                        (n) => n.driveFileId === note.driveFileId ||
-                               (n.name === note.name && n.workspaceId === note.workspaceId)
-                    );
-                    if (!duplicate) merged.push(note);
-                }
-                return merged;
-            });
-
-            setSyncStatus('synced');
-            setLastSyncTime(Date.now());
-        } catch (err) {
-            console.error('Drive session init failed:', err);
-            setSyncStatus('error');
-        } finally {
-            setSyncing(false);
-        }
-    }, [applyDriveSettings, syncWorkspacesFromDrive, setNotes, setSyncing, setSyncStatus, setLastSyncTime, setWorkspaces]);
-
-    // Restore session on mount: if we have a saved token+user, validate and resume
-    useEffect(() => {
-        const savedToken = getAccessToken();
-        const savedUser = getSavedUserProfile();
-        if (!savedToken || !savedUser) return;
-        let cancelled = false;
-        (async () => {
-            const valid = await validateToken(savedToken);
-            if (cancelled) return;
-            if (valid) {
-                setUser(savedUser);
-                showSnackbar(`Welcome back, ${savedUser.name}`, 'info');
-                await initDriveSession(savedToken);
-            } else {
-                // Token expired — clear stale session silently
-                clearAccessToken();
-                setUser(null);
-                showSnackbar('Session expired — please sign in again', 'info');
-            }
-        })();
-        return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Auto-show workspace management whenever a user logs in or session restores.
-    // This gives them an immediate landing page while Drive files are loading.
-    useEffect(() => {
-        if (user) {
-            setCurrentView('workspace-management');
-        }
-    }, [user]);
-
-    // Google Auth
-    const googleLogin = useGoogleLogin({
-        onSuccess: async (tokenResponse) => {
-            try {
-                setAccessToken(tokenResponse.access_token);
-                const profile = await fetchUserProfile(tokenResponse.access_token);
-                setUser(profile);
-                saveUserProfile(profile);
-                showSnackbar(`Signed in as ${profile.name}`, 'success');
-                await initDriveSession(tokenResponse.access_token);
-            } catch {
-                showSnackbar('Failed to sign in', 'error');
-            }
-        },
-        onError: () => showSnackbar('Google sign-in failed', 'error'),
-        scope: 'https://www.googleapis.com/auth/drive.file',
+    const {
+        googleLogin, handleLogout, handleCreateNote, handleDeleteNote, handleUpdateContent, handleRenameNote
+    } = useGoogleDriveSync({
+        notes, setNotes, workspaces, setWorkspaces, activeWorkspaceId, activeWorkspace, settings,
+        user, setUser, setRootDriveFolderId, rootDriveFolderId,
+        setSyncing, setSyncStatus, setLastSyncTime, setCurrentView, showSnackbar,
+        applyDriveSettings, resetWorkspaces,
+        createNote, deleteNote, updateContent, renameNote,
     });
-
-    const handleLogout = useCallback(() => {
-        clearAccessToken();
-        setUser(null);
-        setGuestMode(false);
-        setSyncStatus('idle');
-        setLastSyncTime(null);
-        setRootDriveFolderId(null);
-        setCurrentView('editor');
-        // Clear ALL workspace data from state and localStorage
-        setNotes([]);
-        resetWorkspaces();
-        clearAllWorkspaceData();
-        showSnackbar('Signed out — all data cleared', 'info');
-    }, [setNotes, resetWorkspaces]);
-
-    /** Enter guest mode (localStorage-only, no Google account required) */
-    const handleGuestLogin = useCallback(() => {
-        setGuestMode(true);
-        showSnackbar('Entered as guest — files saved locally', 'info');
-    }, []);
-
-    // DEV-ONLY: mock login to test logged-in UI without real Google OAuth
-    const handleDevLogin = useCallback(() => {
-        if (!import.meta.env.DEV) return;
-        setUser({
-            name: 'Dev User',
-            email: 'dev@localhost',
-            picture: 'https://ui-avatars.com/api/?name=Dev+User&background=007acc&color=fff&size=64',
-        });
-        showSnackbar('[DEV] Logged in as Dev User', 'info');
-    }, []);
 
     const { handleSync } = useEditorSync({
         user,
@@ -312,96 +127,17 @@ const EditorPage: React.FC = () => {
         setUser
     });
 
-    // ── Drive-aware CRUD wrappers ──────────────────────────────────────────
-    // When logged in, these also push changes to Google Drive in the active
-    // workspace folder. When not logged in they fall back to localStorage only.
-
-    /** Create a note locally and, if logged in, upload it to Drive */
-    const handleCreateNote = useCallback((name?: string, workspaceId?: string) => {
-        if (!activeWorkspaceId) {
-            showSnackbar('Please create a workspace folder first!', 'info');
-            setCurrentView('workspace-management');
-            return null;
-        }
-        const note = createNote(name, workspaceId);
-        const accessToken = getAccessToken();
-        const folderId = activeWorkspace?.driveId;
-        if (accessToken && folderId) {
-            uploadingNoteIdsRef.current.add(note.id);
-            uploadNoteToDrive(accessToken, folderId, note.name, note.content)
-                .then(driveFileId => {
-                    setNotes(prev => prev.map(n => n.id === note.id ? { ...n, driveFileId } : n));
-                    // If content was updated while uploading (e.g. file import), re-upload
-                    const latest = notesRef.current.find(n => n.id === note.id);
-                    if (latest && latest.content !== note.content) {
-                        return uploadNoteToDrive(accessToken, folderId, latest.name, latest.content, driveFileId);
-                    }
-                })
-                .catch(err => console.error('Drive: failed to save new file', err))
-                .finally(() => { uploadingNoteIdsRef.current.delete(note.id); });
-        }
-        return note;
-    }, [createNote, activeWorkspace, setNotes]);
-
-    /** Delete a note locally and, if logged in, remove it from Drive */
-    const handleDeleteNote = useCallback((id: string) => {
-        const note = notes.find(n => n.id === id);
-        deleteNote(id);
-        // Clear any pending Drive upload timer for this note
-        if (driveUploadTimersRef.current[id]) {
-            clearTimeout(driveUploadTimersRef.current[id]);
-            delete driveUploadTimersRef.current[id];
-        }
-        const accessToken = getAccessToken();
-        if (accessToken && note?.driveFileId) {
-            deleteNoteFromDrive(accessToken, note.driveFileId)
-                .catch(err => console.error('Drive: failed to delete file', err));
-        }
-    }, [notes, deleteNote]);
-
-    /** Update note content locally and, if logged in, debounced auto-save to Drive */
-    const handleUpdateContent = useCallback((id: string, content: string) => {
-        updateContent(id, content);
-        const accessToken = getAccessToken();
-        const folderId = activeWorkspace?.driveId;
-        if (!accessToken || !folderId) return;
-
-        if (driveUploadTimersRef.current[id]) {
-            clearTimeout(driveUploadTimersRef.current[id]);
-        }
-        driveUploadTimersRef.current[id] = setTimeout(() => {
-            // Skip if the note is still being created on Drive
-            if (uploadingNoteIdsRef.current.has(id)) return;
-            const note = notesRef.current.find(n => n.id === id);
-            if (!note) return;
-            uploadNoteToDrive(accessToken, folderId, note.name, content, note.driveFileId)
-                .then(driveFileId => {
-                    if (!note.driveFileId) {
-                        setNotes(prev => prev.map(n => n.id === id ? { ...n, driveFileId } : n));
-                    }
-                })
-                .catch(err => console.error('Drive: auto-save error', err));
-            delete driveUploadTimersRef.current[id];
-        }, 3000);
-    }, [updateContent, activeWorkspace, setNotes]);
-
-    /** Rename a note locally and, if logged in, rename on Drive */
-    const handleRenameNote = useCallback((id: string, newName: string) => {
-        renameNote(id, newName);
-        const note = notes.find(n => n.id === id);
-        const accessToken = getAccessToken();
-        if (accessToken && note?.driveFileId) {
-            renameNoteOnDrive(accessToken, note.driveFileId, newName)
-                .catch(err => console.error('Drive: failed to rename file', err));
-        }
-    }, [notes, renameNote]);
-
     // Drag and drop file import
     const { isDragging, handleDragOver, handleDragLeave, handleDrop } = useDragAndDrop({
         onFileCreate: handleCreateNote,
         onContentUpdate: handleUpdateContent,
         onShowSnackbar: showSnackbar
     });
+
+    const {
+        handleSortLines, handleRemoveDuplicateLines, handleTrimWhitespace,
+        handleUpperCase, handleLowerCase, handleFormatText
+    } = useEditorFormatting({ editorRef, activeNote, handleUpdateContent, showSnackbar });
 
     // Cursor change handler
     const handleCursorChange = useCallback((line: number, col: number, sc: number, sl: number) => {
@@ -456,118 +192,7 @@ const EditorPage: React.FC = () => {
     const handleIndent = useCallback(() => triggerEditorAction('editor.action.indentLines'), [triggerEditorAction]);
     const handleUnindent = useCallback(() => triggerEditorAction('editor.action.outdentLines'), [triggerEditorAction]);
 
-    // Format text — auto-detects type from content, works on selection or full doc
-    const handleFormatText = useCallback(() => {
-        if (!editorRef.current) {
-            showSnackbar('No editor available', 'info');
-            return;
-        }
-        const editor = editorRef.current;
-        const model = editor.getModel();
-        if (!model) return;
 
-        // Get selected text or full content directly from Monaco model
-        const selection = editor.getSelection();
-        const hasSelection = selection && !selection.isEmpty();
-        const textToFormat = hasSelection
-            ? model.getValueInRange(selection)
-            : model.getValue();
-
-        if (!textToFormat.trim()) {
-            showSnackbar('Nothing to format', 'info');
-            return;
-        }
-
-        // Auto-detect content type from the text itself
-        const detectType = (text: string): string => {
-            const trimmed = text.trim();
-            // JSON: starts with { or [
-            if ((trimmed.startsWith('{') && trimmed.endsWith('}')) ||
-                (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
-                try { JSON.parse(trimmed); return 'json'; } catch { /* not json */ }
-            }
-            // XML/HTML: starts with <
-            if (trimmed.startsWith('<') && trimmed.endsWith('>')) return 'xml';
-            // SQL: contains SQL keywords
-            if (/\b(SELECT|INSERT|UPDATE|DELETE|CREATE|DROP|ALTER)\b/i.test(trimmed)) return 'sql';
-            // CSS: contains { } with ; inside
-            if (/\{[^}]*;[^}]*\}/.test(trimmed)) return 'css';
-            return 'unknown';
-        };
-
-        const detectedType = detectType(textToFormat);
-        let formatted = textToFormat;
-
-        try {
-            if (detectedType === 'json') {
-                formatted = JSON.stringify(JSON.parse(textToFormat.trim()), null, 2);
-            } else if (detectedType === 'xml') {
-                let indent = 0;
-                const lines: string[] = [];
-                const tags = textToFormat.replace(/>\s*</g, '>\n<').split('\n');
-                for (const rawTag of tags) {
-                    const tag = rawTag.trim();
-                    if (!tag) continue;
-                    if (tag.startsWith('</')) {
-                        indent = Math.max(0, indent - 1);
-                        lines.push('  '.repeat(indent) + tag);
-                    } else if (tag.startsWith('<') && !tag.startsWith('<!') && !tag.endsWith('/>') && tag.endsWith('>') && !tag.includes('</')) {
-                        lines.push('  '.repeat(indent) + tag);
-                        indent++;
-                    } else {
-                        lines.push('  '.repeat(indent) + tag);
-                    }
-                }
-                formatted = lines.join('\n');
-            } else if (detectedType === 'css') {
-                formatted = textToFormat
-                    .replace(/\s*\{\s*/g, ' {\n  ')
-                    .replace(/\s*\}\s*/g, '\n}\n')
-                    .replace(/;\s*/g, ';\n  ')
-                    .replace(/\n\s*\n/g, '\n')
-                    .replace(/ {2}\}/g, '}')
-                    .trim();
-            } else if (detectedType === 'sql') {
-                const keywords = ['SELECT', 'FROM', 'WHERE', 'AND', 'OR', 'JOIN', 'LEFT', 'RIGHT', 'INNER', 'OUTER', 'ON', 'GROUP BY', 'ORDER BY', 'HAVING', 'LIMIT', 'INSERT', 'INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE', 'CREATE', 'TABLE', 'DROP', 'ALTER', 'AS', 'IN', 'NOT', 'NULL', 'IS', 'LIKE', 'BETWEEN', 'UNION', 'ALL', 'DISTINCT', 'CASE', 'WHEN', 'THEN', 'ELSE', 'END'];
-                formatted = textToFormat;
-                for (const kw of keywords) {
-                    formatted = formatted.replace(new RegExp('\\b' + kw + '\\b', 'gi'), kw);
-                }
-                formatted = formatted
-                    .replace(/\b(SELECT|FROM|WHERE|JOIN|LEFT|RIGHT|INNER|OUTER|GROUP BY|ORDER BY|HAVING|LIMIT|INSERT INTO|VALUES|UPDATE|SET|DELETE|CREATE TABLE|DROP|ALTER|UNION)\b/g, '\n$1')
-                    .replace(/^\n/, '')
-                    .trim();
-            } else {
-                // Unknown type — try Monaco's built-in formatter
-                if (hasSelection) {
-                    editor.trigger('format', 'editor.action.formatSelection', null);
-                } else {
-                    editor.trigger('format', 'editor.action.formatDocument', null);
-                }
-                showSnackbar('Formatted with editor', 'success');
-                return;
-            }
-
-            if (formatted !== textToFormat) {
-                const range = hasSelection ? selection : model.getFullModelRange();
-                editor.executeEdits('format', [{
-                    range: range,
-                    text: formatted,
-                }]);
-                if (!hasSelection && activeNote) {
-                    handleUpdateContent(activeNote.id, formatted);
-                }
-                const typeLabels: Record<string, string> = {
-                    json: 'JSON', xml: 'XML/HTML', css: 'CSS', sql: 'SQL',
-                };
-                showSnackbar(`Formatted as ${typeLabels[detectedType]}${hasSelection ? ' (selection)' : ''}`, 'success');
-            } else {
-                showSnackbar('Already formatted', 'info');
-            }
-        } catch (err) {
-            showSnackbar(`Format error: ${(err as Error).message}`, 'error');
-        }
-    }, [activeNote, handleUpdateContent]);
 
     // Minimap toggle
     const handleToggleMinimap = useCallback(() => setSettings((prev) => ({ ...prev, showMinimap: !prev.showMinimap })), [setSettings]);
@@ -576,22 +201,7 @@ const EditorPage: React.FC = () => {
     const handleZoomIn = useCallback(() => setFontSize(Math.min(fontSize + 2, 40)), [fontSize, setFontSize]);
     const handleZoomOut = useCallback(() => setFontSize(Math.max(fontSize - 2, 8)), [fontSize, setFontSize]);
     const handleZoomReset = useCallback(() => setFontSize(14), [setFontSize]);
-    // Upload settings to Drive whenever they change (debounced 2 s)
-    const settingsUploadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-    useEffect(() => {
-        const token = getAccessToken();
-        if (!token || !rootDriveFolderId) return;
-        if (settingsUploadTimer.current) clearTimeout(settingsUploadTimer.current);
-        settingsUploadTimer.current = setTimeout(() => {
-            uploadSettings(token, rootDriveFolderId, {
-                theme: settings.theme,
-                wordWrap: settings.wordWrap,
-                fontSize: settings.fontSize,
-                sidebarOpen: settings.sidebarOpen,
-            }).catch(() => { /* silent */ });
-        }, 2000);
-        return () => { if (settingsUploadTimer.current) clearTimeout(settingsUploadTimer.current); };
-    }, [settings.theme, settings.wordWrap, settings.fontSize, settings.sidebarOpen, rootDriveFolderId]);
+
 
     // File operations
     const handleNewFile = useCallback(() => handleCreateNote(), [handleCreateNote]);
@@ -669,82 +279,7 @@ const EditorPage: React.FC = () => {
         showSnackbar(`Words: ${words} | Chars: ${chars} | Lines: ${lines} | Paragraphs: ${paragraphs}`, 'info');
     }, [activeNote]);
 
-    // Plugins: Sort Lines
-    const handleSortLines = useCallback(() => {
-        if (!editorRef.current || !activeNote) return;
-        const editor = editorRef.current;
-        const model = editor.getModel();
-        if (!model) return;
 
-        const selection = editor.getSelection();
-        const hasSelection = selection && !selection.isEmpty();
-        const text = hasSelection ? model.getValueInRange(selection) : model.getValue();
-        const sorted = text.split('\n').sort().join('\n');
-
-        const range = hasSelection ? selection : model.getFullModelRange();
-        editor.executeEdits('sort', [{ range, text: sorted }]);
-        if (!hasSelection) handleUpdateContent(activeNote.id, sorted);
-        showSnackbar('Lines sorted', 'success');
-    }, [activeNote, handleUpdateContent]);
-
-    // Plugins: Remove Duplicate Lines
-    const handleRemoveDuplicateLines = useCallback(() => {
-        if (!editorRef.current || !activeNote) return;
-        const editor = editorRef.current;
-        const model = editor.getModel();
-        if (!model) return;
-
-        const text = model.getValue();
-        const unique = [...new Set(text.split('\n'))].join('\n');
-        const range = model.getFullModelRange();
-        editor.executeEdits('dedup', [{ range, text: unique }]);
-        handleUpdateContent(activeNote.id, unique);
-        showSnackbar('Duplicate lines removed', 'success');
-    }, [activeNote, handleUpdateContent]);
-
-    // Plugins: Trim Trailing Whitespace
-    const handleTrimWhitespace = useCallback(() => {
-        if (!editorRef.current || !activeNote) return;
-        const editor = editorRef.current;
-        const model = editor.getModel();
-        if (!model) return;
-
-        const text = model.getValue();
-        const trimmed = text.split('\n').map(line => line.trimEnd()).join('\n');
-        const range = model.getFullModelRange();
-        editor.executeEdits('trim', [{ range, text: trimmed }]);
-        handleUpdateContent(activeNote.id, trimmed);
-        showSnackbar('Trailing whitespace removed', 'success');
-    }, [activeNote, handleUpdateContent]);
-
-    // Plugins: Convert Case
-    const handleUpperCase = useCallback(() => {
-        if (!editorRef.current) return;
-        const editor = editorRef.current;
-        const model = editor.getModel();
-        const selection = editor.getSelection();
-        if (!model || !selection || selection.isEmpty()) {
-            showSnackbar('Select text first', 'info');
-            return;
-        }
-        const text = model.getValueInRange(selection);
-        editor.executeEdits('upper', [{ range: selection, text: text.toUpperCase() }]);
-        showSnackbar('Converted to UPPERCASE', 'success');
-    }, []);
-
-    const handleLowerCase = useCallback(() => {
-        if (!editorRef.current) return;
-        const editor = editorRef.current;
-        const model = editor.getModel();
-        const selection = editor.getSelection();
-        if (!model || !selection || selection.isEmpty()) {
-            showSnackbar('Select text first', 'info');
-            return;
-        }
-        const text = model.getValueInRange(selection);
-        editor.executeEdits('lower', [{ range: selection, text: text.toLowerCase() }]);
-        showSnackbar('Converted to lowercase', 'success');
-    }, []);
 
     // Run: Execute HTML/JS in browser
     const handleRunInBrowser = useCallback(() => {
@@ -804,14 +339,6 @@ const EditorPage: React.FC = () => {
         }
     }, [activeNote, renameNote, setNotes]);
 
-    // Rename dialog
-    const handleRenameOpen = useCallback((noteId: string) => {
-        const note = notes.find((n) => n.id === noteId);
-        if (note) {
-            setRenameDialog({ open: true, noteId, name: note.name });
-        }
-    }, [notes]);
-
     // Keyboard shortcuts
     useKeyboardShortcuts({
         onNewFile: () => handleCreateNote(),
@@ -854,10 +381,8 @@ const EditorPage: React.FC = () => {
                     activeId={settings.activeTabId}
                     wordWrap={settings.wordWrap}
                     activeWorkspaceName={activeWorkspace?.name}
-                    onNewFile={handleNewFile}
                     onFileClick={openTab}
                     onDelete={handleDeleteNote}
-                    onRename={handleRenameOpen}
                     onSaveFile={handleSaveFile}
                     onUndo={handleUndo}
                     onRedo={handleRedo}
@@ -869,7 +394,10 @@ const EditorPage: React.FC = () => {
                     onAbout={() => setAboutOpen(true)}
                     onDownloadFile={handleDownloadFile}
                     onOpenSettingsJson={() => setSettingsDialogOpen(true)}
-                    onManageWorkspaces={isLoggedIn ? () => setCurrentView('workspace-management') : undefined}
+                    onManageWorkspaces={() => {
+                        if (isLoggedIn) setCurrentView('workspace-management');
+                        else showSnackbar('Please log in with Google to use Workspaces', 'info');
+                    }}
                     loading={syncing}
                 >
                     {currentView === 'workspace-management' ? (
@@ -908,12 +436,6 @@ const EditorPage: React.FC = () => {
                 </MobileLayout>
 
                 {/* Dialogs shared with desktop */}
-                <RenameDialog
-                    open={renameDialog.open}
-                    initialName={renameDialog.name}
-                    onRename={(newName: string) => { renameNote(renameDialog.noteId, newName); setRenameDialog({ open: false, noteId: '', name: '' }); }}
-                    onClose={() => setRenameDialog({ open: false, noteId: '', name: '' })}
-                />
                 <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} theme={settings.theme} />
                 <SettingsDialog
                     open={settingsDialogOpen}
@@ -984,13 +506,13 @@ const EditorPage: React.FC = () => {
             )}
             {/* Menu Bar with Clock */}
             <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                background: isDark ? '#3b3b3b' : '#e8e8e8',
-                borderBottom: `1px solid ${isDark ? '#555' : '#bcbcbc'}`,
-                flexShrink: 0,
-                overflowX: 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: p.panel,
+            borderBottom: `1px solid ${p.border}`,
+            flexShrink: 0,
+            overflowX: 'auto',
                 WebkitOverflowScrolling: 'touch',
                 scrollbarWidth: 'none', // Hide scrollbar for a cleaner look
             }}>
@@ -1081,9 +603,10 @@ const EditorPage: React.FC = () => {
                 onThemeToggle={handleThemeToggle}
                 onGoogleLogin={() => googleLogin()}
                 onGoogleLogout={handleLogout}
-                onGuestLogin={!isLoggedIn ? handleGuestLogin : undefined}
-                onDevLogin={import.meta.env.DEV ? handleDevLogin : undefined}
-                onManageWorkspaces={isLoggedIn ? () => setCurrentView('workspace-management') : undefined}
+                onManageWorkspaces={() => {
+                    if (isLoggedIn) setCurrentView('workspace-management');
+                    else showSnackbar('Please log in with Google to use Workspaces', 'info');
+                }}
                 onDownloadFile={handleDownloadFile}
                 onDownloadAllAsZip={handleDownloadAllAsZip}
                 wordWrap={settings.wordWrap}
@@ -1109,8 +632,7 @@ const EditorPage: React.FC = () => {
                     notes={workspaceNotes}
                     activeId={settings.activeTabId}
                     onFileClick={openTab}
-                    onNewFile={handleNewFile}
-                    onRename={handleRenameOpen}
+                    onRename={handleRenameNote}
                     onDelete={handleDeleteNote}
                     theme={settings.theme}
                     visible={settings.sidebarOpen}
@@ -1166,7 +688,6 @@ const EditorPage: React.FC = () => {
                                 onCloseAll={handleCloseAllFiles}
                                 onCloseOthers={handleCloseOthers}
                                 onReorder={reorderTabs}
-                                onRename={handleRenameOpen}
                                 theme={settings.theme}
                             />
 
@@ -1240,9 +761,9 @@ const EditorPage: React.FC = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    height: 24,
-                    background: isDark ? '#202020' : '#f0f0f0',
-                    borderTop: `1px solid ${isDark ? '#555' : '#a0a0a0'}`,
+                    height: 26,
+                    background: p.panelAlt,
+                    borderTop: `1px solid ${p.border}`,
                     padding: '0 8px',
                     fontSize: '12px',
                     fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif",
@@ -1314,17 +835,6 @@ const EditorPage: React.FC = () => {
                 open={aboutOpen}
                 onClose={() => setAboutOpen(false)}
                 theme={settings.theme}
-            />
-
-            {/* Rename Dialog */}
-            <RenameDialog
-                open={renameDialog.open}
-                initialName={renameDialog.name}
-                onClose={() => setRenameDialog({ open: false, noteId: '', name: '' })}
-                onRename={(newName) => {
-                    handleRenameNote(renameDialog.noteId, newName);
-                    setRenameDialog({ open: false, noteId: '', name: '' });
-                }}
             />
 
             {/* Settings Dialog (JSON) */}

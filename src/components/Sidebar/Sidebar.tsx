@@ -6,8 +6,7 @@ interface SidebarProps {
     notes: Note[];
     activeId: string | null;
     onFileClick: (id: string) => void;
-    onNewFile: () => void;
-    onRename: (id: string) => void;
+    onRename: (id: string, newName: string) => void;
     onDelete: (id: string) => void;
     theme: 'light' | 'dark';
     visible: boolean;
@@ -32,12 +31,36 @@ function getFileType(name: string): { ext: string; color: string } {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
-    notes, activeId, onFileClick, onNewFile, onRename, onDelete,
+    notes, activeId, onFileClick, onRename, onDelete,
     theme, visible, isMobile, activeWorkspaceName, loading,
 }) => {
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number; noteId: string } | null>(null);
     const [search, setSearch] = useState('');
     const [hoveredId, setHoveredId] = useState<string | null>(null);
+    
+    // Inline Rename state
+    const [renamingId, setRenamingId] = useState<string | null>(null);
+    const [renameValue, setRenameValue] = useState('');
+    const renameInputRef = React.useRef<HTMLInputElement>(null);
+
+    const startRename = (id: string, currentName: string) => {
+        setRenamingId(id);
+        setRenameValue(currentName);
+        setTimeout(() => renameInputRef.current?.focus(), 0);
+    };
+
+    const commitRename = () => {
+        if (renamingId && renameValue.trim()) {
+            onRename(renamingId, renameValue.trim());
+        }
+        setRenamingId(null);
+    };
+
+    const handleRenameKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') commitRename();
+        if (e.key === 'Escape') setRenamingId(null);
+    };
+
     const p = getPalette(theme);
     const isDark = theme === 'dark';
 
@@ -50,14 +73,11 @@ const Sidebar: React.FC<SidebarProps> = ({
 
     if (!visible) return null;
 
-    const sidebarBg = isDark
-        ? 'linear-gradient(180deg, #1a1d23 0%, #1e2128 100%)'
-        : 'linear-gradient(180deg, #f8f9fc 0%, #f3f5f9 100%)';
-
-    const headerBg = isDark ? '#161820' : '#eef0f6';
+    const sidebarBg = p.bg;
+    const headerBg = p.bg;
     const accentColor = '#ff9900';
-    const searchBg = isDark ? '#252831' : '#ffffff';
-    const searchBorder = isDark ? '#35384a' : '#d8dce8';
+    const searchBg = isDark ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.6)';
+    const searchBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
     const itemActiveBg = isDark ? 'rgba(255,153,0,0.15)' : 'rgba(255,153,0,0.1)';
     const itemHoverBg = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
     const scrollbarColor = isDark ? '#333647' : '#d0d4e0';
@@ -82,9 +102,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                 .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
                 .sidebar-scroll::-webkit-scrollbar-thumb { background: ${scrollbarColor}; border-radius: 10px; }
                 .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: ${accentColor}88; }
-                .sidebar-search:focus { border-color: ${accentColor} !important; box-shadow: 0 0 0 2px ${accentColor}30 !important; }
-                .sidebar-new-btn:hover { background: ${accentColor} !important; color: #fff !important; border-color: ${accentColor} !important; }
+                .sidebar-search { backdrop-filter: blur(8px); }
+                .sidebar-search:focus { border-color: ${accentColor} !important; background: ${isDark ? '#252831' : '#ffffff'} !important; box-shadow: 0 0 0 3px ${accentColor}30, 0 4px 12px rgba(0,0,0,0.05) !important; }
+                .sidebar-new-btn:hover { background: ${accentColor} !important; color: #fff !important; border-color: ${accentColor} !important; transform: scale(1.05); box-shadow: 0 4px 12px ${accentColor}44; }
                 .sidebar-new-btn:hover .sidebar-plus { color: #fff !important; }
+                .sidebar-header { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 10; position: relative; }
             `}</style>
 
             <div
@@ -99,16 +121,17 @@ const Sidebar: React.FC<SidebarProps> = ({
                 }}
             >
                 {/* ── Header ── */}
-                <div style={{
+                <div className="sidebar-header" style={{
                     background: headerBg,
                     borderBottom: `1px solid ${isDark ? '#2a2d38' : '#e2e5ee'}`,
-                    padding: '10px 12px 8px',
+                    padding: '12px 14px 10px',
                     flexShrink: 0,
+                    boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
                 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                             {/* Folder icon */}
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill={accentColor} style={{ flexShrink: 0 }}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill={accentColor} style={{ flexShrink: 0 }}>
                                 <path d="M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8l-2-2z"/>
                             </svg>
                             <span style={{
@@ -132,31 +155,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     padding: '2px 6px', borderRadius: 10,
                                 }}>{notes.length}</span>
                             )}
-                            {/* New file button */}
-                            <button
-                                onClick={onNewFile}
-                                title="New File"
-                                style={{
-                                    background: 'none', border: 'none', cursor: 'pointer',
-                                    width: 24, height: 24, borderRadius: 6,
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    color: isDark ? '#7c84b2' : '#6b739a',
-                                    transition: 'all 0.15s ease',
-                                    padding: 0,
-                                }}
-                                onMouseOver={e => {
-                                    (e.currentTarget as HTMLButtonElement).style.background = isDark ? '#2e3248' : '#e6e8f2';
-                                    (e.currentTarget as HTMLButtonElement).style.color = accentColor;
-                                }}
-                                onMouseOut={e => {
-                                    (e.currentTarget as HTMLButtonElement).style.background = 'none';
-                                    (e.currentTarget as HTMLButtonElement).style.color = isDark ? '#7c84b2' : '#6b739a';
-                                }}
-                            >
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                                </svg>
-                            </button>
                         </div>
                     </div>
 
@@ -176,14 +174,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                             onChange={e => setSearch(e.target.value)}
                             style={{
                                 width: '100%', boxSizing: 'border-box',
-                                padding: '5px 8px 5px 28px',
+                                padding: '6px 8px 6px 28px',
                                 background: searchBg,
                                 border: `1px solid ${searchBorder}`,
-                                borderRadius: 7,
+                                borderRadius: 8,
                                 color: p.text,
-                                fontSize: 12,
+                                fontSize: 13,
                                 outline: 'none',
-                                transition: 'border-color 0.15s, box-shadow 0.15s',
+                                transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
                             }}
                         />
                         {search && (
@@ -268,36 +266,58 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 }}
                             >
                                 {/* File type pill */}
-                                <span style={{
-                                    fontSize: 9, fontWeight: 800, letterSpacing: '0.04em',
-                                    color: iconColor, background: iconColor + '22',
-                                    padding: '2px 5px', borderRadius: 4,
-                                    flexShrink: 0, minWidth: 24, textAlign: 'center',
-                                    textTransform: 'uppercase',
-                                }}>
-                                    {ext.slice(0, 4)}
-                                </span>
+                            <span style={{
+                                fontSize: 8.5, fontWeight: 800, letterSpacing: '0.04em',
+                                color: iconColor, background: iconColor + '22',
+                                padding: '1.5px 4px', borderRadius: 4,
+                                flexShrink: 0, minWidth: 22, textAlign: 'center',
+                                textTransform: 'uppercase',
+                            }}>
+                                {ext.slice(0, 4)}
+                            </span>
 
                                 {/* File name */}
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{
-                                        fontSize: 12.5, fontWeight: isActive ? 600 : 400,
-                                        color: isActive ? (isDark ? '#fff' : '#1a1d2e') : p.text,
-                                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                                        lineHeight: 1.3,
-                                    }}>
-                                        {showExt ? (
-                                            <>
-                                                <span>{baseName}</span>
-                                                <span style={{ color: isDark ? '#4e5472' : '#b0b7cc', fontWeight: 400 }}>
-                                                    .{ext}
-                                                </span>
-                                            </>
-                                        ) : note.name}
-                                    </div>
-                                    <div style={{ fontSize: 10, color: isDark ? '#3e4260' : '#c0c5d8', marginTop: 1 }}>
-                                        {formatTime(note.lastModified)}
-                                    </div>
+                                <div style={{ flex: 1, minWidth: 0 }} onDoubleClick={() => startRename(note.id, note.name)}>
+                                    {renamingId === note.id ? (
+                                        <input
+                                            ref={renameInputRef}
+                                            type="text"
+                                            value={renameValue}
+                                            onChange={e => setRenameValue(e.target.value)}
+                                            onBlur={commitRename}
+                                            onKeyDown={handleRenameKeyDown}
+                                            onClick={e => e.stopPropagation()}
+                                            style={{
+                                                width: '100%', boxSizing: 'border-box',
+                                                padding: '2px 4px', fontSize: 12.5,
+                                                background: isDark ? '#1a1d2e' : '#ffffff',
+                                                border: `1px solid ${accentColor}`,
+                                                borderRadius: 4, outline: 'none',
+                                                color: isDark ? '#fff' : '#000',
+                                            }}
+                                        />
+                                    ) : (
+                                        <>
+                                            <div style={{
+                                                fontSize: 12.5, fontWeight: isActive ? 600 : 400,
+                                                color: isActive ? (isDark ? '#fff' : '#1a1d2e') : p.text,
+                                                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                                                lineHeight: 1.3,
+                                            }}>
+                                                {showExt ? (
+                                                    <>
+                                                        <span>{baseName}</span>
+                                                        <span style={{ color: isDark ? '#4e5472' : '#b0b7cc', fontWeight: 400 }}>
+                                                            .{ext}
+                                                        </span>
+                                                    </>
+                                                ) : note.name}
+                                            </div>
+                                            <div style={{ fontSize: 10, color: isDark ? '#3e4260' : '#c0c5d8', marginTop: 1 }}>
+                                                {formatTime(note.lastModified)}
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
 
                                 {/* Hover action buttons */}
@@ -305,7 +325,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}
                                         onClick={e => e.stopPropagation()}>
                                         <button
-                                            onClick={() => onRename(note.id)}
+                                            onClick={() => startRename(note.id, note.name)}
                                             title="Rename"
                                             style={{
                                                 background: 'none', border: 'none', cursor: 'pointer',
@@ -359,35 +379,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                         );
                     })}
                 </div>
-
-                {/* ── Footer ── */}
-                <div style={{
-                    padding: '8px 10px',
-                    borderTop: `1px solid ${isDark ? '#2a2d38' : '#e2e5ee'}`,
-                    background: headerBg,
-                    flexShrink: 0,
-                }}>
-                    <button
-                        className="sidebar-new-btn"
-                        onClick={onNewFile}
-                        style={{
-                            width: '100%', padding: '7px 12px',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                            background: isDark ? '#23263a' : '#ededf5',
-                            border: `1px solid ${isDark ? '#2e3248' : '#d8dce8'}`,
-                            borderRadius: 7, cursor: 'pointer',
-                            color: isDark ? '#7c84b2' : '#6b739a',
-                            fontSize: 12, fontWeight: 600,
-                            transition: 'all 0.18s ease',
-                        }}
-                    >
-                        <svg className="sidebar-plus" width="12" height="12" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" strokeWidth="2.8" strokeLinecap="round">
-                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                        </svg>
-                        New File
-                    </button>
-                </div>
             </div>
 
             {/* ── Right-click Context Menu ── */}
@@ -410,7 +401,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                     }}>
                         {[
                             { label: 'Open', icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>, action: () => { onFileClick(contextMenu.noteId); setContextMenu(null); } },
-                            { label: 'Rename', icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>, action: () => { onRename(contextMenu.noteId); setContextMenu(null); } },
+                            { label: 'Rename', icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>, action: () => { 
+                                const n = notes.find(x => x.id === contextMenu.noteId);
+                                if (n) startRename(n.id, n.name); 
+                                setContextMenu(null); 
+                            } },
                         ].map(({ label, icon, action }) => (
                             <div
                                 key={label}

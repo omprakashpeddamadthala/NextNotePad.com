@@ -79,12 +79,10 @@ const ToolbarSeparator = ({ theme }: { theme: 'light' | 'dark' }) => {
     return (
         <div
             style={{
-                width: 2,
-                height: 22,
-                background: 'transparent',
-                borderLeft: `1px solid ${p.border}`,
-                borderRight: `1px solid ${theme === 'dark' ? '#333' : '#ffffff'}`,
-                margin: '0 3px',
+                width: 1,
+                height: 24,
+                background: p.border,
+                margin: '0 6px',
                 flexShrink: 0,
             }}
         />
@@ -111,27 +109,32 @@ const TBtn: React.FC<TBtnProps> = ({ icon, tooltip, onClick, active, theme, disa
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    width: 24,
-                    height: 24,
-                    border: active ? `1px solid ${p.border}` : '1px solid transparent',
-                    borderRadius: 0,
-                    background: active ? p.active : 'transparent',
+                    width: 32,
+                    height: 32,
+                    border: active ? `1px solid ${p.accent}66` : '1px solid transparent',
+                    borderRadius: 8,
+                    background: active ? `${p.accent}22` : 'transparent',
                     cursor: disabled ? 'default' : 'pointer',
-                    color: disabled ? p.textMute : p.text,
+                    color: active ? p.accentHover : (disabled ? p.textMute : p.textDim),
                     padding: 0,
+                    margin: '0 1px',
                     flexShrink: 0,
                     opacity: disabled ? 0.5 : 1,
+                    transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                    transform: 'scale(1)',
                 }}
                 onMouseOver={(e) => {
                     if (!disabled && !active) {
                         (e.currentTarget as HTMLElement).style.background = p.hover;
-                        (e.currentTarget as HTMLElement).style.border = `1px solid ${p.border}`;
+                        (e.currentTarget as HTMLElement).style.color = p.text;
+                        (e.currentTarget as HTMLElement).style.transform = 'scale(1.05)';
                     }
                 }}
                 onMouseOut={(e) => {
                     if (!active) {
                         (e.currentTarget as HTMLElement).style.background = 'transparent';
-                        (e.currentTarget as HTMLElement).style.border = '1px solid transparent';
+                        (e.currentTarget as HTMLElement).style.color = p.textDim;
+                        (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
                     }
                 }}
             >
@@ -169,10 +172,10 @@ const NppToolbar: React.FC<NppToolbarProps> = ({
         <div
             className="npp-toolbar"
             style={{
-                display: 'flex', alignItems: 'center', height: 32,
-                background: p.panel,
+                display: 'flex', alignItems: 'center', height: 44,
+                background: `linear-gradient(180deg, ${p.panelAlt} 0%, ${p.panel} 100%)`,
                 borderBottom: `1px solid ${p.border}`,
-                padding: '0 6px', gap: 1, userSelect: 'none',
+                padding: '0 12px', gap: 2, userSelect: 'none',
                 overflowX: 'auto', flexShrink: 0,
                 WebkitOverflowScrolling: 'touch', scrollbarWidth: 'thin',
             }}

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import {
     Drawer, IconButton, List, ListItem, ListItemIcon, ListItemText,
-    Divider, Box, Typography, Fab
+    Divider, Box, Typography
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
-import AddIcon from '@mui/icons-material/Add';
+
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import FolderSpecialIcon from '@mui/icons-material/FolderSpecial';
 import SaveIcon from '@mui/icons-material/Save';
@@ -62,10 +62,8 @@ export interface MobileLayoutProps {
     activeId: string | null;
     wordWrap: boolean;
     activeWorkspaceName?: string;
-    onNewFile: () => void;
     onFileClick: (id: string) => void;
     onDelete: (id: string) => void;
-    onRename: (id: string) => void;
     onSaveFile: () => void;
     onUndo: () => void;
     onRedo: () => void;
@@ -84,7 +82,7 @@ export interface MobileLayoutProps {
 
 const MobileLayout: React.FC<MobileLayoutProps> = ({
     theme, notes, activeNote, activeId, wordWrap, activeWorkspaceName, loading,
-    onNewFile, onFileClick, onDelete, onRename, onSaveFile,
+    onFileClick, onDelete, onSaveFile,
     onUndo, onRedo, onFind, onReplace, onSyncDrive, onThemeToggle,
     onToggleWordWrap, onAbout, onDownloadFile, onOpenSettingsJson, onManageWorkspaces,
     children
@@ -96,8 +94,7 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
     const close = (fn: () => void) => () => { fn(); setDrawerOpen(false); };
 
     const menuActions: MobileMenuAction[] = [
-        ...(onManageWorkspaces ? [{ icon: <FolderSpecialIcon />, label: 'Manage Workspaces', action: close(onManageWorkspaces), divider: false }] : []),
-        { icon: <AddIcon />, label: 'New File', action: close(onNewFile), divider: !!onManageWorkspaces },
+        ...(onManageWorkspaces ? [{ icon: <FolderSpecialIcon />, label: 'Manage Workspaces', action: close(onManageWorkspaces), divider: true }] : []),
         { icon: <SaveIcon />, label: 'Save', action: close(onSaveFile) },
         { icon: <DownloadIcon />, label: 'Download File', action: close(onDownloadFile), divider: true },
         { icon: <UndoIcon />, label: 'Undo', action: close(onUndo) },
@@ -140,16 +137,6 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
             <Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
                 {children}
             </Box>
-
-            {/* ── FAB: New File ── */}
-            <Fab
-                size="medium"
-                color="primary"
-                onClick={onNewFile}
-                sx={{ position: 'absolute', bottom: 20, right: 20, zIndex: 5 }}
-            >
-                <AddIcon />
-            </Fab>
 
             {/* ── Hamburger Drawer ── */}
             <Drawer
@@ -216,9 +203,7 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
                     <Typography variant="subtitle1" sx={{ flex: 1, fontWeight: 700, color: textColor }}>
                         Files
                     </Typography>
-                    <IconButton size="small" onClick={onNewFile} sx={{ color: isDark ? '#9cdcfe' : '#0078d4', mr: 0.5 }}>
-                        <AddIcon fontSize="small" />
-                    </IconButton>
+
                     <IconButton size="small" onClick={() => setFileListOpen(false)} sx={{ color: textColor }}>
                         <CloseIcon fontSize="small" />
                     </IconButton>
@@ -262,12 +247,6 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
                                 }}
                                 secondaryAction={
                                     <Box sx={{ display: 'flex', gap: 0.5 }}>
-                                        <IconButton edge="end" size="small"
-                                            onClick={(e) => { e.stopPropagation(); onRename(note.id); setFileListOpen(false); }}
-                                            sx={{ color: isDark ? '#888' : '#666' }}
-                                        >
-                                            <DescriptionIcon fontSize="small" />
-                                        </IconButton>
                                         <IconButton edge="end" size="small"
                                             onClick={(e) => { e.stopPropagation(); onDelete(note.id); }}
                                             sx={{ color: '#e53935' }}

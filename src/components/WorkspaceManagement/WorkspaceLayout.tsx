@@ -5,6 +5,7 @@ import {
     ViewList as ListIcon,
     Search as SearchIcon,
     Cloud as CloudIcon,
+    SortByAlpha as SortIcon,
 } from '@mui/icons-material';
 import FolderGrid from './FolderGrid';
 import type { ThemePalette } from '../../theme/colors';
@@ -26,17 +27,33 @@ const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({
     workspaces, activeWorkspaceId, notes, palette, loading,
     onSelect, onCreate, onRename, onDelete,
 }) => {
-    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
+        return (localStorage.getItem('npp_workspace_view') as 'grid'|'list') || 'grid';
+    });
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
     const [page, setPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState('');
+
+    const handleViewModeChange = (mode: 'grid' | 'list') => {
+        setViewMode(mode);
+        localStorage.setItem('npp_workspace_view', mode);
+    };
 
     const ITEMS_PER_PAGE = viewMode === 'grid' ? 15 : 10;
 
     const filteredWorkspaces = useMemo(() => {
+        let result = workspaces;
         const query = searchQuery.toLowerCase().trim();
-        if (!query) return workspaces;
-        return workspaces.filter(w => w.name.toLowerCase().includes(query));
-    }, [workspaces, searchQuery]);
+        if (query) {
+            result = result.filter(w => w.name.toLowerCase().includes(query));
+        }
+        // Create duplicate before sorting since sort mutates
+        return [...result].sort((a, b) => {
+            return sortOrder === 'asc' 
+                ? a.name.localeCompare(b.name) 
+                : b.name.localeCompare(a.name);
+        });
+    }, [workspaces, searchQuery, sortOrder]);
 
     const totalPages = Math.ceil(filteredWorkspaces.length / ITEMS_PER_PAGE) || 1;
 
@@ -108,14 +125,29 @@ const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({
                                 />
                             </div>
 
-                            <div style={{ width: 1, height: 24, background: palette.border }} />
+                            {/* Sort Toggle */}
+                            <Tooltip title={`Sort ${sortOrder === 'asc' ? 'Z-A' : 'A-Z'}`}>
+                                <IconButton
+                                    size="small"
+                                    onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                                    sx={{
+                                        color: palette.textDim,
+                                        background: palette.panel,
+                                        border: `1px solid ${palette.border}`,
+                                        borderRadius: 2,
+                                        mr: 2,
+                                        '&:hover': { background: palette.hover, color: palette.text }
+                                    }}
+                                >
+                                    <SortIcon fontSize="small" sx={{ transform: sortOrder === 'desc' ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s ease' }} />
+                                </IconButton>
+                            </Tooltip>
 
-                            {/* View Toggle */}
                             <div style={{ display: 'flex', background: palette.panel, borderRadius: 6, padding: 2, border: `1px solid ${palette.border}` }}>
                                 <Tooltip title="Grid View">
                                     <IconButton
                                         size="small"
-                                        onClick={() => setViewMode('grid')}
+                                        onClick={() => handleViewModeChange('grid')}
                                         sx={{
                                             color: viewMode === 'grid' ? palette.accent : palette.textDim,
                                             background: viewMode === 'grid' ? palette.panelAlt : 'transparent',
@@ -228,7 +260,7 @@ const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({
                         />
                         </div>
                     )}
-                    
+
                     {/* Pagination */}
                     {!loading && totalPages > 1 && (
                         <div style={{ display: 'flex', justifyContent: 'center', marginTop: 32, paddingTop: 16, borderTop: `1px solid ${palette.border}` }}>

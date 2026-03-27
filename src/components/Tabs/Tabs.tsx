@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useState } from 'react';
-import { Menu, MenuItem, ListItemText, Typography, Divider } from '@mui/material';
+import { Menu, MenuItem, ListItemText, Typography } from '@mui/material';
 import type { Note } from '../../types/Note';
 import { getPalette } from '../../theme/colors';
 
@@ -12,7 +12,6 @@ interface TabsProps {
     onCloseAll: () => void;
     onCloseOthers: (id: string) => void;
     onReorder: (fromIndex: number, toIndex: number) => void;
-    onRename: (id: string) => void;
     theme: 'light' | 'dark';
 }
 
@@ -42,7 +41,7 @@ function getFileIconColor(name: string): string {
 const TabsComponent: React.FC<TabsProps> = ({
     tabs, activeId, dirtyIds,
     onTabClick, onTabClose, onCloseAll, onCloseOthers,
-    onReorder, onRename, theme,
+    onReorder, theme,
 }) => {
     const dragItemRef = useRef<number | null>(null);
     const dragOverRef = useRef<number | null>(null);
@@ -95,11 +94,13 @@ const TabsComponent: React.FC<TabsProps> = ({
                 ref={scrollRef}
                 style={{
                     display: 'flex',
-                    alignItems: 'flex-end',
+                    alignItems: 'center',
                     overflowX: 'auto',
                     overflowY: 'hidden',
                     background: palette.panel,
-                    minHeight: 26,
+                    minHeight: 36,
+                    padding: '6px 12px',
+                    gap: 6,
                     borderBottom: `1px solid ${palette.border}`,
                     flexShrink: 0,
                     scrollbarWidth: 'thin',
@@ -122,35 +123,35 @@ const TabsComponent: React.FC<TabsProps> = ({
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: 5,
-                                padding: '4px 10px',
-                                paddingRight: 6,
+                                gap: 6,
+                                padding: '6px 14px',
                                 cursor: 'default',
                                 userSelect: 'none',
                                 flexShrink: 0,
-                                height: isActive ? 27 : 24,
-                                fontSize: '12px',
+                                height: 28,
+                                borderRadius: 16,
+                                fontSize: '13px',
+                                fontWeight: isActive ? 600 : 500,
                                 fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif",
-                                background: isActive ? palette.bg : palette.panelAlt,
+                                background: isActive ? palette.bg : 'transparent',
                                 color: isActive ? palette.text : palette.textDim,
-                                borderTop: isActive ? `3px solid ${palette.tabActiveBorder}` : '3px solid transparent',
-                                borderLeft: `1px solid ${palette.border}`,
-                                borderRight: `1px solid ${palette.border}`,
-                                borderBottom: isActive ? '1px solid transparent' : `1px solid ${palette.border}`,
-                                marginBottom: isActive ? -1 : 0,
+                                border: `1px solid ${isActive ? palette.border : 'transparent'}`,
                                 position: 'relative',
                                 zIndex: isActive ? 2 : 1,
-                                animation: 'tab-slide-in 0.18s ease both',
-                                transition: 'background 0.12s, color 0.12s, height 0.12s',
+                                boxShadow: isActive ? `0 2px 8px rgba(0,0,0,0.06)` : 'none',
+                                animation: 'tab-slide-in 0.2s cubic-bezier(0.16,1,0.3,1) both',
+                                transition: 'background 0.2s, color 0.2s, box-shadow 0.2s, border-color 0.2s',
                             }}
                             onMouseOver={(e) => {
                                 if (!isActive) {
-                                    (e.currentTarget as HTMLElement).style.background = palette.hover;
+                                    (e.currentTarget as HTMLElement).style.background = `${palette.hover}88`;
+                                    (e.currentTarget as HTMLElement).style.color = palette.text;
                                 }
                             }}
                             onMouseOut={(e) => {
                                 if (!isActive) {
-                                    (e.currentTarget as HTMLElement).style.background = palette.panelAlt;
+                                    (e.currentTarget as HTMLElement).style.background = 'transparent';
+                                    (e.currentTarget as HTMLElement).style.color = palette.textDim;
                                 }
                             }}
                         >
@@ -161,7 +162,7 @@ const TabsComponent: React.FC<TabsProps> = ({
                             }} />
 
                             {/* Tab name */}
-                            <span style={{ whiteSpace: 'nowrap' }}>{tab.name}</span>
+                            <span style={{ whiteSpace: 'nowrap', letterSpacing: 0.2 }}>{tab.name}</span>
 
                             {/* Modified indicator */}
                             {isDirty && (
@@ -179,19 +180,20 @@ const TabsComponent: React.FC<TabsProps> = ({
                                 }}
                                 style={{
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    width: 16, height: 16, border: 'none', borderRadius: 2,
+                                    width: 18, height: 18, border: 'none', borderRadius: '50%',
                                     background: 'transparent', cursor: 'pointer',
                                     fontSize: '14px', lineHeight: 1,
-                                    color: palette.textMute,
-                                    padding: 0, flexShrink: 0,
+                                    color: isActive ? palette.textDim : palette.textMute,
+                                    padding: 0, flexShrink: 0, marginLeft: 2,
+                                    transition: 'background 0.15s, color 0.15s',
                                 }}
                                 onMouseOver={(e) => {
-                                    (e.currentTarget as HTMLElement).style.background = palette.hover;
-                                    (e.currentTarget as HTMLElement).style.color = palette.text;
+                                    (e.currentTarget as HTMLElement).style.background = `${palette.danger}15`;
+                                    (e.currentTarget as HTMLElement).style.color = palette.danger;
                                 }}
                                 onMouseOut={(e) => {
                                     (e.currentTarget as HTMLElement).style.background = 'transparent';
-                                    (e.currentTarget as HTMLElement).style.color = palette.textMute;
+                                    (e.currentTarget as HTMLElement).style.color = isActive ? palette.textDim : palette.textMute;
                                 }}
                             >
                                 ×
@@ -211,7 +213,7 @@ const TabsComponent: React.FC<TabsProps> = ({
                         ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
                         : undefined
                 }
-                sx={{ '& .MuiPaper-root': { minWidth: 180, borderRadius: '2px' } }}
+                sx={{ '& .MuiPaper-root': { minWidth: 180, borderRadius: 2 } }}
             >
                 <MenuItem sx={{ fontSize: '13px', minHeight: 28 }} onClick={() => {
                     if (contextMenu) onTabClose(contextMenu.tabId);
@@ -230,13 +232,6 @@ const TabsComponent: React.FC<TabsProps> = ({
                     handleContextClose();
                 }}>
                     <ListItemText><Typography sx={{ fontSize: '13px' }}>Close All</Typography></ListItemText>
-                </MenuItem>
-                <Divider />
-                <MenuItem sx={{ fontSize: '13px', minHeight: 28 }} onClick={() => {
-                    if (contextMenu) onRename(contextMenu.tabId);
-                    handleContextClose();
-                }}>
-                    <ListItemText><Typography sx={{ fontSize: '13px' }}>Rename</Typography></ListItemText>
                 </MenuItem>
             </Menu>
         </>

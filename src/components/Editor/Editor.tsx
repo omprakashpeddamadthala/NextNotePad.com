@@ -92,11 +92,35 @@ const EditorComponent: React.FC<EditorProps> = ({
                     color: '#c0c0c0',
                 }}
             >
-                <div style={{ fontSize: 28, fontWeight: 300, marginBottom: 8, whiteSpace: 'nowrap' }}>
-                    No file is open
+                <div style={{ fontSize: 28, fontWeight: 300, marginBottom: 8, color: p.text }}>
+                    NextNotePad.com
                 </div>
-                <div style={{ fontSize: 14, whiteSpace: 'nowrap' }}>
-                    Ctrl+N to create a new file, or click the Document List
+                <div style={{ fontSize: 14, color: p.textDim, marginBottom: 32 }}>
+                    A modern, cloud-synced code and text editor
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(250px, 1fr) minmax(260px, 1fr)', gap: 24, maxWidth: 640 }}>
+                    <div style={{ background: p.panel, padding: 20, borderRadius: 8, border: `1px solid ${p.border}` }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: p.accent, marginBottom: 16, textTransform: 'uppercase', letterSpacing: 0.5 }}>Core Features</div>
+                        <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: p.textMute, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            <li><span style={{color: p.text, fontWeight: 500}}>Cloud Sync:</span> Google Drive auto-save</li>
+                            <li><span style={{color: p.text, fontWeight: 500}}>Workspaces:</span> Organize files visually</li>
+                            <li><span style={{color: p.text, fontWeight: 500}}>Smart Formatter:</span> JSON, XML, CSS, SQL</li>
+                            <li><span style={{color: p.text, fontWeight: 500}}>Text Tools:</span> Sort lines, dedup, change case</li>
+                            <li><span style={{color: p.text, fontWeight: 500}}>Diff Viewer:</span> Side-by-side comparison</li>
+                        </ul>
+                    </div>
+
+                    <div style={{ background: p.panel, padding: 20, borderRadius: 8, border: `1px solid ${p.border}` }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: p.accent, marginBottom: 16, textTransform: 'uppercase', letterSpacing: 0.5 }}>Keyboard Shortcuts</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13, color: p.textMute }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><span>New File</span> <kbd style={{ background: p.active, padding: '2px 6px', borderRadius: 4, color: p.text, border: `1px solid ${p.border}`, fontFamily: 'monospace' }}>Ctrl+N</kbd></div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><span>Open File</span> <kbd style={{ background: p.active, padding: '2px 6px', borderRadius: 4, color: p.text, border: `1px solid ${p.border}`, fontFamily: 'monospace' }}>Ctrl+O</kbd></div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><span>Save File</span> <kbd style={{ background: p.active, padding: '2px 6px', borderRadius: 4, color: p.text, border: `1px solid ${p.border}`, fontFamily: 'monospace' }}>Ctrl+S</kbd></div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><span>Find / Replace</span> <kbd style={{ background: p.active, padding: '2px 6px', borderRadius: 4, color: p.text, border: `1px solid ${p.border}`, fontFamily: 'monospace' }}>Ctrl+F / H</kbd></div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><span>Command Palette</span> <kbd style={{ background: p.active, padding: '2px 6px', borderRadius: 4, color: p.text, border: `1px solid ${p.border}`, fontFamily: 'monospace' }}>F1</kbd></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         );
