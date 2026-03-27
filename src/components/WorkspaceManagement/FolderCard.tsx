@@ -65,22 +65,24 @@ const FolderCard: React.FC<FolderCardProps> = ({
                 display: 'flex',
                 flexDirection: viewMode === 'list' ? 'row' : 'column',
                 alignItems: 'center',
-                gap: viewMode === 'list' ? 16 : 8,
-                padding: viewMode === 'list' ? '12px 16px' : '20px 16px 14px',
-                background: isActive ? palette.active : palette.panel,
+                gap: viewMode === 'list' ? 16 : 10,
+                padding: viewMode === 'list' ? '12px 16px' : '24px 20px 18px',
+                background: isActive 
+                    ? `linear-gradient(145deg, ${palette.active}, ${palette.active}dd)` 
+                    : (hovered ? `linear-gradient(145deg, ${palette.panelAlt}, ${palette.panel})` : palette.panel),
                 border: `2px solid ${isActive ? palette.accent : (hovered ? palette.accentHover : palette.border)}`,
-                borderRadius: 10,
+                borderRadius: 16, // Smoother squircle look
                 cursor: renaming ? 'default' : 'pointer',
                 position: 'relative',
                 minWidth: 0,
-                height: viewMode === 'list' ? 64 : 'auto',
-                animation: 'fc-rise 0.25s ease both',
-                transform: hovered && !renaming && viewMode === 'grid' ? 'translateY(-4px) scale(1.02)' : 'translateY(0) scale(1)',
+                height: viewMode === 'list' ? 68 : 'auto',
+                animation: 'fc-rise 0.4s cubic-bezier(0.16, 1, 0.3, 1) both',
+                transform: hovered && !renaming && viewMode === 'grid' ? 'translateY(-6px) scale(1.02)' : 'translateY(0) scale(1)',
                 boxShadow: hovered && !renaming
-                    ? `0 8px 24px rgba(0,0,0,0.22), 0 0 0 1px ${palette.accent}44`
-                    : isActive ? `0 2px 10px rgba(0,0,0,0.15)` : 'none',
-                transition: 'transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease, border-color 0.15s, background 0.15s',
-                willChange: 'transform',
+                    ? `0 14px 32px rgba(0,0,0,0.18), 0 4px 12px rgba(0,0,0,0.08), 0 0 0 1px ${palette.accent}22`
+                    : isActive ? `0 4px 16px rgba(0,0,0,0.1)` : '0 2px 8px rgba(0,0,0,0.04)',
+                transition: 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s ease, border-color 0.2s, background 0.2s',
+                willChange: 'transform, box-shadow',
             }}
         >
             {/* Drive sync indicator (grid mode only) */}
@@ -96,11 +98,14 @@ const FolderCard: React.FC<FolderCardProps> = ({
             {/* Active badge (grid mode only) */}
             {isActive && viewMode === 'grid' && (
                 <div style={{
-                    position: 'absolute', top: 6, left: 6,
-                    fontSize: 9, fontWeight: 700,
+                    position: 'absolute', top: 12, left: 12,
+                    fontSize: 9, fontWeight: 800,
                     color: palette.accent,
                     textTransform: 'uppercase',
-                    letterSpacing: 0.5,
+                    letterSpacing: 0.8,
+                    background: palette.accent + '15',
+                    padding: '3px 8px',
+                    borderRadius: 12,
                 }}>
                     Active
                 </div>
@@ -108,11 +113,12 @@ const FolderCard: React.FC<FolderCardProps> = ({
 
             {/* Folder icon */}
             <FolderIcon sx={{
-                fontSize: viewMode === 'list' ? 32 : 48,
-                color: isActive ? palette.accent : (hovered ? palette.accentHover : palette.textDim),
-                transition: 'color 0.2s, transform 0.2s',
-                transform: hovered && !renaming && viewMode === 'grid' ? 'scale(1.12)' : 'scale(1)',
+                fontSize: viewMode === 'list' ? 32 : 54,
+                color: isActive ? palette.accent : (hovered ? palette.accentHover : palette.textMute),
+                transition: 'color 0.3s ease, transform 0.3s cubic-bezier(0.34,1.56,0.64,1)',
+                transform: hovered && !renaming && viewMode === 'grid' ? 'scale(1.15) translateY(-2px)' : 'scale(1) translateY(0)',
                 flexShrink: 0,
+                filter: hovered && !renaming && viewMode === 'grid' ? `drop-shadow(0 4px 8px ${palette.accent}44)` : 'none',
             }} />
 
             {/* Content area for List view (Name + Badges) */}
@@ -157,14 +163,15 @@ const FolderCard: React.FC<FolderCardProps> = ({
                     </div>
                 ) : (
                     <div style={{
-                        fontSize: 13, fontWeight: 600,
-                        color: palette.text,
+                        fontSize: 14, fontWeight: 600,
+                        color: isActive ? palette.accent : palette.text,
                         textAlign: viewMode === 'list' ? 'left' : 'center',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
                         maxWidth: '100%',
                         flex: viewMode === 'list' ? 1 : 'unset',
+                        letterSpacing: 0.2,
                     }} title={workspace.name}>
                         {workspace.name}
                     </div>
@@ -172,10 +179,13 @@ const FolderCard: React.FC<FolderCardProps> = ({
 
                 {/* File count */}
                 <div style={{
-                    fontSize: 11, color: palette.textDim,
+                    fontSize: 11, fontWeight: 500, color: palette.textDim,
+                    background: palette.bg,
+                    padding: '3px 8px', borderRadius: 12,
                     width: viewMode === 'list' ? 80 : 'auto',
-                    textAlign: viewMode === 'list' ? 'right' : 'center',
+                    textAlign: 'center',
                     flexShrink: 0,
+                    border: `1px solid ${palette.border}`,
                 }}>
                     {fileCount} {fileCount === 1 ? 'file' : 'files'}
                 </div>
@@ -201,19 +211,29 @@ const FolderCard: React.FC<FolderCardProps> = ({
 
             {/* Action buttons */}
             {!renaming && (
-                <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                <div style={{ display: 'flex', gap: 6, flexShrink: 0, opacity: viewMode === 'grid' && !hovered ? 0.6 : 1, transition: 'opacity 0.2s' }}>
                     <Tooltip title="Rename">
                         <IconButton size="small" onClick={startRename}
-                            sx={{ color: palette.textDim, p: 0.5, '&:hover': { color: palette.text } }}>
-                            <EditIcon sx={{ fontSize: 14 }} />
+                            sx={{
+                                color: palette.textDim,
+                                p: 0.6,
+                                background: palette.bg + '88',
+                                '&:hover': { color: palette.text, background: palette.hover }
+                            }}>
+                            <EditIcon sx={{ fontSize: 16 }} />
                         </IconButton>
                     </Tooltip>
                     <Tooltip title={canDelete ? 'Delete Workspace' : 'Cannot delete last workspace'}>
                         <span>
                             <IconButton size="small" onClick={handleDelete}
                                 disabled={!canDelete}
-                                sx={{ color: palette.textDim, p: 0.5, '&:hover': { color: palette.danger } }}>
-                                <DeleteIcon sx={{ fontSize: 14 }} />
+                                sx={{
+                                    color: palette.textDim,
+                                    p: 0.6,
+                                    background: palette.bg + '88',
+                                    '&:hover': { color: palette.danger, background: palette.danger + '15' }
+                                }}>
+                                <DeleteIcon sx={{ fontSize: 16 }} />
                             </IconButton>
                         </span>
                     </Tooltip>

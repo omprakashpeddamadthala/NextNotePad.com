@@ -4,6 +4,7 @@ import {
     GridView as GridIcon,
     ViewList as ListIcon,
     Search as SearchIcon,
+    Cloud as CloudIcon,
 } from '@mui/icons-material';
 import FolderGrid from './FolderGrid';
 import type { ThemePalette } from '../../theme/colors';
@@ -69,18 +70,23 @@ const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({
                 {/* Main content area */}
                 <div style={{
                     flex: 1, overflow: 'auto',
-                    padding: '24px 32px',
                     display: 'flex', flexDirection: 'column',
                 }}>
+                    {/* Header Section */}
                     <div style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        marginBottom: 24, paddingBottom: 16, borderBottom: `1px solid ${palette.border}`,
+                        padding: '32px 32px 24px',
+                        background: `linear-gradient(180deg, ${palette.active}88 0%, transparent 100%)`,
+                        borderBottom: `1px solid ${palette.border}`,
                     }}>
+                        <div style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            maxWidth: 1200, margin: '0 auto', width: '100%',
+                        }}>
                         <div>
-                            <div style={{ fontSize: 20, fontWeight: 600, color: palette.text }}>
-                                Workspaces <span style={{ fontSize: 13, color: palette.textDim, fontWeight: 400, marginLeft: 8 }}>({filteredWorkspaces.length})</span>
+                            <div style={{ fontSize: 24, fontWeight: 700, color: palette.text, letterSpacing: -0.5 }}>
+                                Workspaces <span style={{ fontSize: 14, color: palette.textDim, fontWeight: 500, marginLeft: 8 }}>({filteredWorkspaces.length})</span>
                             </div>
-                            <div style={{ fontSize: 13, color: palette.textDim, marginTop: 4 }}>
+                            <div style={{ fontSize: 13, color: palette.textDim, marginTop: 6, fontWeight: 500 }}>
                                 Organize your projects and switch contexts quickly
                             </div>
                         </div>
@@ -135,9 +141,13 @@ const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({
                             </div>
                         </div>
                     </div>
+                    </div>
 
                     {/* Content */}
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ 
+                        flex: 1, display: 'flex', flexDirection: 'column', 
+                        padding: '24px 32px', maxWidth: 1264, margin: '0 auto', width: '100%' 
+                    }}>
 
                     {/* Loading state */}
                     {loading ? (
@@ -149,19 +159,32 @@ const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({
                             <style>{`
                                 @keyframes ws-spin { to { transform: rotate(360deg); } }
                                 @keyframes ws-pulse { 0%,80%,100%{transform:scale(0);opacity:.3} 40%{transform:scale(1);opacity:1} }
+                                @keyframes ws-glow { 0%,100%{box-shadow: 0 0 20px ${palette.accent}22} 50%{box-shadow: 0 0 40px ${palette.accent}44} }
                             `}</style>
                             {/* Spinner ring */}
                             <div style={{
-                                width: 52, height: 52, borderRadius: '50%',
-                                border: `4px solid ${palette.active}`,
-                                borderTopColor: palette.accent,
-                                animation: 'ws-spin 0.9s linear infinite',
-                            }} />
-                            <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: 16, fontWeight: 600, color: palette.text, marginBottom: 6 }}>
-                                    Syncing from Google Drive
+                                position: 'relative',
+                                width: 64, height: 64,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                borderRadius: '50%',
+                                background: palette.panel,
+                                animation: 'ws-glow 2s ease-in-out infinite',
+                                border: `1px solid ${palette.accent}33`,
+                            }}>
+                                <div style={{
+                                    position: 'absolute', inset: -4, borderRadius: '50%',
+                                    border: `3px solid transparent`,
+                                    borderTopColor: palette.accent,
+                                    borderRightColor: palette.accentHover,
+                                    animation: 'ws-spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite',
+                                }} />
+                                <CloudIcon sx={{ fontSize: 28, color: palette.accent }} />
+                            </div>
+                            <div style={{ textAlign: 'center', marginTop: 8 }}>
+                                <div style={{ fontSize: 18, fontWeight: 700, color: palette.text, marginBottom: 8, letterSpacing: -0.2 }}>
+                                    Syncing Workspace
                                 </div>
-                                <div style={{ fontSize: 13, color: palette.textDim, lineHeight: 1.6 }}>
+                                <div style={{ fontSize: 14, color: palette.textDim, lineHeight: 1.6, fontWeight: 500 }}>
                                     Loading your folders and files…<br/>
                                     <span style={{ fontSize: 12, color: palette.textMute }}>
                                         This only takes a moment
@@ -169,11 +192,11 @@ const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({
                                 </div>
                                 {/* Dot pulse */}
                                 <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginTop: 14 }}>
-                                    {[0, 0.2, 0.4].map((delay, i) => (
+                                    {[0, 0.15, 0.3].map((delay, i) => (
                                         <div key={i} style={{
-                                            width: 7, height: 7, borderRadius: '50%',
+                                            width: 8, height: 8, borderRadius: '50%',
                                             background: palette.accent,
-                                            animation: `ws-pulse 1.2s ease-in-out ${delay}s infinite`,
+                                            animation: `ws-pulse 1.4s ease-in-out ${delay}s infinite`,
                                         }} />
                                     ))}
                                 </div>

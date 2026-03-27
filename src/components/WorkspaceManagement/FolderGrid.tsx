@@ -88,24 +88,29 @@ const FolderGrid: React.FC<FolderGridProps> = ({
                         flexDirection: viewMode === 'list' ? 'row' : 'column',
                         alignItems: 'center', justifyContent: viewMode === 'list' ? 'flex-start' : 'center',
                         gap: viewMode === 'list' ? 16 : 8,
-                        padding: viewMode === 'list' ? '12px 16px' : '20px 16px 14px',
-                        background: isCreating ? palette.panelAlt : 'transparent',
-                        border: `2px dashed ${palette.border}`,
-                        borderRadius: 10,
+                        padding: viewMode === 'list' ? '12px 16px' : '24px 20px 18px',
+                        background: isCreating ? palette.panel : `${palette.panel}44`,
+                        border: `2px dashed ${isCreating ? palette.accent : palette.border}`,
+                        borderRadius: 16,
                         cursor: isCreating ? 'default' : 'pointer',
-                        transition: 'border-color 0.15s, background 0.15s',
-                        minHeight: viewMode === 'list' ? 64 : 120,
+                        transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                        minHeight: viewMode === 'list' ? 68 : 'auto',
+                        height: viewMode === 'list' ? 68 : '100%',
                     }}
                     onMouseOver={(e) => {
                         if (!isCreating) {
-                            (e.currentTarget as HTMLElement).style.borderColor = palette.accent;
-                            (e.currentTarget as HTMLElement).style.background = palette.hover;
+                            (e.currentTarget as HTMLElement).style.borderColor = palette.accentHover;
+                            (e.currentTarget as HTMLElement).style.background = `${palette.accent}11`;
+                            (e.currentTarget as HTMLElement).style.transform = viewMode === 'grid' ? 'translateY(-6px) scale(1.02)' : 'translateY(0)';
+                            (e.currentTarget as HTMLElement).style.boxShadow = `0 14px 32px rgba(0,0,0,0.12), 0 0 0 1px ${palette.accent}22`;
                         }
                     }}
                     onMouseOut={(e) => {
                         if (!isCreating) {
                             (e.currentTarget as HTMLElement).style.borderColor = palette.border;
-                            (e.currentTarget as HTMLElement).style.background = 'transparent';
+                            (e.currentTarget as HTMLElement).style.background = `${palette.panel}44`;
+                            (e.currentTarget as HTMLElement).style.transform = 'translateY(0) scale(1)';
+                            (e.currentTarget as HTMLElement).style.boxShadow = 'none';
                         }
                     }}
                 >
@@ -128,20 +133,21 @@ const FolderGrid: React.FC<FolderGridProps> = ({
                             placeholder="Folder name..."
                             style={{
                                 width: '100%',
-                                padding: '6px 8px',
-                                border: `1px solid ${palette.border}`,
-                                borderRadius: 4,
+                                padding: '8px 12px',
+                                border: `1px solid ${palette.accent}`,
+                                borderRadius: 8,
                                 outline: 'none',
                                 fontSize: 13,
                                 background: palette.bg,
                                 color: palette.text,
+                                boxShadow: `0 0 0 3px ${palette.accent}33`,
                             }}
                             onClick={(e) => e.stopPropagation()}
                         />
                     ) : (
                         <>
-                            <AddIcon sx={{ fontSize: viewMode === 'list' ? 32 : 48, color: palette.textDim }} />
-                            <span style={{ fontSize: 13, fontWeight: 600, color: palette.textDim }}>
+                            <AddIcon sx={{ fontSize: viewMode === 'list' ? 32 : 54, color: palette.textDim, transition: 'color 0.2s', '.MuiSvgIcon-root:hover &': { color: palette.accent } }} />
+                            <span style={{ fontSize: 14, fontWeight: 600, color: palette.textDim }}>
                                 New Folder
                             </span>
                         </>
