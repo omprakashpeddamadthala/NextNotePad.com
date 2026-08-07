@@ -1,0 +1,129 @@
+"use client";
+
+import { useMemo } from "react";
+import { Palette, Settings, Trash2, Download, Upload, Info, Database, type LucideIcon } from "lucide-react";
+import {
+  CommandDialog,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandShortcut,
+} from "@/components/ui/command";
+import { useUIStore } from "@/store/uiStore";
+import { useSettingsStore } from "@/store/settingsStore";
+import { SHORTCUTS } from "@/lib/constants/shortcuts";
+import { runAction } from "@/services/shortcuts/actionRegistry";
+import { THEME_ORDER } from "@/lib/constants/themes";
+import { THEME_MODULES } from "@/lib/monaco/themes";
+import { emptyTrash } from "@/services/fileOperations";
+import { seedMockWorkspace } from "@/lib/devtools/seedMockData";
+
+interface PaletteCommand {
+  id: string;
+  label: string;
+  category: string;
+  shortcut?: string;
+  icon?: LucideIcon;
+  run: () => void;
+}
+
+export function CommandPalette() {
+  const open = useUIStore((s) => s.commandPaletteOpen);
+  const setOpen = useUIStore((s) => s.setCommandPaletteOpen);
+  const setTheme = useSettingsStore((s) => s.setTheme);
+
+  const commands = useMemo<PaletteCommand[]>(() => {
+    const shortcutCommands: PaletteCommand[] = SHORTCUTS.map((s) => ({
+      id: s.action,
+      label: s.label,
+      category: s.category,
+      shortcut: s.keys,
+      run: () => runAction(s.action),
+    }));
+
+    const extraCommands: PaletteCommand[] = [
+      {
+        id: "open-settings",
+        label: "Open Settings",
+        category: "Settings",
+        icon: Settings,
+        run: () => useUIStore.getState().setSettingsDialogOpen(true),
+      },
+      {
+        id: "empty-trash",
+        label: "Empty Recycle Bin",
+        category: "File",
+        icon: Trash2,
+        run: () => void emptyTrash(),
+      },
+      {
+        id: "export-workspace",
+        label: "Export Workspace (.zip)",
+        category: "File",
+        icon: Download,
+        run: () => useUIStore.getState().setExportImportDialogOpen(true),
+      },
+      {
+        id: "import-workspace",
+        label: "Import Workspace…",
+        category: "File",
+        icon: Upload,
+        run: () => useUIStore.getState().setExportImportDialogOpen(true),
+      },
+      {
+        id: "about",
+        label: "About NextNotePad.com",
+        category: "Help",
+        icon: Info,
+        run: () => useUIStore.getState().setAboutDialogOpen(true),
+      },
+      ...THEME_ORDER.map((id) => ({
+        id: `theme-${id}`,
+        label: `Theme: ${THEME_MODULES[id].label}`,
+        category: "Theme",
+        icon: Palette,
+        run: () => setTheme(id),
+      })),
+    ];
+
+    if (process.env.NODE_ENV === "development") {
+      extraCommands.push({
+        id: "dev-seed-mock-workspace",
+        label: "Dev: Seed 2,000 Mock Files (perf test)",
+        category: "Developer",
+        icon: Database,
+        run: () => seedMockWorkspace(2000, 200),
+      });
+    }
+
+    return [...shortcutCommands, ...extraCommands];
+  }, [setTheme]);
+
+  function handleSelect(cmd: PaletteCommand) {
+    setOpen(false);
+    cmd.run();
+  }
+
+  return (
+    <CommandDialog open={open} onOpenChange={setOpen}>
+      <CommandInput placeholder="Type a command…" />
+      <CommandList>
+        <CommandEmpty>No commands found.</CommandEmpty>
+        <CommandGroup heading="Commands">
+          {commands.map((cmd) => {
+            const Icon = cmd.icon;
+            return (
+              <CommandItem key={cmd.id} value={`${cmd.label} ${cmd.category}`} onSelect={() => handleSelect(cmd)}>
+                {Icon && <Icon className="size-4 shrink-0" />}
+                <span>{cmd.label}</span>
+                {cmd.shortcut && <CommandShortcut>{cmd.shortcut}</CommandShortcut>}
+              </CommandItem>
+            );
+          })}
+        </CommandGroup>
+      </CommandList>
+    </CommandDialog>
+  );
+}

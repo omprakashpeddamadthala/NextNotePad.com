@@ -1,0 +1,28 @@
+# Dependencies & build output — reinstalled/rebuilt inside the image
+node_modules
+.next
+src/generated
+
+# Local dev database — never ship real data in the image; runtime DB lives on a mounted volume
+dev.db
+dev.db-journal
+
+# Secrets — must never end up in an image layer. Runtime config is passed via `docker run -e` /
+# compose `environment:` / your deploy platform's secret store, not baked-in files.
+.env
+.env.local
+.env.*.local
+
+# VCS / editor / assistant tooling — irrelevant to the runtime image
+.git
+.github
+.agents
+.claude
+.windsurf
+.vscode
+
+# Misc
+*.tsbuildinfo
+npm-debug.log*
+coverage
+README.md

@@ -1,0 +1,126 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  avatarUrl String?
+  googleId  String   @unique
+
+  // Stored for future Drive API access (Phase 2b). Plain text for now — see plan notes on hardening.
+  googleAccessToken     String?
+  googleRefreshToken    String?
+  googleTokenExpiresAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workspace Workspace?
+  settings  UserSettings?
+}
+
+model Workspace {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  folders Folder[]
+  files   File[]
+
+  // Cached id of the "NextNotePad.com" root folder in the user's Drive (Phase 2b).
+  driveRootFolderId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Folder {
+  id          String  @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  parentId String?
+  parent   Folder?  @relation("FolderChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children Folder[] @relation("FolderChildren")
+  files    File[]
+
+  name      String
+  path      String
+  collapsed Boolean @default(false)
+
+  driveFileId String? // unused until Phase 2b
+  version     Int     @default(1)
+  deletedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workspaceId, parentId])
+}
+
+model File {
+  id          String  @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  parentId String?
+  parent   Folder? @relation(fields: [parentId], references: [id], onDelete: Cascade)
+
+  name     String
+  path     String
+  language String  @default("plaintext")
+  encoding String  @default("UTF-8")
+  content  String  @default("")
+  size     Int     @default(0)
+
+  driveFileId String? // unused until Phase 2b
+  version     Int     @default(1)
+  checksum    String?
+  deletedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workspaceId, parentId])
+}
+
+/**
+ * One row per entity currently failing to push to Drive — upserted on failure, deleted on
+ * successful retry. Deliberately not a full sync-history/queue log, just "what's broken now".
+ */
+model SyncFailure {
+  id     String @id @default(cuid())
+  userId String
+
+  entityType String // "file" | "folder"
+  entityId   String
+  operation  String // "create" | "update" | "move" | "delete"
+  error      String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([entityType, entityId])
+  @@index([userId])
+}
+
+model UserSettings {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  theme String @default("notepad-plus-plus")
+  json  String // serialized EditorSettings
+
+  updatedAt DateTime @updatedAt
+}

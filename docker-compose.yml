@@ -1,0 +1,16 @@
+services:
+  app:
+    build: .
+    image: omprakashornold/nextnotepad:local
+    ports:
+      - "3000:3000"
+    environment:
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-http://localhost:3000/api/auth/google/callback}
+      - JWT_SECRET=${JWT_SECRET}
+    volumes:
+      - nextnotepad-data:/app/data
+
+volumes:
+  nextnotepad-data:

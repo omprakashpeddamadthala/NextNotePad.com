@@ -1,0 +1,144 @@
+/*
+ * Default (pre-hydration) chrome variables — mirrors the "notepad-plus-plus" theme.
+ * ThemeApplier overwrites these on the client to match the active theme.
+ */
+:root {
+  --np-toolbar-bg: #f3f3f3;
+  --np-statusbar-bg: #e8e8e8;
+  --np-statusbar-fg: #000000;
+  --np-tab-active-bg: #ffffff;
+  --np-tab-inactive-bg: #e4e4e4;
+  --np-tab-border: #c8c8c8;
+  --np-scrollbar: #c2c2c2;
+  --np-menu-hover: #dbe9f9;
+}
+
+.np-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--np-scrollbar) transparent;
+}
+
+.np-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.np-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--np-scrollbar);
+  border-radius: 9999px;
+}
+
+.np-bookmark-glyph {
+  background-color: #4a90d9;
+  border-radius: 9999px;
+  width: 8px !important;
+  height: 8px !important;
+  margin-left: 6px;
+  margin-top: 6px;
+}
+
+.np-markdown-preview {
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--foreground);
+}
+
+.np-markdown-preview h1,
+.np-markdown-preview h2,
+.np-markdown-preview h3,
+.np-markdown-preview h4,
+.np-markdown-preview h5,
+.np-markdown-preview h6 {
+  font-weight: 600;
+  margin-top: 1.4em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+.np-markdown-preview h1 {
+  font-size: 1.7em;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.3em;
+}
+
+.np-markdown-preview h2 {
+  font-size: 1.4em;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.25em;
+}
+
+.np-markdown-preview h3 {
+  font-size: 1.2em;
+}
+
+.np-markdown-preview p,
+.np-markdown-preview ul,
+.np-markdown-preview ol,
+.np-markdown-preview blockquote,
+.np-markdown-preview table,
+.np-markdown-preview pre {
+  margin-top: 0;
+  margin-bottom: 0.8em;
+}
+
+.np-markdown-preview ul,
+.np-markdown-preview ol {
+  padding-left: 1.6em;
+}
+
+.np-markdown-preview a {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.np-markdown-preview code {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.9em;
+  background-color: var(--muted);
+  border-radius: 0.2rem;
+  padding: 0.15em 0.35em;
+}
+
+.np-markdown-preview pre {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  background-color: var(--muted);
+  border-radius: 0.25rem;
+  padding: 0.8em 1em;
+  overflow-x: auto;
+}
+
+.np-markdown-preview pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+.np-markdown-preview blockquote {
+  border-left: 3px solid var(--border);
+  color: var(--muted-foreground);
+  padding-left: 1em;
+  margin-left: 0;
+}
+
+.np-markdown-preview table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.np-markdown-preview th,
+.np-markdown-preview td {
+  border: 1px solid var(--border);
+  padding: 0.4em 0.7em;
+  text-align: left;
+}
+
+.np-markdown-preview img {
+  max-width: 100%;
+}
+
+.np-markdown-preview hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1.5em 0;
+}
