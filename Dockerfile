@@ -62,7 +62,11 @@ COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder /app/next.config.ts ./next.config.ts
 COPY --from=builder /app/package.json ./package.json
 
-RUN mkdir -p /app/data && chown -R nextjs:nodejs /app/data /app/.next
+# `prisma migrate deploy` (below) lazily downloads the schema-engine binary into
+# node_modules/@prisma/engines on first run, since `prisma generate` at build time only
+# fetches what the client needs. node_modules is still root-owned from the COPY above, so
+# without this chown the non-root `nextjs` user fails to write it and crash-loops.
+RUN mkdir -p /app/data && chown -R nextjs:nodejs /app/data /app/.next /app/node_modules/@prisma/engines
 USER nextjs
 
 EXPOSE 3000
