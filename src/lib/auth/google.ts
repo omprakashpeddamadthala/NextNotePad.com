@@ -14,6 +14,18 @@ function getEnv(name: string): string {
   return value;
 }
 
+/**
+ * Origin to build post-login redirect URLs against. Deriving it from `request.url` breaks behind
+ * a reverse proxy like Railway's — the app only sees the proxy's internal connection (e.g.
+ * `http://localhost:8080`), not the public HTTPS domain, so `NextResponse.redirect(new URL(path,
+ * request.url))` sends the browser to that internal address instead. `GOOGLE_REDIRECT_URI` is
+ * already the one piece of config that must be the true public URL (Google itself redirects here),
+ * so reuse its origin rather than adding another env var or trusting client-controlled headers.
+ */
+export function getAppOrigin(): string {
+  return new URL(getEnv("GOOGLE_REDIRECT_URI")).origin;
+}
+
 export function buildGoogleAuthUrl(state: string): string {
   const params = new URLSearchParams({
     client_id: getEnv("GOOGLE_CLIENT_ID"),

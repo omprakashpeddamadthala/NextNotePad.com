@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { exchangeCodeForTokens, decodeIdTokenProfile, fetchGoogleProfile, OAUTH_STATE_COOKIE_NAME } from "@/lib/auth/google";
+import { exchangeCodeForTokens, decodeIdTokenProfile, fetchGoogleProfile, getAppOrigin, OAUTH_STATE_COOKIE_NAME } from "@/lib/auth/google";
 import { signSessionToken, SESSION_COOKIE_NAME, SESSION_TTL_SECONDS } from "@/lib/auth/jwt";
 import { prisma } from "@/lib/db/prisma";
 
@@ -13,12 +13,13 @@ export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
   const expectedState = cookieStore.get(OAUTH_STATE_COOKIE_NAME)?.value;
   cookieStore.delete(OAUTH_STATE_COOKIE_NAME);
+  const appOrigin = getAppOrigin();
 
   if (oauthError) {
-    return NextResponse.redirect(new URL(`/?authError=${encodeURIComponent(oauthError)}`, request.url));
+    return NextResponse.redirect(new URL(`/?authError=${encodeURIComponent(oauthError)}`, appOrigin));
   }
   if (!code || !state || !expectedState || state !== expectedState) {
-    return NextResponse.redirect(new URL("/?authError=invalid_state", request.url));
+    return NextResponse.redirect(new URL("/?authError=invalid_state", appOrigin));
   }
 
   try {
@@ -61,9 +62,9 @@ export async function GET(request: NextRequest) {
       path: "/",
     });
 
-    return NextResponse.redirect(new URL("/", request.url));
+    return NextResponse.redirect(new URL("/", appOrigin));
   } catch (err) {
     console.error("Google OAuth callback failed:", err);
-    return NextResponse.redirect(new URL("/?authError=oauth_failed", request.url));
+    return NextResponse.redirect(new URL("/?authError=oauth_failed", appOrigin));
   }
 }
