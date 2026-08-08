@@ -19,6 +19,11 @@ COPY package.json package-lock.json ./
 # prisma/schema.prisma — that doesn't exist here yet. The `builder` stage below runs it
 # explicitly instead, once the full source has been copied in.
 RUN npm ci --ignore-scripts
+# --ignore-scripts above also skips better-sqlite3's own install script (which compiles its
+# native .node addon), not just the top-level `postinstall` it was meant to defer — without this,
+# the addon is never built and every Prisma query fails at runtime with "Could not locate the
+# bindings file".
+RUN npm rebuild better-sqlite3
 
 #
 # ---- builder: generate the Prisma client and build the Next.js app ----
