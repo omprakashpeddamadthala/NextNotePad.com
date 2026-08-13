@@ -2,6 +2,8 @@
 
 import { MenuBar } from "./MenuBar";
 import { Toolbar } from "./Toolbar";
+import { MobileAppBar } from "./MobileAppBar";
+import { MobileMenuSheet } from "./MobileMenuSheet";
 import { StatusBar } from "./StatusBar";
 import {
   ResizablePanelGroup,
@@ -32,15 +34,25 @@ export function AppShell() {
   useAppBootstrap();
 
   const sidebarVisible = useUIStore((s) => s.sidebarVisible);
-  const setSidebarVisible = useUIStore((s) => s.setSidebarVisible);
   const bottomPanelVisible = useUIStore((s) => s.bottomPanelVisible);
+  const mobileSidebarOpen = useUIStore((s) => s.mobileSidebarOpen);
+  const setMobileSidebarOpen = useUIStore((s) => s.setMobileSidebarOpen);
   const isMobile = useIsMobile();
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col bg-background text-foreground">
       <GlobalActionsRegistrar />
-      <MenuBar />
-      <Toolbar />
+      {isMobile ? (
+        <>
+          <MobileAppBar />
+          <MobileMenuSheet />
+        </>
+      ) : (
+        <>
+          <MenuBar />
+          <Toolbar />
+        </>
+      )}
       <div className="min-h-0 flex-1">
         {isMobile ? (
           <>
@@ -54,7 +66,7 @@ export function AppShell() {
                 </div>
               )}
             </div>
-            <Sheet open={sidebarVisible} onOpenChange={setSidebarVisible}>
+            <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
               <SheetContent side="left" className="w-4/5 p-0 sm:max-w-xs">
                 <SheetHeader className="sr-only">
                   <SheetTitle>File Explorer</SheetTitle>

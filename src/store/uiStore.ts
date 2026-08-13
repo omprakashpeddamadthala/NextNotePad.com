@@ -6,6 +6,13 @@ type BottomPanelTab = "search" | "console";
 
 interface UIState {
   sidebarVisible: boolean;
+  /** Mobile's slide-over explorer sheet — deliberately separate from `sidebarVisible` (which
+   *  drives the desktop inline panel and persists) so a persisted "open" from desktop doesn't
+   *  make the sheet cover the whole screen the moment a phone loads the app. Always starts
+   *  closed. */
+  mobileSidebarOpen: boolean;
+  /** Mobile's bottom-sheet stand-in for the desktop MenuBar + Toolbar. Also transient. */
+  mobileMenuSheetOpen: boolean;
   bottomPanelVisible: boolean;
   activeBottomTab: BottomPanelTab;
   commandPaletteOpen: boolean;
@@ -21,6 +28,9 @@ interface UIState {
 interface UIActions {
   setSidebarVisible: (visible: boolean) => void;
   toggleSidebar: () => void;
+  setMobileSidebarOpen: (open: boolean) => void;
+  toggleMobileSidebar: () => void;
+  setMobileMenuSheetOpen: (open: boolean) => void;
   setBottomPanelVisible: (visible: boolean) => void;
   setActiveBottomTab: (tab: BottomPanelTab) => void;
   setCommandPaletteOpen: (open: boolean) => void;
@@ -37,6 +47,8 @@ export const useUIStore = create<UIState & UIActions>()(
   persist(
     (set) => ({
       sidebarVisible: true,
+      mobileSidebarOpen: false,
+      mobileMenuSheetOpen: false,
       bottomPanelVisible: false,
       activeBottomTab: "search",
       commandPaletteOpen: false,
@@ -50,6 +62,9 @@ export const useUIStore = create<UIState & UIActions>()(
 
       setSidebarVisible: (sidebarVisible) => set({ sidebarVisible }),
       toggleSidebar: () => set((state) => ({ sidebarVisible: !state.sidebarVisible })),
+      setMobileSidebarOpen: (mobileSidebarOpen) => set({ mobileSidebarOpen }),
+      toggleMobileSidebar: () => set((state) => ({ mobileSidebarOpen: !state.mobileSidebarOpen })),
+      setMobileMenuSheetOpen: (mobileMenuSheetOpen) => set({ mobileMenuSheetOpen }),
       setBottomPanelVisible: (bottomPanelVisible) => set({ bottomPanelVisible }),
       setActiveBottomTab: (activeBottomTab) => set({ activeBottomTab }),
       setCommandPaletteOpen: (commandPaletteOpen) => set({ commandPaletteOpen }),
