@@ -33,6 +33,7 @@ export function seedMockWorkspace(targetFiles = 2000, targetFolders = 200): void
       checksum: null,
       deleted: false,
       collapsed: true,
+      hidden: false,
     };
     nodes[id] = folder;
     folderIds.push(id);
@@ -62,6 +63,7 @@ export function seedMockWorkspace(targetFiles = 2000, targetFolders = 200): void
       encoding: "UTF-8",
       size: content.length,
       pinnedFavorite: false,
+      hidden: false,
     };
     nodes[id] = file;
     fileContents[id] = content;

@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { FilePlus, FolderPlus, ChevronsDownUp, Trash2, X } from "lucide-react";
+import { FilePlus, FolderPlus, ChevronsDownUp, Trash2, X, Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ToolbarButton } from "@/components/layout/ToolbarButton";
 import { FileTree } from "./FileTree";
 import { Breadcrumb } from "./Breadcrumb";
 import { RecycleBinPanel } from "@/components/trash/RecycleBinPanel";
 import { useWorkspaceStore } from "@/store/workspaceStore";
+import { useUIStore } from "@/store/uiStore";
 import { useTrashStore } from "@/store/trashStore";
 import { useCreateAndRename } from "@/hooks/useCreateAndRename";
 import { importNativeFiles } from "@/services/fileOperations";
@@ -19,6 +20,8 @@ export function FileExplorer() {
   const setFilterQuery = useWorkspaceStore((s) => s.setFilterQuery);
   const nodes = useWorkspaceStore((s) => s.nodes);
   const setCollapsed = useWorkspaceStore((s) => s.setCollapsed);
+  const showHiddenFiles = useUIStore((s) => s.showHiddenFiles);
+  const toggleShowHiddenFiles = useUIStore((s) => s.toggleShowHiddenFiles);
   const trashCount = useTrashStore((s) => s.entries.length);
   const { createFileAndRename, createFolderAndRename } = useCreateAndRename();
 
@@ -51,6 +54,12 @@ export function FileExplorer() {
                   if (node.type === "folder") setCollapsed(node.id, true);
                 }
               }}
+            />
+            <ToolbarButton
+              icon={showHiddenFiles ? EyeOff : Eye}
+              label={showHiddenFiles ? "Hide Hidden Items" : "Show Hidden Items"}
+              active={showHiddenFiles}
+              onClick={() => toggleShowHiddenFiles()}
             />
           </>
         )}

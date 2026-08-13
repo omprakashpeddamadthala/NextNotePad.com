@@ -21,8 +21,9 @@ export interface FlatTreeRow {
   depth: number;
 }
 
-/** Depth-first flattening of the tree, skipping children of collapsed folders — what the virtualizer renders. */
-export function flattenVisibleTree(nodes: NodeMap, filterQuery = ""): FlatTreeRow[] {
+/** Depth-first flattening of the tree, skipping children of collapsed folders — what the virtualizer
+ *  renders. Hidden nodes (and everything under a hidden folder) are skipped unless `showHidden`. */
+export function flattenVisibleTree(nodes: NodeMap, filterQuery = "", showHidden = false): FlatTreeRow[] {
   const rows: FlatTreeRow[] = [];
   const query = filterQuery.trim().toLowerCase();
   const matchesFilter = query
@@ -32,11 +33,12 @@ export function flattenVisibleTree(nodes: NodeMap, filterQuery = ""): FlatTreeRo
   function anyDescendantMatches(node: WorkspaceNode): boolean {
     if (node.type !== "folder") return matchesFilter ? matchesFilter(node) : true;
     if (matchesFilter?.(node)) return true;
-    return getChildren(nodes, node.id).some(anyDescendantMatches);
+    return getChildren(nodes, node.id).some((c) => (showHidden || !c.hidden) && anyDescendantMatches(c));
   }
 
   function walk(parentId: string | null, depth: number) {
     for (const node of getChildren(nodes, parentId)) {
+      if (!showHidden && node.hidden) continue;
       if (matchesFilter && !anyDescendantMatches(node)) continue;
       rows.push({ node, depth });
       if (node.type === "folder" && (!node.collapsed || matchesFilter)) {

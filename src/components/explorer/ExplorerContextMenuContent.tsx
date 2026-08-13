@@ -1,12 +1,12 @@
 "use client";
 
-import { FilePlus, FolderPlus, Pencil, Copy, Trash2, Star, ChevronsDownUp } from "lucide-react";
+import { FilePlus, FolderPlus, Pencil, Copy, Trash2, Star, ChevronsDownUp, Eye, EyeOff } from "lucide-react";
 import { ContextMenuItem, ContextMenuSeparator } from "@/components/ui/context-menu";
 import type { WorkspaceNode } from "@/types/file";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useExplorerSelectionStore } from "@/store/explorerSelectionStore";
 import { useRecentFilesStore } from "@/store/recentFilesStore";
-import { duplicateNode, moveToTrash } from "@/services/fileOperations";
+import { duplicateNode, moveToTrash, toggleNodeHidden } from "@/services/fileOperations";
 import { useCreateAndRename } from "@/hooks/useCreateAndRename";
 import { collectSubtree } from "@/lib/utils/treeUtils";
 
@@ -40,6 +40,9 @@ export function ExplorerContextMenuContent({ node }: { node: WorkspaceNode }) {
           <Star /> {isFavorite ? "Remove from Favorites" : "Add to Favorites"}
         </ContextMenuItem>
       )}
+      <ContextMenuItem onSelect={() => toggleNodeHidden(node.id)}>
+        {node.hidden ? <Eye /> : <EyeOff />} {node.hidden ? "Unhide" : "Hide"}
+      </ContextMenuItem>
       {node.type === "folder" && (
         <ContextMenuItem
           onSelect={() => {

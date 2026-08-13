@@ -14,6 +14,7 @@ export function folderToDto(folder: FolderModel) {
     checksum: null,
     deleted: folder.deletedAt !== null,
     collapsed: folder.collapsed,
+    hidden: folder.hidden,
   };
 }
 
@@ -34,6 +35,7 @@ export function fileToDto(file: FileModel, includeContent = false) {
     encoding: file.encoding,
     size: file.size,
     pinnedFavorite: false,
+    hidden: file.hidden,
     ...(includeContent ? { content: file.content } : {}),
   };
 }

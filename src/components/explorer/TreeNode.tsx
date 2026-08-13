@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { ChevronRight, ChevronDown, Folder, FolderOpen, Star } from "lucide-react";
+import { ChevronRight, ChevronDown, Folder, FolderOpen, Star, EyeOff } from "lucide-react";
 import { ContextMenu, ContextMenuTrigger, ContextMenuContent } from "@/components/ui/context-menu";
 import { ExplorerContextMenuContent } from "./ExplorerContextMenuContent";
 import { getFileIcon } from "@/lib/fileIcons";
@@ -135,6 +135,7 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
               "hover:bg-[var(--np-menu-hover)] focus-visible:ring-1 focus-visible:ring-ring",
               isSelected && "bg-accent text-accent-foreground",
               isDropHighlighted && "outline outline-1 outline-primary",
+              node.hidden && "opacity-50 italic",
             )}
           >
             {isFolder ? (
@@ -170,6 +171,7 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
               <span className="flex-1 truncate">{node.name}</span>
             )}
             {isFavorite && !isRenaming && <Star className="size-3 shrink-0 fill-current text-amber-500" />}
+            {node.hidden && !isRenaming && <EyeOff className="size-3 shrink-0 text-muted-foreground" />}
           </button>
         </ContextMenuTrigger>
         <ContextMenuContent className="w-56" onCloseAutoFocus={(e) => e.preventDefault()}>
