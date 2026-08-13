@@ -7,6 +7,7 @@ import { ToolbarButton } from "@/components/layout/ToolbarButton";
 import { useTabsStore } from "@/store/tabsStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useRecentFilesStore } from "@/store/recentFilesStore";
+import { useDiffViewStore } from "@/store/diffViewStore";
 
 export function EditorTabs() {
   const tabs = useTabsStore((s) => s.tabs);
@@ -18,6 +19,7 @@ export function EditorTabs() {
   const closedStackLength = useTabsStore((s) => s.closedStack.length);
   const nodes = useWorkspaceStore((s) => s.nodes);
   const addRecent = useRecentFilesStore((s) => s.addRecent);
+  const closeDiff = useDiffViewStore((s) => s.closeDiff);
 
   const dragIndexRef = useRef<number | null>(null);
   const [, forceRerender] = useState(0);
@@ -41,6 +43,7 @@ export function EditorTabs() {
           isDirty={Boolean(dirtyTabIds[tab.id])}
           index={index}
           onActivate={() => {
+            closeDiff();
             setActiveTab(tab.id);
             addRecent(tab.fileId);
           }}

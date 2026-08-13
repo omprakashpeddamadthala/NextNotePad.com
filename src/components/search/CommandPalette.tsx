@@ -153,7 +153,7 @@ export function CommandPalette() {
         label: "Tools: Diff Checker",
         category: "Tools",
         icon: FileDiff,
-        run: () => useUIStore.getState().setToolsDialogOpen(true),
+        run: () => runAction("tools.diffChecker"),
       },
       ...THEME_ORDER.map((id) => ({
         id: `theme-${id}`,

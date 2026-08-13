@@ -36,7 +36,6 @@ export function Toolbar() {
   const bottomPanelVisible = useUIStore((s) => s.bottomPanelVisible);
   const setBottomPanelVisible = useUIStore((s) => s.setBottomPanelVisible);
   const setCommandPaletteOpen = useUIStore((s) => s.setCommandPaletteOpen);
-  const setToolsDialogOpen = useUIStore((s) => s.setToolsDialogOpen);
   const markdownPreviewVisible = useUIStore((s) => s.markdownPreviewVisible);
   const toggleMarkdownPreview = useUIStore((s) => s.toggleMarkdownPreview);
   const settings = useSettingsStore((s) => s.settings);
@@ -73,7 +72,7 @@ export function Toolbar() {
         label="Format Document / Selection (Shift+Alt+F)"
         onClick={() => runAction("edit.formatDocument")}
       />
-      <ToolbarButton icon={FileDiff} label="Diff Checker" onClick={() => setToolsDialogOpen(true)} />
+      <ToolbarButton icon={FileDiff} label="Diff Checker" onClick={() => runAction("tools.diffChecker")} />
       <Separator orientation="vertical" className="mx-1 h-5" />
       <VoiceDictationButton />
       <ToolbarButton

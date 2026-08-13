@@ -92,7 +92,6 @@ export function MobileMenuSheet() {
   const setBottomPanelVisible = useUIStore((s) => s.setBottomPanelVisible);
   const markdownPreviewVisible = useUIStore((s) => s.markdownPreviewVisible);
   const toggleMarkdownPreview = useUIStore((s) => s.toggleMarkdownPreview);
-  const setToolsDialogOpen = useUIStore((s) => s.setToolsDialogOpen);
   const settings = useSettingsStore((s) => s.settings);
   const updateSettings = useSettingsStore((s) => s.updateSettings);
   const authStatus = useAuthStore((s) => s.status);
@@ -175,7 +174,7 @@ export function MobileMenuSheet() {
             <ActionGridButton icon={Search} label="Find" onClick={() => runAction("search.find")} />
             <ActionGridButton icon={Replace} label="Replace" onClick={() => runAction("search.replace")} />
             <ActionGridButton icon={Braces} label="Format" onClick={() => runAction("edit.formatDocument")} />
-            <ActionGridButton icon={FileDiff} label="Diff Checker" onClick={() => setToolsDialogOpen(true)} />
+            <ActionGridButton icon={FileDiff} label="Diff Checker" onClick={() => runAction("tools.diffChecker")} />
             <ActionGridButton
               icon={Eye}
               label="Markdown Preview"

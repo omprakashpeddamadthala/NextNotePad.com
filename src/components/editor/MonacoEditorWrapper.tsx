@@ -666,6 +666,7 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
         theme={themeModule.monacoThemeId}
         defaultLanguage={language}
         defaultValue=""
+        keepCurrentModel
         beforeMount={handleMonacoBeforeMount}
         onMount={handleMount}
         options={{

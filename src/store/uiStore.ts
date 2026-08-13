@@ -23,10 +23,6 @@ interface UIState {
   workspaceStatsOpen: boolean;
   isSplitView: boolean;
   markdownPreviewVisible: boolean;
-  /** Diff Checker — the one Tools-menu utility that still needs a dialog surface (comparing two
-   *  tabs needs two panes at once). Everything else (Base64, URL, case) transforms the active
-   *  tab's content in place instead of opening a dialog. */
-  toolsDialogOpen: boolean;
 }
 
 interface UIActions {
@@ -45,7 +41,6 @@ interface UIActions {
   setWorkspaceStatsOpen: (open: boolean) => void;
   setSplitView: (isSplit: boolean) => void;
   toggleMarkdownPreview: () => void;
-  setToolsDialogOpen: (open: boolean) => void;
 }
 
 export const useUIStore = create<UIState & UIActions>()(
@@ -64,7 +59,6 @@ export const useUIStore = create<UIState & UIActions>()(
       workspaceStatsOpen: false,
       isSplitView: false,
       markdownPreviewVisible: false,
-      toolsDialogOpen: false,
 
       setSidebarVisible: (sidebarVisible) => set({ sidebarVisible }),
       toggleSidebar: () => set((state) => ({ sidebarVisible: !state.sidebarVisible })),
@@ -81,7 +75,6 @@ export const useUIStore = create<UIState & UIActions>()(
       setWorkspaceStatsOpen: (workspaceStatsOpen) => set({ workspaceStatsOpen }),
       setSplitView: (isSplitView) => set({ isSplitView }),
       toggleMarkdownPreview: () => set((state) => ({ markdownPreviewVisible: !state.markdownPreviewVisible })),
-      setToolsDialogOpen: (toolsDialogOpen) => set({ toolsDialogOpen }),
     }),
     {
       name: "np-ui",

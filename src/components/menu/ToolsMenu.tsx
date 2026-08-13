@@ -10,7 +10,6 @@ import {
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import { runAction } from "@/services/shortcuts/actionRegistry";
-import { useUIStore } from "@/store/uiStore";
 import { HASH_ALGORITHMS, type CaseConverterId } from "@/services/textTools/textTools";
 
 const CASE_OPTIONS: { id: CaseConverterId; label: string }[] = [
@@ -27,10 +26,9 @@ const CASE_OPTIONS: { id: CaseConverterId; label: string }[] = [
 
 /** Every item here acts directly on the active tab's selection (or whole document if nothing is
  *  selected) — same convention as Format Document — instead of opening a separate copy/paste
- *  dialog. Diff Checker is the one exception: comparing two tabs needs two panes at once. */
+ *  dialog. Diff Checker also stays on-tab: it replaces the editor content with two open tabs
+ *  side by side on Monaco's diff editor, rather than a popup. */
 export function ToolsMenu() {
-  const setToolsDialogOpen = useUIStore((s) => s.setToolsDialogOpen);
-
   return (
     <TopMenu label="Tools">
       <DropdownMenuItem onSelect={() => runAction("tools.base64Encode")}>
@@ -71,7 +69,7 @@ export function ToolsMenu() {
         </DropdownMenuSubContent>
       </DropdownMenuSub>
       <DropdownMenuSeparator />
-      <DropdownMenuItem onSelect={() => setToolsDialogOpen(true)}>
+      <DropdownMenuItem onSelect={() => runAction("tools.diffChecker")}>
         <FileDiff /> Diff Checker
       </DropdownMenuItem>
     </TopMenu>
