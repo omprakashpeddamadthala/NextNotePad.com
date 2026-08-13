@@ -7,6 +7,7 @@ import { SearchMenu } from "@/components/menu/SearchMenu";
 import { ViewMenu } from "@/components/menu/ViewMenu";
 import { EncodingMenu } from "@/components/menu/EncodingMenu";
 import { LanguageMenu } from "@/components/menu/LanguageMenu";
+import { ToolsMenu } from "@/components/menu/ToolsMenu";
 import { SettingsMenu } from "@/components/menu/SettingsMenu";
 import { WindowMenu } from "@/components/menu/WindowMenu";
 import { HelpMenu } from "@/components/menu/HelpMenu";
@@ -31,6 +32,7 @@ export function MenuBar() {
         <ViewMenu />
         <EncodingMenu />
         <LanguageMenu />
+        <ToolsMenu />
         <SettingsMenu />
         <WindowMenu />
         <HelpMenu />

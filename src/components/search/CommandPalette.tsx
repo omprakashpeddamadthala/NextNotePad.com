@@ -1,7 +1,21 @@
 "use client";
 
 import { useMemo } from "react";
-import { Palette, Settings, Trash2, Download, Upload, Info, Database, type LucideIcon } from "lucide-react";
+import {
+  Palette,
+  Settings,
+  Trash2,
+  Download,
+  Upload,
+  Info,
+  Database,
+  Binary,
+  Link2,
+  CaseSensitive,
+  Hash,
+  FileDiff,
+  type LucideIcon,
+} from "lucide-react";
 import {
   CommandDialog,
   CommandInput,
@@ -19,6 +33,19 @@ import { THEME_ORDER } from "@/lib/constants/themes";
 import { THEME_MODULES } from "@/lib/monaco/themes";
 import { emptyTrash } from "@/services/fileOperations";
 import { seedMockWorkspace } from "@/lib/devtools/seedMockData";
+import { HASH_ALGORITHMS } from "@/services/textTools/textTools";
+
+const CASE_COMMANDS: { id: string; label: string }[] = [
+  { id: "upper", label: "UPPERCASE" },
+  { id: "lower", label: "lowercase" },
+  { id: "title", label: "Title Case" },
+  { id: "sentence", label: "Sentence case" },
+  { id: "camel", label: "camelCase" },
+  { id: "pascal", label: "PascalCase" },
+  { id: "snake", label: "snake_case" },
+  { id: "kebab", label: "kebab-case" },
+  { id: "constant", label: "CONSTANT_CASE" },
+];
 
 interface PaletteCommand {
   id: string;
@@ -78,6 +105,55 @@ export function CommandPalette() {
         category: "Help",
         icon: Info,
         run: () => useUIStore.getState().setAboutDialogOpen(true),
+      },
+      {
+        id: "tools-base64-encode",
+        label: "Tools: Base64 Encode",
+        category: "Tools",
+        icon: Binary,
+        run: () => runAction("tools.base64Encode"),
+      },
+      {
+        id: "tools-base64-decode",
+        label: "Tools: Base64 Decode",
+        category: "Tools",
+        icon: Binary,
+        run: () => runAction("tools.base64Decode"),
+      },
+      {
+        id: "tools-url-encode",
+        label: "Tools: URL Encode",
+        category: "Tools",
+        icon: Link2,
+        run: () => runAction("tools.urlEncode"),
+      },
+      {
+        id: "tools-url-decode",
+        label: "Tools: URL Decode",
+        category: "Tools",
+        icon: Link2,
+        run: () => runAction("tools.urlDecode"),
+      },
+      ...CASE_COMMANDS.map((c) => ({
+        id: `tools-case-${c.id}`,
+        label: `Tools: Case — ${c.label}`,
+        category: "Tools",
+        icon: CaseSensitive,
+        run: () => runAction(`tools.case.${c.id}`),
+      })),
+      ...HASH_ALGORITHMS.map((algo) => ({
+        id: `tools-hash-${algo}`,
+        label: `Tools: Hash — ${algo}`,
+        category: "Tools",
+        icon: Hash,
+        run: () => runAction(`tools.hash.${algo}`),
+      })),
+      {
+        id: "tools-diff-checker",
+        label: "Tools: Diff Checker",
+        category: "Tools",
+        icon: FileDiff,
+        run: () => useUIStore.getState().setToolsDialogOpen(true),
       },
       ...THEME_ORDER.map((id) => ({
         id: `theme-${id}`,

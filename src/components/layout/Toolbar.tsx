@@ -17,6 +17,7 @@ import {
   Braces,
   Eye,
   CalendarDays,
+  FileDiff,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ToolbarButton } from "./ToolbarButton";
@@ -35,6 +36,7 @@ export function Toolbar() {
   const bottomPanelVisible = useUIStore((s) => s.bottomPanelVisible);
   const setBottomPanelVisible = useUIStore((s) => s.setBottomPanelVisible);
   const setCommandPaletteOpen = useUIStore((s) => s.setCommandPaletteOpen);
+  const setToolsDialogOpen = useUIStore((s) => s.setToolsDialogOpen);
   const markdownPreviewVisible = useUIStore((s) => s.markdownPreviewVisible);
   const toggleMarkdownPreview = useUIStore((s) => s.toggleMarkdownPreview);
   const settings = useSettingsStore((s) => s.settings);
@@ -71,6 +73,7 @@ export function Toolbar() {
         label="Format Document / Selection (Shift+Alt+F)"
         onClick={() => runAction("edit.formatDocument")}
       />
+      <ToolbarButton icon={FileDiff} label="Diff Checker" onClick={() => setToolsDialogOpen(true)} />
       <Separator orientation="vertical" className="mx-1 h-5" />
       <VoiceDictationButton />
       <ToolbarButton

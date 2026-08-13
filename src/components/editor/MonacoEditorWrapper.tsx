@@ -22,6 +22,15 @@ import { toggleBookmark, nextBookmarkLine } from "@/lib/monaco/bookmarks";
 import { usePendingGotoStore } from "@/store/pendingGotoStore";
 import { useEditorInsertStore } from "@/store/editorInsertStore";
 import { useMarkdownPreviewContentStore } from "@/store/markdownPreviewContentStore";
+import {
+  base64Encode,
+  base64Decode,
+  urlEncode,
+  urlDecode,
+  caseConverters,
+  computeHash,
+  type HashAlgorithm,
+} from "@/services/textTools/textTools";
 
 const Editor = dynamic(() => import("@monaco-editor/react").then((m) => m.default), {
   ssr: false,
@@ -313,6 +322,51 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
     });
   }
 
+  /** Applies a pure text transform to the selection if one exists, otherwise the whole document —
+   *  the same "selection-or-document" convention `formatActiveEditor` uses. Backs every Tools-menu
+   *  action (Base64, URL, case conversion): they act on the tab you already have open instead of a
+   *  separate copy/paste dialog. */
+  function transformActiveEditor(transform: (text: string) => string, successMessage: string, errorMessage: string) {
+    const editor = editorRef.current;
+    const model = editor?.getModel();
+    if (!editor || !model) return;
+
+    const selection = editor.getSelection();
+    const hasSelection = Boolean(selection && !selection.isEmpty());
+    const range = hasSelection && selection ? selection : model.getFullModelRange();
+    const original = model.getValueInRange(range);
+    try {
+      const transformed = transform(original);
+      editor.executeEdits("tools", [{ range, text: transformed }]);
+      editor.pushUndoStop();
+      toast.success(successMessage);
+    } catch {
+      toast.error(errorMessage);
+    }
+  }
+
+  /** Reads the selection if one exists, otherwise the whole document — read-only counterpart to
+   *  `transformActiveEditor`, used by the hash tool since hashing doesn't mutate the buffer. */
+  function getActiveEditorSelectionOrDocument(): string | null {
+    const editor = editorRef.current;
+    const model = editor?.getModel();
+    if (!editor || !model) return null;
+    const selection = editor.getSelection();
+    const hasSelection = Boolean(selection && !selection.isEmpty());
+    return hasSelection && selection ? model.getValueInRange(selection) : model.getValue();
+  }
+
+  async function hashActiveEditor(algorithm: HashAlgorithm) {
+    const text = getActiveEditorSelectionOrDocument();
+    if (!text) {
+      toast.error("Open a file first to hash its content.");
+      return;
+    }
+    const hex = await computeHash(algorithm, text);
+    await navigator.clipboard.writeText(hex);
+    toast.success(`${algorithm} copied to clipboard: ${hex}`);
+  }
+
   /** Inserts dictated text at the cursor/selection, adding a leading space if it would otherwise
    *  run into the preceding word — keeps consecutive voice-typed phrases from merging together. */
   function insertDictatedText(text: string) {
@@ -469,6 +523,131 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
     "edit.formatDocument",
     () => {
       if (registerGlobalActions) formatActiveEditor();
+    },
+    [registerGlobalActions],
+  );
+
+  useRegisterAction(
+    "tools.base64Encode",
+    () => {
+      if (registerGlobalActions)
+        transformActiveEditor(base64Encode, "Base64-encoded.", "Couldn't Base64-encode this content.");
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.base64Decode",
+    () => {
+      if (registerGlobalActions)
+        transformActiveEditor(base64Decode, "Base64-decoded.", "Couldn't Base64-decode — is this valid Base64?");
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.urlEncode",
+    () => {
+      if (registerGlobalActions) transformActiveEditor(urlEncode, "URL-encoded.", "Couldn't URL-encode this content.");
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.urlDecode",
+    () => {
+      if (registerGlobalActions)
+        transformActiveEditor(urlDecode, "URL-decoded.", "Couldn't URL-decode — is this a valid encoded string?");
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.case.upper",
+    () => {
+      if (registerGlobalActions) transformActiveEditor(caseConverters.upper, "Case converted.", "Couldn't convert case.");
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.case.lower",
+    () => {
+      if (registerGlobalActions) transformActiveEditor(caseConverters.lower, "Case converted.", "Couldn't convert case.");
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.case.title",
+    () => {
+      if (registerGlobalActions) transformActiveEditor(caseConverters.title, "Case converted.", "Couldn't convert case.");
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.case.sentence",
+    () => {
+      if (registerGlobalActions)
+        transformActiveEditor(caseConverters.sentence, "Case converted.", "Couldn't convert case.");
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.case.camel",
+    () => {
+      if (registerGlobalActions) transformActiveEditor(caseConverters.camel, "Case converted.", "Couldn't convert case.");
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.case.pascal",
+    () => {
+      if (registerGlobalActions) transformActiveEditor(caseConverters.pascal, "Case converted.", "Couldn't convert case.");
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.case.snake",
+    () => {
+      if (registerGlobalActions) transformActiveEditor(caseConverters.snake, "Case converted.", "Couldn't convert case.");
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.case.kebab",
+    () => {
+      if (registerGlobalActions) transformActiveEditor(caseConverters.kebab, "Case converted.", "Couldn't convert case.");
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.case.constant",
+    () => {
+      if (registerGlobalActions)
+        transformActiveEditor(caseConverters.constant, "Case converted.", "Couldn't convert case.");
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.hash.SHA-1",
+    () => {
+      if (registerGlobalActions) void hashActiveEditor("SHA-1");
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.hash.SHA-256",
+    () => {
+      if (registerGlobalActions) void hashActiveEditor("SHA-256");
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.hash.SHA-384",
+    () => {
+      if (registerGlobalActions) void hashActiveEditor("SHA-384");
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.hash.SHA-512",
+    () => {
+      if (registerGlobalActions) void hashActiveEditor("SHA-512");
     },
     [registerGlobalActions],
   );
