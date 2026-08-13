@@ -7,6 +7,7 @@ import { flattenVisibleTree } from "@/lib/utils/treeUtils";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useExplorerSelectionStore } from "@/store/explorerSelectionStore";
 import { useTabsStore } from "@/store/tabsStore";
+import { useUIStore } from "@/store/uiStore";
 import { moveNode } from "@/services/fileOperations";
 
 const ROW_HEIGHT = 24;
@@ -14,6 +15,7 @@ const ROW_HEIGHT = 24;
 export function FileTree() {
   const nodes = useWorkspaceStore((s) => s.nodes);
   const filterQuery = useWorkspaceStore((s) => s.filterQuery);
+  const showHiddenFiles = useUIStore((s) => s.showHiddenFiles);
   const toggleCollapsed = useWorkspaceStore((s) => s.toggleCollapsed);
   const selectedNodeId = useExplorerSelectionStore((s) => s.selectedNodeId);
   const setSelectedNodeId = useExplorerSelectionStore((s) => s.setSelectedNodeId);
@@ -23,7 +25,7 @@ export function FileTree() {
   const setDropTargetId = useExplorerSelectionStore((s) => s.setDropTargetId);
   const openTab = useTabsStore((s) => s.openTab);
 
-  const rows = flattenVisibleTree(nodes, filterQuery);
+  const rows = flattenVisibleTree(nodes, filterQuery, showHiddenFiles);
 
   const parentRef = useRef<HTMLDivElement>(null);
   const virtualizer = useVirtualizer({

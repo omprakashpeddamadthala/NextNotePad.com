@@ -23,6 +23,9 @@ interface UIState {
   workspaceStatsOpen: boolean;
   isSplitView: boolean;
   markdownPreviewVisible: boolean;
+  /** Explorer's "Show Hidden Items" toggle — hidden files/folders stay out of the tree until this
+   *  is on, same idea as a Finder/Explorer dotfile toggle. */
+  showHiddenFiles: boolean;
 }
 
 interface UIActions {
@@ -41,6 +44,7 @@ interface UIActions {
   setWorkspaceStatsOpen: (open: boolean) => void;
   setSplitView: (isSplit: boolean) => void;
   toggleMarkdownPreview: () => void;
+  toggleShowHiddenFiles: () => void;
 }
 
 export const useUIStore = create<UIState & UIActions>()(
@@ -59,6 +63,7 @@ export const useUIStore = create<UIState & UIActions>()(
       workspaceStatsOpen: false,
       isSplitView: false,
       markdownPreviewVisible: false,
+      showHiddenFiles: false,
 
       setSidebarVisible: (sidebarVisible) => set({ sidebarVisible }),
       toggleSidebar: () => set((state) => ({ sidebarVisible: !state.sidebarVisible })),
@@ -75,6 +80,7 @@ export const useUIStore = create<UIState & UIActions>()(
       setWorkspaceStatsOpen: (workspaceStatsOpen) => set({ workspaceStatsOpen }),
       setSplitView: (isSplitView) => set({ isSplitView }),
       toggleMarkdownPreview: () => set((state) => ({ markdownPreviewVisible: !state.markdownPreviewVisible })),
+      toggleShowHiddenFiles: () => set((state) => ({ showHiddenFiles: !state.showHiddenFiles })),
     }),
     {
       name: "np-ui",
@@ -82,6 +88,7 @@ export const useUIStore = create<UIState & UIActions>()(
       partialize: (state) => ({
         sidebarVisible: state.sidebarVisible,
         bottomPanelVisible: state.bottomPanelVisible,
+        showHiddenFiles: state.showHiddenFiles,
       }),
     },
   ),
