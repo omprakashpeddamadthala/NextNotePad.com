@@ -3,7 +3,7 @@ import { useAuthStore } from "@/store/authStore";
 
 const isBrowser = typeof window !== "undefined";
 
-export function safeGetItem(key: string): string | null {
+function safeGetItem(key: string): string | null {
   if (!isBrowser) return null;
   try {
     return window.localStorage.getItem(key);
@@ -12,7 +12,7 @@ export function safeGetItem(key: string): string | null {
   }
 }
 
-export function safeSetItem(key: string, value: string): boolean {
+function safeSetItem(key: string, value: string): boolean {
   if (!isBrowser) return false;
   try {
     window.localStorage.setItem(key, value);
@@ -23,7 +23,7 @@ export function safeSetItem(key: string, value: string): boolean {
   }
 }
 
-export function safeRemoveItem(key: string): void {
+function safeRemoveItem(key: string): void {
   if (!isBrowser) return;
   try {
     window.localStorage.removeItem(key);

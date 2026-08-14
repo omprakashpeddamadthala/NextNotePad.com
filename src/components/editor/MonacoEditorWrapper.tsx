@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { toast } from "sonner";
 import type { OnMount } from "@monaco-editor/react";
 import type { editor as MonacoEditorNS } from "monaco-editor";
 import { handleMonacoBeforeMount } from "@/lib/monaco/setupMonaco";
@@ -13,24 +12,15 @@ import { useSettingsStore } from "@/store/settingsStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useTabsStore } from "@/store/tabsStore";
 import { useEditorStatusStore } from "@/store/editorStatusStore";
-import { useRegisterAction } from "@/hooks/useRegisterAction";
 import { AUTO_SAVE_INTERVALS_MS } from "@/lib/constants/defaultSettings";
-import { duplicateNode } from "@/services/fileOperations";
 import { useExplorerSelectionStore } from "@/store/explorerSelectionStore";
-import { CUSTOM_FORMATTERS } from "@/services/formatting/formatters";
+import { formatActiveEditor } from "@/services/formatting/formatActiveEditor";
 import { toggleBookmark, nextBookmarkLine } from "@/lib/monaco/bookmarks";
 import { usePendingGotoStore } from "@/store/pendingGotoStore";
-import { useEditorInsertStore } from "@/store/editorInsertStore";
 import { useMarkdownPreviewContentStore } from "@/store/markdownPreviewContentStore";
-import {
-  base64Encode,
-  base64Decode,
-  urlEncode,
-  urlDecode,
-  caseConverters,
-  computeHash,
-  type HashAlgorithm,
-} from "@/services/textTools/textTools";
+import { useMonacoGlobalActions } from "@/hooks/useMonacoGlobalActions";
+import { useMonacoTextToolActions } from "@/hooks/useMonacoTextToolActions";
+import { useVoiceDictationTarget } from "@/hooks/useVoiceDictationTarget";
 
 const Editor = dynamic(() => import("@monaco-editor/react").then((m) => m.default), {
   ssr: false,
@@ -62,7 +52,6 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
   const updateViewState = useTabsStore((s) => s.updateViewState);
   const setStatus = useEditorStatusStore((s) => s.setStatus);
   const setSelectedNodeId = useExplorerSelectionStore((s) => s.setSelectedNodeId);
-  const setRenamingNodeId = useExplorerSelectionStore((s) => s.setRenamingNodeId);
 
   const file = nodes[fileId];
   const language = file?.type === "file" ? file.language : "plaintext";
@@ -243,7 +232,7 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
     });
 
     editor.addCommand(monaco.KeyMod.Shift | monaco.KeyMod.Alt | monaco.KeyCode.KeyF, () => {
-      formatActiveEditor();
+      formatActiveEditor(editor);
     });
 
     editor.onMouseDown((e) => {
@@ -274,130 +263,7 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
     });
   };
 
-  /** Formats the selection if one exists, otherwise the whole document. JSON/XML use our own
-   *  formatter (guaranteed-correct, no CDN dependency); everything else uses Monaco's built-in. */
-  function formatActiveEditor() {
-    const editor = editorRef.current;
-    const model = editor?.getModel();
-    if (!editor || !model) return;
-
-    const selection = editor.getSelection();
-    const hasSelection = Boolean(selection && !selection.isEmpty());
-    const language = model.getLanguageId();
-    const customFormatter = CUSTOM_FORMATTERS[language];
-    const tabWidth = useSettingsStore.getState().settings.tabWidth;
-
-    if (customFormatter) {
-      const range = hasSelection && selection ? selection : model.getFullModelRange();
-      const original = model.getValueInRange(range);
-      try {
-        const formatted = customFormatter(original, tabWidth);
-        editor.executeEdits("format", [{ range, text: formatted }]);
-        editor.pushUndoStop();
-        toast.success(`Formatted ${language.toUpperCase()}`);
-      } catch {
-        toast.error(`Couldn't format — invalid ${language.toUpperCase()}`);
-      }
-      return;
-    }
-
-    const actionId = hasSelection ? "editor.action.formatSelection" : "editor.action.formatDocument";
-    const action = editor.getAction(actionId);
-    if (!action) {
-      toast.error(`No formatter available for "${language}"`);
-      return;
-    }
-    // Monaco's built-in action only does anything if a formatting provider is registered for
-    // this language — that's true for JS/TS/CSS/HTML/JSON out of the box, but most languages
-    // (Python, Go, Rust, Java, YAML, ...) have none, and `action.run()` succeeds silently
-    // without changing anything. Compare before/after so that case gets an honest message
-    // instead of the button looking like it did nothing.
-    const before = model.getValue();
-    void action.run().then(() => {
-      if (model.getValue() === before) {
-        toast.error(`No formatter available for "${language}"`);
-      } else {
-        toast.success(`Formatted ${language.toUpperCase()}`);
-      }
-    });
-  }
-
-  /** Applies a pure text transform to the selection if one exists, otherwise the whole document —
-   *  the same "selection-or-document" convention `formatActiveEditor` uses. Backs every Tools-menu
-   *  action (Base64, URL, case conversion): they act on the tab you already have open instead of a
-   *  separate copy/paste dialog. */
-  function transformActiveEditor(transform: (text: string) => string, successMessage: string, errorMessage: string) {
-    const editor = editorRef.current;
-    const model = editor?.getModel();
-    if (!editor || !model) return;
-
-    const selection = editor.getSelection();
-    const hasSelection = Boolean(selection && !selection.isEmpty());
-    const range = hasSelection && selection ? selection : model.getFullModelRange();
-    const original = model.getValueInRange(range);
-    try {
-      const transformed = transform(original);
-      editor.executeEdits("tools", [{ range, text: transformed }]);
-      editor.pushUndoStop();
-      toast.success(successMessage);
-    } catch {
-      toast.error(errorMessage);
-    }
-  }
-
-  /** Reads the selection if one exists, otherwise the whole document — read-only counterpart to
-   *  `transformActiveEditor`, used by the hash tool since hashing doesn't mutate the buffer. */
-  function getActiveEditorSelectionOrDocument(): string | null {
-    const editor = editorRef.current;
-    const model = editor?.getModel();
-    if (!editor || !model) return null;
-    const selection = editor.getSelection();
-    const hasSelection = Boolean(selection && !selection.isEmpty());
-    return hasSelection && selection ? model.getValueInRange(selection) : model.getValue();
-  }
-
-  async function hashActiveEditor(algorithm: HashAlgorithm) {
-    const text = getActiveEditorSelectionOrDocument();
-    if (!text) {
-      toast.error("Open a file first to hash its content.");
-      return;
-    }
-    const hex = await computeHash(algorithm, text);
-    await navigator.clipboard.writeText(hex);
-    toast.success(`${algorithm} copied to clipboard: ${hex}`);
-  }
-
-  /** Inserts dictated text at the cursor/selection, adding a leading space if it would otherwise
-   *  run into the preceding word — keeps consecutive voice-typed phrases from merging together. */
-  function insertDictatedText(text: string) {
-    const editor = editorRef.current;
-    const model = editor?.getModel();
-    const selection = editor?.getSelection();
-    if (!editor || !model || !selection) return;
-
-    const startPos = selection.getStartPosition();
-    const charBefore =
-      startPos.column > 1
-        ? model.getValueInRange({
-            startLineNumber: startPos.lineNumber,
-            startColumn: startPos.column - 1,
-            endLineNumber: startPos.lineNumber,
-            endColumn: startPos.column,
-          })
-        : "";
-    const needsLeadingSpace = charBefore !== "" && !/\s/.test(charBefore);
-
-    editor.executeEdits("voice-dictation", [
-      { range: selection, text: (needsLeadingSpace ? " " : "") + text + " ", forceMoveMarkers: true },
-    ]);
-    editor.pushUndoStop();
-  }
-
-  useEffect(() => {
-    if (!registerGlobalActions) return;
-    useEditorInsertStore.getState().register(insertDictatedText);
-    return () => useEditorInsertStore.getState().unregister(insertDictatedText);
-  }, [registerGlobalActions]);
+  useVoiceDictationTarget(editorRef, registerGlobalActions);
 
   function saveActiveFile() {
     const id = currentFileIdRef.current;
@@ -416,241 +282,8 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
       });
   }
 
-  useRegisterAction(
-    "file.save",
-    () => {
-      if (registerGlobalActions) saveActiveFile();
-    },
-    [registerGlobalActions, fileId, tabId],
-  );
-
-  useRegisterAction(
-    "file.saveAs",
-    () => {
-      if (!registerGlobalActions) return;
-      saveActiveFile();
-      void duplicateNode(fileId).then((newId) => {
-        if (!newId) return;
-        setSelectedNodeId(newId);
-        setRenamingNodeId(newId);
-        useTabsStore.getState().openTab(newId);
-      });
-    },
-    [registerGlobalActions, fileId],
-  );
-
-  useRegisterAction(
-    "edit.cut",
-    () => {
-      if (registerGlobalActions) editorRef.current?.getAction("editor.action.clipboardCutAction")?.run();
-    },
-    [registerGlobalActions],
-  );
-  useRegisterAction(
-    "edit.copy",
-    () => {
-      if (registerGlobalActions) editorRef.current?.getAction("editor.action.clipboardCopyAction")?.run();
-    },
-    [registerGlobalActions],
-  );
-  useRegisterAction(
-    "edit.paste",
-    () => {
-      if (registerGlobalActions) editorRef.current?.getAction("editor.action.clipboardPasteAction")?.run();
-    },
-    [registerGlobalActions],
-  );
-  useRegisterAction(
-    "edit.selectAll",
-    () => {
-      if (!registerGlobalActions) return;
-      const editor = editorRef.current;
-      const model = editor?.getModel();
-      if (editor && model) editor.setSelection(model.getFullModelRange());
-    },
-    [registerGlobalActions],
-  );
-  useRegisterAction(
-    "edit.deleteLine",
-    () => {
-      if (registerGlobalActions) editorRef.current?.getAction("editor.action.deleteLines")?.run();
-    },
-    [registerGlobalActions],
-  );
-  useRegisterAction(
-    "edit.duplicateLine",
-    () => {
-      if (registerGlobalActions) editorRef.current?.getAction("editor.action.copyLinesDownAction")?.run();
-    },
-    [registerGlobalActions],
-  );
-  useRegisterAction(
-    "edit.undo",
-    () => {
-      if (registerGlobalActions) editorRef.current?.trigger("menu", "undo", null);
-    },
-    [registerGlobalActions],
-  );
-  useRegisterAction(
-    "edit.redo",
-    () => {
-      if (registerGlobalActions) editorRef.current?.trigger("menu", "redo", null);
-    },
-    [registerGlobalActions],
-  );
-  useRegisterAction(
-    "search.find",
-    () => {
-      if (registerGlobalActions) editorRef.current?.getAction("actions.find")?.run();
-    },
-    [registerGlobalActions],
-  );
-  useRegisterAction(
-    "search.replace",
-    () => {
-      if (registerGlobalActions) editorRef.current?.getAction("editor.action.startFindReplaceAction")?.run();
-    },
-    [registerGlobalActions],
-  );
-  useRegisterAction(
-    "search.goToLine",
-    () => {
-      if (registerGlobalActions) editorRef.current?.getAction("editor.action.gotoLine")?.run();
-    },
-    [registerGlobalActions],
-  );
-  useRegisterAction(
-    "edit.formatDocument",
-    () => {
-      if (registerGlobalActions) formatActiveEditor();
-    },
-    [registerGlobalActions],
-  );
-
-  useRegisterAction(
-    "tools.base64Encode",
-    () => {
-      if (registerGlobalActions)
-        transformActiveEditor(base64Encode, "Base64-encoded.", "Couldn't Base64-encode this content.");
-    },
-    [registerGlobalActions],
-  );
-  useRegisterAction(
-    "tools.base64Decode",
-    () => {
-      if (registerGlobalActions)
-        transformActiveEditor(base64Decode, "Base64-decoded.", "Couldn't Base64-decode — is this valid Base64?");
-    },
-    [registerGlobalActions],
-  );
-  useRegisterAction(
-    "tools.urlEncode",
-    () => {
-      if (registerGlobalActions) transformActiveEditor(urlEncode, "URL-encoded.", "Couldn't URL-encode this content.");
-    },
-    [registerGlobalActions],
-  );
-  useRegisterAction(
-    "tools.urlDecode",
-    () => {
-      if (registerGlobalActions)
-        transformActiveEditor(urlDecode, "URL-decoded.", "Couldn't URL-decode — is this a valid encoded string?");
-    },
-    [registerGlobalActions],
-  );
-  useRegisterAction(
-    "tools.case.upper",
-    () => {
-      if (registerGlobalActions) transformActiveEditor(caseConverters.upper, "Case converted.", "Couldn't convert case.");
-    },
-    [registerGlobalActions],
-  );
-  useRegisterAction(
-    "tools.case.lower",
-    () => {
-      if (registerGlobalActions) transformActiveEditor(caseConverters.lower, "Case converted.", "Couldn't convert case.");
-    },
-    [registerGlobalActions],
-  );
-  useRegisterAction(
-    "tools.case.title",
-    () => {
-      if (registerGlobalActions) transformActiveEditor(caseConverters.title, "Case converted.", "Couldn't convert case.");
-    },
-    [registerGlobalActions],
-  );
-  useRegisterAction(
-    "tools.case.sentence",
-    () => {
-      if (registerGlobalActions)
-        transformActiveEditor(caseConverters.sentence, "Case converted.", "Couldn't convert case.");
-    },
-    [registerGlobalActions],
-  );
-  useRegisterAction(
-    "tools.case.camel",
-    () => {
-      if (registerGlobalActions) transformActiveEditor(caseConverters.camel, "Case converted.", "Couldn't convert case.");
-    },
-    [registerGlobalActions],
-  );
-  useRegisterAction(
-    "tools.case.pascal",
-    () => {
-      if (registerGlobalActions) transformActiveEditor(caseConverters.pascal, "Case converted.", "Couldn't convert case.");
-    },
-    [registerGlobalActions],
-  );
-  useRegisterAction(
-    "tools.case.snake",
-    () => {
-      if (registerGlobalActions) transformActiveEditor(caseConverters.snake, "Case converted.", "Couldn't convert case.");
-    },
-    [registerGlobalActions],
-  );
-  useRegisterAction(
-    "tools.case.kebab",
-    () => {
-      if (registerGlobalActions) transformActiveEditor(caseConverters.kebab, "Case converted.", "Couldn't convert case.");
-    },
-    [registerGlobalActions],
-  );
-  useRegisterAction(
-    "tools.case.constant",
-    () => {
-      if (registerGlobalActions)
-        transformActiveEditor(caseConverters.constant, "Case converted.", "Couldn't convert case.");
-    },
-    [registerGlobalActions],
-  );
-  useRegisterAction(
-    "tools.hash.SHA-1",
-    () => {
-      if (registerGlobalActions) void hashActiveEditor("SHA-1");
-    },
-    [registerGlobalActions],
-  );
-  useRegisterAction(
-    "tools.hash.SHA-256",
-    () => {
-      if (registerGlobalActions) void hashActiveEditor("SHA-256");
-    },
-    [registerGlobalActions],
-  );
-  useRegisterAction(
-    "tools.hash.SHA-384",
-    () => {
-      if (registerGlobalActions) void hashActiveEditor("SHA-384");
-    },
-    [registerGlobalActions],
-  );
-  useRegisterAction(
-    "tools.hash.SHA-512",
-    () => {
-      if (registerGlobalActions) void hashActiveEditor("SHA-512");
-    },
-    [registerGlobalActions],
-  );
+  useMonacoGlobalActions({ registerGlobalActions, editorRef, fileId, tabId, saveActiveFile });
+  useMonacoTextToolActions({ registerGlobalActions, editorRef });
 
   const themeModule = THEME_MODULES[theme];
 
