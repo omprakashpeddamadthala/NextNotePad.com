@@ -17,6 +17,7 @@ import {
   Braces,
   Eye,
   CalendarDays,
+  FileDiff,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ToolbarButton } from "./ToolbarButton";
@@ -71,6 +72,7 @@ export function Toolbar() {
         label="Format Document / Selection (Shift+Alt+F)"
         onClick={() => runAction("edit.formatDocument")}
       />
+      <ToolbarButton icon={FileDiff} label="Diff Checker" onClick={() => runAction("tools.diffChecker")} />
       <Separator orientation="vertical" className="mx-1 h-5" />
       <VoiceDictationButton />
       <ToolbarButton

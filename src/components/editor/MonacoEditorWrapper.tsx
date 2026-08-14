@@ -19,6 +19,7 @@ import { toggleBookmark, nextBookmarkLine } from "@/lib/monaco/bookmarks";
 import { usePendingGotoStore } from "@/store/pendingGotoStore";
 import { useMarkdownPreviewContentStore } from "@/store/markdownPreviewContentStore";
 import { useMonacoGlobalActions } from "@/hooks/useMonacoGlobalActions";
+import { useMonacoTextToolActions } from "@/hooks/useMonacoTextToolActions";
 import { useVoiceDictationTarget } from "@/hooks/useVoiceDictationTarget";
 
 const Editor = dynamic(() => import("@monaco-editor/react").then((m) => m.default), {
@@ -282,6 +283,7 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
   }
 
   useMonacoGlobalActions({ registerGlobalActions, editorRef, fileId, tabId, saveActiveFile });
+  useMonacoTextToolActions({ registerGlobalActions, editorRef });
 
   const themeModule = THEME_MODULES[theme];
 
@@ -297,6 +299,7 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
         theme={themeModule.monacoThemeId}
         defaultLanguage={language}
         defaultValue=""
+        keepCurrentModel
         beforeMount={handleMonacoBeforeMount}
         onMount={handleMount}
         options={{

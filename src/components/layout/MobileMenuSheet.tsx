@@ -17,6 +17,7 @@ import {
   WrapText,
   PanelBottom,
   HardDriveDownload,
+  FileDiff,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
@@ -26,6 +27,7 @@ import { SearchMenu } from "@/components/menu/SearchMenu";
 import { ViewMenu } from "@/components/menu/ViewMenu";
 import { EncodingMenu } from "@/components/menu/EncodingMenu";
 import { LanguageMenu } from "@/components/menu/LanguageMenu";
+import { ToolsMenu } from "@/components/menu/ToolsMenu";
 import { SettingsMenu } from "@/components/menu/SettingsMenu";
 import { WindowMenu } from "@/components/menu/WindowMenu";
 import { HelpMenu } from "@/components/menu/HelpMenu";
@@ -142,6 +144,9 @@ export function MobileMenuSheet() {
               <LanguageMenu />
             </MenuGridCell>
             <MenuGridCell>
+              <ToolsMenu />
+            </MenuGridCell>
+            <MenuGridCell>
               <SettingsMenu />
             </MenuGridCell>
             <MenuGridCell>
@@ -169,6 +174,7 @@ export function MobileMenuSheet() {
             <ActionGridButton icon={Search} label="Find" onClick={() => runAction("search.find")} />
             <ActionGridButton icon={Replace} label="Replace" onClick={() => runAction("search.replace")} />
             <ActionGridButton icon={Braces} label="Format" onClick={() => runAction("edit.formatDocument")} />
+            <ActionGridButton icon={FileDiff} label="Diff Checker" onClick={() => runAction("tools.diffChecker")} />
             <ActionGridButton
               icon={Eye}
               label="Markdown Preview"

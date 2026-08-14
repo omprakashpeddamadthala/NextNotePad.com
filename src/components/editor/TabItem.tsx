@@ -1,11 +1,12 @@
 "use client";
 
-import { X, Pin } from "lucide-react";
+import { X, Pin, FileDiff } from "lucide-react";
 import { getFileIcon } from "@/lib/fileIcons";
 import { cn } from "@/lib/utils";
 import { ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem, ContextMenuSeparator } from "@/components/ui/context-menu";
 import type { Tab, WorkspaceNode } from "@/types/file";
 import { useTabsStore } from "@/store/tabsStore";
+import { useDiffViewStore } from "@/store/diffViewStore";
 
 interface TabItemProps {
   tab: Tab;
@@ -103,6 +104,19 @@ export function TabItem({ tab, node, isActive, isDirty, index, onActivate, onDra
         <ContextMenuItem onSelect={() => closeOthers(tab.id)}>Close Others</ContextMenuItem>
         <ContextMenuItem onSelect={() => closeLeft(tab.id)}>Close to the Left</ContextMenuItem>
         <ContextMenuItem onSelect={() => closeRight(tab.id)}>Close to the Right</ContextMenuItem>
+        {!isActive && (
+          <>
+            <ContextMenuSeparator />
+            <ContextMenuItem
+              onSelect={() => {
+                const activeTabId = useTabsStore.getState().activeTabId;
+                if (activeTabId) useDiffViewStore.getState().openDiff(activeTabId, tab.id);
+              }}
+            >
+              <FileDiff /> Compare with Active Tab
+            </ContextMenuItem>
+          </>
+        )}
       </ContextMenuContent>
     </ContextMenu>
   );
