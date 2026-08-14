@@ -108,6 +108,14 @@ export async function pushFolderUpdate(folderId: string, opts?: { parentChanged?
     }
     await clearFailure("folder", folderId);
   } catch (err) {
+    if (isDriveNotFound(err)) {
+      // The linked Drive folder is gone (deleted directly in Drive, outside app control) — the
+      // local folder still exists, so re-create it under a fresh id rather than recording a
+      // failure that would just 404 again on every retry forever.
+      await prisma.folder.update({ where: { id: folderId }, data: { driveFileId: null } });
+      await pushFolderCreate(folderId);
+      return;
+    }
     await recordFailure(userId, "folder", folderId, "update", err);
   }
 }
@@ -192,6 +200,13 @@ export async function pushFileUpdate(fileId: string, opts?: { parentChanged?: bo
     }
     await clearFailure("file", fileId);
   } catch (err) {
+    if (isDriveNotFound(err)) {
+      // Same self-healing as the folder-update path: the linked Drive file is gone, so
+      // re-create it under a fresh id instead of a permanent, retry-proof failure.
+      await prisma.file.update({ where: { id: fileId }, data: { driveFileId: null } });
+      await pushFileCreate(fileId);
+      return;
+    }
     await recordFailure(userId, "file", fileId, "update", err);
   }
 }
