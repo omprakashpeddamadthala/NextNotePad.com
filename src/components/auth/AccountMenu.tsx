@@ -1,6 +1,7 @@
 "use client";
 
-import { LogIn, LogOut, User as UserIcon } from "lucide-react";
+import { useState } from "react";
+import { LogIn, LogOut, User as UserIcon, CloudDownload, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,6 +12,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { useAuthStore } from "@/store/authStore";
+import { syncFromDrive } from "@/services/driveImport";
 
 function initialsFor(name: string | null, email: string): string {
   const source = name?.trim() || email;
@@ -25,6 +27,16 @@ async function handleSignOut() {
 export function AccountMenu() {
   const status = useAuthStore((s) => s.status);
   const user = useAuthStore((s) => s.user);
+  const [syncing, setSyncing] = useState(false);
+
+  async function handleSyncFromDrive() {
+    setSyncing(true);
+    try {
+      await syncFromDrive();
+    } finally {
+      setSyncing(false);
+    }
+  }
 
   if (status === "loading") {
     return <div className="size-6 shrink-0 rounded-full bg-muted" aria-hidden />;
@@ -73,6 +85,17 @@ export function AccountMenu() {
             </div>
           </div>
         </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          disabled={syncing}
+          onSelect={(e) => {
+            e.preventDefault();
+            void handleSyncFromDrive();
+          }}
+        >
+          {syncing ? <Loader2 className="animate-spin" /> : <CloudDownload />}
+          {syncing ? "Syncing…" : "Sync from Drive"}
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => void handleSignOut()}>
           <LogOut /> Sign Out
