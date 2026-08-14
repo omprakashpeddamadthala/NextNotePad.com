@@ -49,31 +49,61 @@ async function getDriveContextForWorkspace(workspaceId: string) {
   return { drive, rootFolderId };
 }
 
-/** Falls back to the Drive root folder if the parent folder hasn't synced yet — a retry will fix the nesting once it has. */
+/**
+ * If a folder is created and then immediately given a child (e.g. Daily Notes: create the
+ * folder, then create today's note inside it), both pushes fire from separate `after()`
+ * callbacks on separate requests — the child's push can easily run before the parent's Drive
+ * folder has been created. Tracking in-flight `pushFolderCreate` calls here lets a child that
+ * needs its parent's Drive id either await the SAME push already underway, or kick one off
+ * itself if none is running, instead of racing it (which used to make the child silently land
+ * at the Drive root as a sibling instead of nested inside its parent).
+ */
+const pendingFolderCreates = new Map<string, Promise<void>>();
+
+/** Resolves the parent's Drive folder id, pushing the parent first if it hasn't synced yet
+ *  (deduped via `pendingFolderCreates` against that parent's own in-flight push, if any) —
+ *  only falls back to the Drive root if the parent push itself fails. */
 async function resolveDriveParentId(parentFolderId: string | null, rootFolderId: string): Promise<string> {
   if (!parentFolderId) return rootFolderId;
-  const parent = await prisma.folder.findUnique({ where: { id: parentFolderId } });
+  let parent = await prisma.folder.findUnique({ where: { id: parentFolderId } });
+  if (!parent) return rootFolderId;
+  if (!parent.driveFileId) {
+    await pushFolderCreate(parentFolderId);
+    parent = await prisma.folder.findUnique({ where: { id: parentFolderId } });
+  }
   return parent?.driveFileId ?? rootFolderId;
 }
 
 export async function pushFolderCreate(folderId: string): Promise<void> {
-  const folder = await prisma.folder.findUnique({ where: { id: folderId } });
-  if (!folder) return;
-  const userId = await getWorkspaceUserId(folder.workspaceId);
+  const inFlight = pendingFolderCreates.get(folderId);
+  if (inFlight) return inFlight;
 
-  try {
-    const { drive, rootFolderId } = await getDriveContextForWorkspace(folder.workspaceId);
-    const parentDriveId = await resolveDriveParentId(folder.parentId, rootFolderId);
-    const created = await drive.files.create({
-      requestBody: { name: folder.name, mimeType: "application/vnd.google-apps.folder", parents: [parentDriveId] },
-      fields: "id",
-    });
-    if (created.data.id) {
-      await prisma.folder.update({ where: { id: folder.id }, data: { driveFileId: created.data.id } });
+  const promise = (async () => {
+    const folder = await prisma.folder.findUnique({ where: { id: folderId } });
+    if (!folder || folder.driveFileId) return; // gone, or already pushed by a racing caller
+    const userId = await getWorkspaceUserId(folder.workspaceId);
+
+    try {
+      const { drive, rootFolderId } = await getDriveContextForWorkspace(folder.workspaceId);
+      const parentDriveId = await resolveDriveParentId(folder.parentId, rootFolderId);
+      const created = await drive.files.create({
+        requestBody: { name: folder.name, mimeType: "application/vnd.google-apps.folder", parents: [parentDriveId] },
+        fields: "id",
+      });
+      if (created.data.id) {
+        await prisma.folder.update({ where: { id: folder.id }, data: { driveFileId: created.data.id } });
+      }
+      await clearFailure("folder", folderId);
+    } catch (err) {
+      await recordFailure(userId, "folder", folderId, "create", err);
     }
-    await clearFailure("folder", folderId);
-  } catch (err) {
-    await recordFailure(userId, "folder", folderId, "create", err);
+  })();
+
+  pendingFolderCreates.set(folderId, promise);
+  try {
+    await promise;
+  } finally {
+    pendingFolderCreates.delete(folderId);
   }
 }
 
