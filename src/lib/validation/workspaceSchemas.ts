@@ -28,6 +28,7 @@ export const updateFileSchema = z.object({
   content: z.string().optional(),
   language: z.string().optional(),
   encoding: z.string().optional(),
+  hidden: z.boolean().optional(),
 });
 
 export const createFolderSchema = z.object({
@@ -39,6 +40,7 @@ export const updateFolderSchema = z.object({
   name: z.string().min(1).max(255).optional(),
   parentId: z.string().nullable().optional(),
   collapsed: z.boolean().optional(),
+  hidden: z.boolean().optional(),
 });
 
 export const updateSettingsSchema = z.object({

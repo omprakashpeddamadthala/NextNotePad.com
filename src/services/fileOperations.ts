@@ -94,6 +94,7 @@ export async function createFile(parentId: string | null, name: string, content 
     encoding: "UTF-8",
     size: content.length,
     pinnedFavorite: false,
+    hidden: false,
   };
   workspace.addNode(node);
   void localRepo.writeFileContent(id, content);
@@ -130,6 +131,7 @@ export async function createFolder(parentId: string | null, name: string): Promi
     checksum: null,
     deleted: false,
     collapsed: false,
+    hidden: false,
   };
   workspace.addNode(node);
   return id;
@@ -172,6 +174,22 @@ export function setFileLanguage(id: string, language: string): void {
     void cloudRepo
       .patchCloudFile(id, { language })
       .catch(() => toast.error(`Failed to sync language change for "${node.name}".`));
+  }
+}
+
+/** Hides/unhides a file or folder from the explorer's default view (still fully usable — open,
+ *  search, etc. — just not shown unless "Show Hidden Items" is on). Mirrors `renameNode`'s
+ *  local-update-then-sync shape. */
+export function toggleNodeHidden(id: string): void {
+  const workspace = useWorkspaceStore.getState();
+  const node = workspace.nodes[id];
+  if (!node) return;
+  const hidden = !node.hidden;
+  workspace.updateNode(id, { hidden });
+
+  if (isCloudMode()) {
+    const patchFn = node.type === "folder" ? cloudRepo.patchCloudFolder : cloudRepo.patchCloudFile;
+    void patchFn(id, { hidden }).catch(() => toast.error(`Failed to sync visibility of "${node.name}".`));
   }
 }
 

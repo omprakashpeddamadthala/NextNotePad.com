@@ -44,6 +44,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   }
   if (parsed.data.language !== undefined) data.language = parsed.data.language;
   if (parsed.data.encoding !== undefined) data.encoding = parsed.data.encoding;
+  if (parsed.data.hidden !== undefined) data.hidden = parsed.data.hidden;
 
   const nameChanged = parsed.data.name !== undefined && parsed.data.name !== existing.name;
   const parentChanged = parsed.data.parentId !== undefined && parsed.data.parentId !== existing.parentId;

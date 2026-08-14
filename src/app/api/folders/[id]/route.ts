@@ -26,6 +26,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
   const data: Prisma.FolderUpdateInput = { version: { increment: 1 } };
   if (parsed.data.collapsed !== undefined) data.collapsed = parsed.data.collapsed;
+  if (parsed.data.hidden !== undefined) data.hidden = parsed.data.hidden;
 
   const nameChanged = parsed.data.name !== undefined && parsed.data.name !== existing.name;
   const parentChanged = parsed.data.parentId !== undefined && parsed.data.parentId !== existing.parentId;

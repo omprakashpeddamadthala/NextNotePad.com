@@ -65,7 +65,7 @@ export async function createCloudFolder(parentId: string | null, name: string): 
 
 export async function patchCloudFile(
   fileId: string,
-  patch: { name?: string; parentId?: string | null; language?: string },
+  patch: { name?: string; parentId?: string | null; language?: string; hidden?: boolean },
 ): Promise<WorkspaceNode> {
   const res = await fetch(`/api/files/${fileId}`, {
     method: "PATCH",
@@ -77,7 +77,7 @@ export async function patchCloudFile(
 
 export async function patchCloudFolder(
   folderId: string,
-  patch: { name?: string; parentId?: string | null; collapsed?: boolean },
+  patch: { name?: string; parentId?: string | null; collapsed?: boolean; hidden?: boolean },
 ): Promise<WorkspaceNode> {
   const res = await fetch(`/api/folders/${folderId}`, {
     method: "PATCH",

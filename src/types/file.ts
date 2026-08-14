@@ -14,6 +14,7 @@ interface BaseNode {
   version: number;
   checksum: string | null;
   deleted: boolean;
+  hidden: boolean;
 }
 
 export interface FileNode extends BaseNode {

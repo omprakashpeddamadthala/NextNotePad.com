@@ -1,6 +1,6 @@
 "use client";
 
-import { PanelLeft, PanelBottom, ZoomIn, ZoomOut, RotateCcw, Palette, SplitSquareHorizontal, Maximize, Lock } from "lucide-react";
+import { PanelLeft, PanelBottom, ZoomIn, ZoomOut, RotateCcw, Palette, SplitSquareHorizontal, Maximize, Lock, EyeOff } from "lucide-react";
 import { TopMenu } from "./TopMenu";
 import {
   DropdownMenuItem,
@@ -23,8 +23,16 @@ import { THEME_ORDER } from "@/lib/constants/themes";
 import { THEME_MODULES } from "@/lib/monaco/themes";
 
 export function ViewMenu() {
-  const { sidebarVisible, toggleSidebar, bottomPanelVisible, setBottomPanelVisible, isSplitView, setSplitView } =
-    useUIStore();
+  const {
+    sidebarVisible,
+    toggleSidebar,
+    bottomPanelVisible,
+    setBottomPanelVisible,
+    isSplitView,
+    setSplitView,
+    showHiddenFiles,
+    toggleShowHiddenFiles,
+  } = useUIStore();
   const settings = useSettingsStore((s) => s.settings);
   const updateSettings = useSettingsStore((s) => s.updateSettings);
   const theme = useSettingsStore((s) => s.theme);
@@ -43,6 +51,9 @@ export function ViewMenu() {
         onCheckedChange={(v) => setBottomPanelVisible(Boolean(v))}
       >
         <PanelBottom /> Bottom Panel
+      </DropdownMenuCheckboxItem>
+      <DropdownMenuCheckboxItem checked={showHiddenFiles} onCheckedChange={() => toggleShowHiddenFiles()}>
+        <EyeOff /> Show Hidden Items
       </DropdownMenuCheckboxItem>
       <DropdownMenuCheckboxItem
         checked={settings.showMinimap}
