@@ -18,6 +18,7 @@ import {
   PanelBottom,
   HardDriveDownload,
   FileDiff,
+  Webhook,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
@@ -175,6 +176,7 @@ export function MobileMenuSheet() {
             <ActionGridButton icon={Replace} label="Replace" onClick={() => runAction("search.replace")} />
             <ActionGridButton icon={Braces} label="Format" onClick={() => runAction("edit.formatDocument")} />
             <ActionGridButton icon={FileDiff} label="Diff Checker" onClick={() => runAction("tools.diffChecker")} />
+            <ActionGridButton icon={Webhook} label="HTTP Tools" onClick={() => runAction("tools.httpClient")} />
             <ActionGridButton
               icon={Eye}
               label="Markdown Preview"

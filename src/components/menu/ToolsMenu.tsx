@@ -1,6 +1,6 @@
 "use client";
 
-import { Binary, Link2, CaseSensitive, Hash, FileDiff } from "lucide-react";
+import { Binary, Link2, CaseSensitive, Hash, FileDiff, Webhook } from "lucide-react";
 import { TopMenu } from "./TopMenu";
 import {
   DropdownMenuItem,
@@ -71,6 +71,9 @@ export function ToolsMenu() {
       <DropdownMenuSeparator />
       <DropdownMenuItem onSelect={() => runAction("tools.diffChecker")}>
         <FileDiff /> Diff Checker
+      </DropdownMenuItem>
+      <DropdownMenuItem onSelect={() => runAction("tools.httpClient")}>
+        <Webhook /> HTTP Tools
       </DropdownMenuItem>
     </TopMenu>
   );

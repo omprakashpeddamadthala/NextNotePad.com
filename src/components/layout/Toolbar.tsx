@@ -18,6 +18,7 @@ import {
   Eye,
   CalendarDays,
   FileDiff,
+  Webhook,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ToolbarButton } from "./ToolbarButton";
@@ -73,6 +74,7 @@ export function Toolbar() {
         onClick={() => runAction("edit.formatDocument")}
       />
       <ToolbarButton icon={FileDiff} label="Diff Checker" onClick={() => runAction("tools.diffChecker")} />
+      <ToolbarButton icon={Webhook} label="HTTP Tools" onClick={() => runAction("tools.httpClient")} />
       <Separator orientation="vertical" className="mx-1 h-5" />
       <VoiceDictationButton />
       <ToolbarButton

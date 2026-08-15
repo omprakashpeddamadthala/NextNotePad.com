@@ -14,6 +14,7 @@ import {
   CaseSensitive,
   Hash,
   FileDiff,
+  Webhook,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -154,6 +155,13 @@ export function CommandPalette() {
         category: "Tools",
         icon: FileDiff,
         run: () => runAction("tools.diffChecker"),
+      },
+      {
+        id: "tools-http-client",
+        label: "Tools: HTTP Tools",
+        category: "Tools",
+        icon: Webhook,
+        run: () => runAction("tools.httpClient"),
       },
       ...THEME_ORDER.map((id) => ({
         id: `theme-${id}`,

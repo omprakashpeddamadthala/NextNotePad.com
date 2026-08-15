@@ -7,11 +7,13 @@ import { EditorTabs } from "./EditorTabs";
 import { MonacoEditorWrapper } from "./MonacoEditorWrapper";
 import { SplitEditor } from "./SplitEditor";
 import { DiffTabView } from "./DiffTabView";
+import { HttpToolsView } from "./HttpToolsView";
 import { Button } from "@/components/ui/button";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useTabsStore } from "@/store/tabsStore";
 import { useUIStore } from "@/store/uiStore";
 import { useDiffViewStore } from "@/store/diffViewStore";
+import { useHttpToolsViewStore } from "@/store/httpToolsViewStore";
 import { useAuthStore } from "@/store/authStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { runAction } from "@/services/shortcuts/actionRegistry";
@@ -32,6 +34,7 @@ export function EditorArea() {
   const setSplitView = useTabsStore((s) => s.setSplitView);
   const isSplitView = useUIStore((s) => s.isSplitView);
   const diffView = useDiffViewStore((s) => s.diffView);
+  const httpToolsOpen = useHttpToolsViewStore((s) => s.open);
   const markdownPreviewVisible = useUIStore((s) => s.markdownPreviewVisible);
   const authStatus = useAuthStore((s) => s.status);
   const workspaceReady = useAuthStore((s) => s.workspaceReady);
@@ -59,6 +62,8 @@ export function EditorArea() {
           <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
             Loading workspace…
           </div>
+        ) : httpToolsOpen ? (
+          <HttpToolsView />
         ) : diffView ? (
           <DiffTabView diff={diffView} />
         ) : tabs.length === 0 || !activeTab ? (
