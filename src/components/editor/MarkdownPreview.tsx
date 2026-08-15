@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Maximize2, Printer } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { getActiveRepository } from "@/services/storage/activeRepository";
 import { useMarkdownPreviewContentStore } from "@/store/markdownPreviewContentStore";
 import { renderMarkdown } from "@/lib/markdown/renderMarkdown";
+import { openMarkdownFullPage } from "@/services/markdownFullPageView";
 
 interface MarkdownPreviewProps {
   fileId: string;
@@ -44,8 +47,18 @@ export function MarkdownPreview({ fileId }: MarkdownPreviewProps) {
   }
 
   return (
-    <div className="np-scrollbar h-full overflow-auto bg-background px-6 py-4">
-      <div className="np-markdown-preview mx-auto max-w-3xl" dangerouslySetInnerHTML={{ __html: html }} />
+    <div className="flex h-full flex-col">
+      <div className="flex h-8 shrink-0 items-center justify-end gap-1 border-b bg-[var(--np-toolbar-bg)] px-2">
+        <Button size="sm" variant="ghost" onClick={() => window.print()}>
+          <Printer className="size-3.5" /> Download PDF
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => openMarkdownFullPage(fileId)}>
+          <Maximize2 className="size-3.5" /> View Full Page
+        </Button>
+      </div>
+      <div className="np-scrollbar min-h-0 flex-1 overflow-auto bg-background px-6 py-4">
+        <div className="np-markdown-preview np-print-target mx-auto max-w-3xl" dangerouslySetInnerHTML={{ __html: html }} />
+      </div>
     </div>
   );
 }

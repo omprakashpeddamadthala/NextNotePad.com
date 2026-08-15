@@ -142,3 +142,22 @@
   border-top: 1px solid var(--border);
   margin: 1.5em 0;
 }
+
+/* "Download PDF" is the browser's own print-to-PDF, triggered on whichever markdown preview
+ * (side-by-side or full-page) is currently rendered — isolate that one element so the printed
+ * page is just the rendered document, not the app chrome (menus, tabs, explorer) around it. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .np-print-target,
+  .np-print-target * {
+    visibility: visible;
+  }
+  .np-print-target {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+}
