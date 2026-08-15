@@ -2,9 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { FileText, Printer, X } from "lucide-react";
+import { FileText, Pencil, Printer, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useWorkspaceStore } from "@/store/workspaceStore";
+import { useTabsStore } from "@/store/tabsStore";
+import { useRecentFilesStore } from "@/store/recentFilesStore";
 import { useMarkdownFullPageViewStore } from "@/store/markdownFullPageViewStore";
 import { getActiveRepository } from "@/services/storage/activeRepository";
 import * as modelRegistry from "@/lib/monaco/modelRegistry";
@@ -20,16 +22,26 @@ async function readCurrentContent(fileId: string): Promise<string> {
 }
 
 /** Full-page, read-only rendering of a markdown file — replaces the tab content the same way
- *  DiffTabView does, reached from the side-by-side preview's "View Full Page" button. Printing
- *  (for "Save as PDF") isolates the `.np-print-target` content via the print stylesheet in
- *  themes.css, so only the rendered markdown ends up on the page, not the app chrome around it.
+ *  DiffTabView does. This is the default landing view for a markdown file (the explorer opens it
+ *  straight here instead of the editor); it's also reached from the side-by-side preview's "View
+ *  Full Page" button. The Edit button opens the normal editor tab for anyone who wants to type.
+ *  Printing (for "Save as PDF") isolates the `.np-print-target` content via the print stylesheet
+ *  in themes.css, so only the rendered markdown ends up on the page, not the app chrome around it.
  *  Callers must render this with `key={fileId}` so switching files remounts it fresh instead of
  *  needing an effect to reset state — same convention as MarkdownPreview. */
 export function MarkdownFullPageView({ fileId }: { fileId: string }) {
   const closeFullPage = useMarkdownFullPageViewStore((s) => s.closeFullPage);
+  const openTab = useTabsStore((s) => s.openTab);
+  const addRecent = useRecentFilesStore((s) => s.addRecent);
   const node = useWorkspaceStore((s) => s.nodes[fileId]);
 
   const [content, setContent] = useState<string | null>(null);
+
+  function handleEdit() {
+    openTab(fileId);
+    addRecent(fileId);
+    closeFullPage();
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -75,11 +87,14 @@ export function MarkdownFullPageView({ fileId }: { fileId: string }) {
         <FileText className="size-3.5 shrink-0 text-muted-foreground" />
         <span className="truncate font-medium">{node.name}</span>
         <div className="ml-auto flex shrink-0 items-center gap-1">
+          <Button size="sm" variant="ghost" onClick={handleEdit}>
+            <Pencil className="size-3.5" /> Edit
+          </Button>
           <Button size="sm" variant="ghost" disabled={content === null} onClick={() => window.print()}>
             <Printer className="size-3.5" /> Download PDF
           </Button>
           <Button size="sm" variant="ghost" onClick={closeFullPage}>
-            <X className="size-3.5" /> Back to Editor
+            <X className="size-3.5" /> Close
           </Button>
         </div>
       </div>

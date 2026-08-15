@@ -12,6 +12,7 @@ import { useExplorerSelectionStore } from "@/store/explorerSelectionStore";
 import { useTabsStore } from "@/store/tabsStore";
 import { useRecentFilesStore } from "@/store/recentFilesStore";
 import { renameNode, moveNode } from "@/services/fileOperations";
+import { openMarkdownFullPage } from "@/services/markdownFullPageView";
 import { isValidNodeName } from "@/lib/utils/pathUtils";
 import { isDescendant } from "@/lib/utils/treeUtils";
 import { toast } from "sonner";
@@ -74,9 +75,16 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
     setSelectedNodeId(node.id);
     if (isFolder) {
       toggleCollapsed(node.id);
+      return;
+    }
+    addRecent(node.id);
+    // Markdown files open straight into the read-only full-page viewer — the Edit button there
+    // switches to the normal editor tab when the user actually wants to type. A locked markdown
+    // file still goes through the normal tab so its unlock overlay is reachable by clicking it.
+    if (node.type === "file" && node.language === "markdown" && !node.locked) {
+      openMarkdownFullPage(node.id);
     } else {
       openTab(node.id);
-      addRecent(node.id);
     }
   }
 
