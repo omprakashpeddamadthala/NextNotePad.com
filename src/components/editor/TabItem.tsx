@@ -58,10 +58,12 @@ export function TabItem({ tab, node, isActive, isDirty, index, onActivate, onDra
           aria-selected={isActive}
           className={cn(
             "focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none",
-            "group flex h-8 shrink-0 cursor-default items-center gap-1.5 border-r px-2.5 text-[13px] select-none",
+            "group relative flex h-8 shrink-0 cursor-default items-center gap-1.5 border-r px-2.5 text-[13px] transition-colors select-none",
+            // A 2px top accent on the active tab — the background alone is a subtle difference in
+            // the lighter themes, and this is the standard editor cue for "you are here".
             isActive
-              ? "bg-[var(--np-tab-active-bg)] text-foreground"
-              : "bg-[var(--np-tab-inactive-bg)] text-muted-foreground hover:text-foreground",
+              ? "bg-[var(--np-tab-active-bg)] text-foreground before:absolute before:inset-x-0 before:top-0 before:h-0.5 before:bg-primary"
+              : "bg-[var(--np-tab-inactive-bg)] text-muted-foreground hover:bg-[var(--np-menu-hover)] hover:text-foreground",
           )}
           style={{ borderColor: "var(--np-tab-border)" }}
           title={node?.path}

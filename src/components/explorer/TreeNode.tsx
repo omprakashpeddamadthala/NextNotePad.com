@@ -9,10 +9,9 @@ import { cn } from "@/lib/utils";
 import type { WorkspaceNode } from "@/types/file";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useExplorerSelectionStore } from "@/store/explorerSelectionStore";
-import { useTabsStore } from "@/store/tabsStore";
 import { useRecentFilesStore } from "@/store/recentFilesStore";
 import { renameNode, moveNode } from "@/services/fileOperations";
-import { openMarkdownFullPage } from "@/services/markdownFullPageView";
+import { openFileForUser } from "@/services/openFile";
 import { isValidNodeName } from "@/lib/utils/pathUtils";
 import { isDescendant } from "@/lib/utils/treeUtils";
 import { toast } from "sonner";
@@ -25,8 +24,6 @@ interface TreeNodeProps {
 export function TreeNode({ node, depth }: TreeNodeProps) {
   const toggleCollapsed = useWorkspaceStore((s) => s.toggleCollapsed);
   const nodes = useWorkspaceStore((s) => s.nodes);
-  const openTab = useTabsStore((s) => s.openTab);
-  const addRecent = useRecentFilesStore((s) => s.addRecent);
   const isFavorite = useRecentFilesStore((s) => s.isFavorite(node.id));
 
   const selectedNodeId = useExplorerSelectionStore((s) => s.selectedNodeId);
@@ -77,15 +74,7 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
       toggleCollapsed(node.id);
       return;
     }
-    addRecent(node.id);
-    // Markdown files open straight into the read-only full-page viewer — the Edit button there
-    // switches to the normal editor tab when the user actually wants to type. A locked markdown
-    // file still goes through the normal tab so its unlock overlay is reachable by clicking it.
-    if (node.type === "file" && node.language === "markdown" && !node.locked) {
-      openMarkdownFullPage(node.id);
-    } else {
-      openTab(node.id);
-    }
+    openFileForUser(node.id);
   }
 
   function handleDragStart(e: React.DragEvent) {

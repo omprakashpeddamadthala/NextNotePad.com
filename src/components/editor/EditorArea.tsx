@@ -2,12 +2,11 @@
 
 import { useEffect } from "react";
 import dynamic from "next/dynamic";
-import { FilePlus, FolderOpen } from "lucide-react";
 import { EditorTabs } from "./EditorTabs";
 import { MonacoEditorWrapper } from "./MonacoEditorWrapper";
 import { SplitEditor } from "./SplitEditor";
 import { DiffTabView } from "./DiffTabView";
-import { Button } from "@/components/ui/button";
+import { EditorWelcome } from "./EditorWelcome";
 import { SkeletonText } from "@/components/ui/skeleton";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useTabsStore } from "@/store/tabsStore";
@@ -16,7 +15,6 @@ import { useDiffViewStore } from "@/store/diffViewStore";
 import { useMarkdownFullPageViewStore } from "@/store/markdownFullPageViewStore";
 import { useAuthStore } from "@/store/authStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
-import { runAction } from "@/services/shortcuts/actionRegistry";
 
 // DOMPurify (used to sanitize the rendered markdown) needs `window` — same ssr:false pattern
 // already used for Monaco itself.
@@ -80,17 +78,7 @@ export function EditorArea() {
         ) : markdownFullPageFileId ? (
           <MarkdownFullPageView key={markdownFullPageFileId} fileId={markdownFullPageFileId} />
         ) : tabs.length === 0 || !activeTab ? (
-          <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
-            <p>No file open</p>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => runAction("file.new")}>
-                <FilePlus className="size-4" /> New File
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => runAction("file.open")}>
-                <FolderOpen className="size-4" /> Open File
-              </Button>
-            </div>
-          </div>
+          <EditorWelcome />
         ) : isSplitView && splitView ? (
           <SplitEditor split={splitView} />
         ) : (
