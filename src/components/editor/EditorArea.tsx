@@ -12,6 +12,7 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/componen
 import { useTabsStore } from "@/store/tabsStore";
 import { useUIStore } from "@/store/uiStore";
 import { useDiffViewStore } from "@/store/diffViewStore";
+import { useMarkdownFullPageViewStore } from "@/store/markdownFullPageViewStore";
 import { useAuthStore } from "@/store/authStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { runAction } from "@/services/shortcuts/actionRegistry";
@@ -24,6 +25,15 @@ const MarkdownPreview = dynamic(() => import("./MarkdownPreview").then((m) => m.
     <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Loading preview…</div>
   ),
 });
+const MarkdownFullPageView = dynamic(
+  () => import("./MarkdownFullPageView").then((m) => m.MarkdownFullPageView),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Loading preview…</div>
+    ),
+  },
+);
 
 export function EditorArea() {
   const tabs = useTabsStore((s) => s.tabs);
@@ -32,6 +42,7 @@ export function EditorArea() {
   const setSplitView = useTabsStore((s) => s.setSplitView);
   const isSplitView = useUIStore((s) => s.isSplitView);
   const diffView = useDiffViewStore((s) => s.diffView);
+  const markdownFullPageFileId = useMarkdownFullPageViewStore((s) => s.fileId);
   const markdownPreviewVisible = useUIStore((s) => s.markdownPreviewVisible);
   const authStatus = useAuthStore((s) => s.status);
   const workspaceReady = useAuthStore((s) => s.workspaceReady);
@@ -65,6 +76,8 @@ export function EditorArea() {
           </div>
         ) : diffView ? (
           <DiffTabView diff={diffView} />
+        ) : markdownFullPageFileId ? (
+          <MarkdownFullPageView key={markdownFullPageFileId} fileId={markdownFullPageFileId} />
         ) : tabs.length === 0 || !activeTab ? (
           <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
             <p>No file open</p>

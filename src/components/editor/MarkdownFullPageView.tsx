@@ -1,0 +1,98 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { FileText, Printer, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useWorkspaceStore } from "@/store/workspaceStore";
+import { useMarkdownFullPageViewStore } from "@/store/markdownFullPageViewStore";
+import { getActiveRepository } from "@/services/storage/activeRepository";
+import * as modelRegistry from "@/lib/monaco/modelRegistry";
+import { renderMarkdown } from "@/lib/markdown/renderMarkdown";
+
+/** Reads a file's current content for read-only display: the live (possibly-unsaved) Monaco
+ *  model if one's still registered, otherwise the last-saved content from storage. Mirrors
+ *  DiffTabView's `readTabContent`. */
+async function readCurrentContent(fileId: string): Promise<string> {
+  const existing = modelRegistry.getModel(fileId);
+  if (existing) return existing.getValue();
+  return getActiveRepository().readFileContent(fileId);
+}
+
+/** Full-page, read-only rendering of a markdown file — replaces the tab content the same way
+ *  DiffTabView does, reached from the side-by-side preview's "View Full Page" button. Printing
+ *  (for "Save as PDF") isolates the `.np-print-target` content via the print stylesheet in
+ *  themes.css, so only the rendered markdown ends up on the page, not the app chrome around it.
+ *  Callers must render this with `key={fileId}` so switching files remounts it fresh instead of
+ *  needing an effect to reset state — same convention as MarkdownPreview. */
+export function MarkdownFullPageView({ fileId }: { fileId: string }) {
+  const closeFullPage = useMarkdownFullPageViewStore((s) => s.closeFullPage);
+  const node = useWorkspaceStore((s) => s.nodes[fileId]);
+
+  const [content, setContent] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void readCurrentContent(fileId)
+      .then((c) => {
+        if (!cancelled) setContent(c);
+      })
+      .catch(() => {
+        if (!cancelled) toast.error("Couldn't load this file.");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [fileId]);
+
+  const html = useMemo(() => renderMarkdown(content ?? ""), [content]);
+
+  if (!node) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
+        <p>That file isn&rsquo;t open anymore.</p>
+        <Button size="sm" variant="outline" onClick={closeFullPage}>
+          <X className="size-3.5" /> Close
+        </Button>
+      </div>
+    );
+  }
+
+  if (node.type === "file" && node.locked) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
+        <p>&ldquo;{node.name}&rdquo; is locked — unlock it first to view it.</p>
+        <Button size="sm" variant="outline" onClick={closeFullPage}>
+          <X className="size-3.5" /> Close
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex h-9 shrink-0 items-center gap-2 border-b bg-[var(--np-toolbar-bg)] px-2.5 text-sm">
+        <FileText className="size-3.5 shrink-0 text-muted-foreground" />
+        <span className="truncate font-medium">{node.name}</span>
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          <Button size="sm" variant="ghost" disabled={content === null} onClick={() => window.print()}>
+            <Printer className="size-3.5" /> Download PDF
+          </Button>
+          <Button size="sm" variant="ghost" onClick={closeFullPage}>
+            <X className="size-3.5" /> Back to Editor
+          </Button>
+        </div>
+      </div>
+      <div className="np-scrollbar h-full overflow-auto bg-background px-6 py-4">
+        {content === null ? (
+          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Loading…</div>
+        ) : (
+          <div
+            className="np-markdown-preview np-print-target mx-auto max-w-3xl"
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
