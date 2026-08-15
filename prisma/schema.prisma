@@ -90,6 +90,14 @@ model File {
   checksum    String?
   deletedAt   DateTime?
 
+  // Lock feature: when `locked`, `content` holds AES-256-GCM ciphertext (base64) instead of
+  // plaintext, and `encryptionSalt`/`encryptionIv` (both base64) are the PBKDF2 salt and AES-GCM
+  // IV needed to re-derive the key and decrypt. Both null while unlocked. The passphrase itself
+  // is never stored anywhere — encryption and decryption happen client-side only.
+  locked         Boolean @default(false)
+  encryptionSalt String?
+  encryptionIv   String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -23,6 +23,7 @@ import { CommandPalette } from "@/components/search/CommandPalette";
 import { AboutDialog } from "@/components/dialogs/AboutDialog";
 import { ExportImportDialog } from "@/components/dialogs/ExportImportDialog";
 import { WorkspaceStatsDialog } from "@/components/dialogs/WorkspaceStatsDialog";
+import { LockUnlockDialog } from "@/components/dialogs/LockUnlockDialog";
 import { SyncOfflineFilesDialog } from "@/components/auth/SyncOfflineFilesDialog";
 import { useAppBootstrap } from "@/hooks/useAppBootstrap";
 import { useAuthBootstrap } from "@/hooks/useAuthBootstrap";
@@ -112,6 +113,7 @@ export function AppShell() {
       <ExportImportDialog />
       <WorkspaceStatsDialog />
       <SyncOfflineFilesDialog />
+      <LockUnlockDialog />
     </div>
   );
 }

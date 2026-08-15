@@ -95,6 +95,9 @@ export async function createFile(parentId: string | null, name: string, content 
     size: content.length,
     pinnedFavorite: false,
     hidden: false,
+    locked: false,
+    encryptionSalt: null,
+    encryptionIv: null,
   };
   workspace.addNode(node);
   void localRepo.writeFileContent(id, content);
@@ -218,6 +221,21 @@ export function moveNode(id: string, newParentId: string | null): void {
   }
 }
 
+/** Duplicates one cloud file, preserving its lock state — a locked source stays locked in the
+ *  copy (same ciphertext/salt/iv, so the same passphrase still unlocks it), matching how
+ *  guest-mode duplication carries lock state over via its plain object spread. */
+async function duplicateCloudFile(source: FileNode, parentId: string | null, newName: string): Promise<FileNode> {
+  const content = await cloudRepo.readFileContent(source.id);
+  const created = (await cloudRepo.createCloudFile(parentId, newName, content)) as FileNode;
+  if (!source.locked) return created;
+  const relocked = (await cloudRepo.patchCloudFile(created.id, {
+    locked: true,
+    encryptionSalt: source.encryptionSalt,
+    encryptionIv: source.encryptionIv,
+  })) as FileNode;
+  return relocked;
+}
+
 export async function duplicateNode(id: string): Promise<string | null> {
   const workspace = useWorkspaceStore.getState();
   const node = workspace.nodes[id];
@@ -226,8 +244,7 @@ export async function duplicateNode(id: string): Promise<string | null> {
 
   if (isCloudMode()) {
     if (node.type === "file") {
-      const content = await cloudRepo.readFileContent(id);
-      const created = (await cloudRepo.createCloudFile(node.parentId, newName, content)) as FileNode;
+      const created = await duplicateCloudFile(node, node.parentId, newName);
       useWorkspaceStore.getState().addNode(created);
       return created.id;
     }
@@ -244,8 +261,7 @@ export async function duplicateNode(id: string): Promise<string | null> {
         useWorkspaceStore.getState().addNode(createdSub);
         idMap.set(d.id, createdSub.id);
       } else {
-        const content = await cloudRepo.readFileContent(d.id);
-        const createdFile = (await cloudRepo.createCloudFile(mappedParentId, d.name, content)) as FileNode;
+        const createdFile = await duplicateCloudFile(d, mappedParentId, d.name);
         useWorkspaceStore.getState().addNode(createdFile);
         idMap.set(d.id, createdFile.id);
       }

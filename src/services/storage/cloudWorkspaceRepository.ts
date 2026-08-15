@@ -65,7 +65,16 @@ export async function createCloudFolder(parentId: string | null, name: string): 
 
 export async function patchCloudFile(
   fileId: string,
-  patch: { name?: string; parentId?: string | null; language?: string; hidden?: boolean },
+  patch: {
+    name?: string;
+    parentId?: string | null;
+    language?: string;
+    hidden?: boolean;
+    content?: string;
+    locked?: boolean;
+    encryptionSalt?: string | null;
+    encryptionIv?: string | null;
+  },
 ): Promise<WorkspaceNode> {
   const res = await fetch(`/api/files/${fileId}`, {
     method: "PATCH",
@@ -99,6 +108,9 @@ export interface ImportNodeInput {
   language?: string;
   encoding?: string;
   content?: string;
+  locked?: boolean;
+  encryptionSalt?: string | null;
+  encryptionIv?: string | null;
 }
 
 export async function importWorkspace(nodes: ImportNodeInput[]): Promise<{ idMap: Record<string, string> }> {

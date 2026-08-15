@@ -23,6 +23,11 @@ export interface FileNode extends BaseNode {
   encoding: string;
   size: number;
   pinnedFavorite: boolean;
+  /** Lock feature — see prisma/schema.prisma's File model comment. Salt/iv are only meaningful
+   *  (non-null) while `locked` is true; the passphrase itself is never stored. */
+  locked: boolean;
+  encryptionSalt: string | null;
+  encryptionIv: string | null;
 }
 
 export interface FolderNode extends BaseNode {

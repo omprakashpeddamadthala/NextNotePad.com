@@ -81,6 +81,18 @@ export function DiffTabView({ diff }: { diff: DiffView }) {
     );
   }
 
+  const lockedNode = [leftNode, rightNode].find((n) => n.type === "file" && n.locked);
+  if (lockedNode) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
+        <p>&ldquo;{lockedNode.name}&rdquo; is locked — unlock it first to compare.</p>
+        <Button size="sm" variant="outline" onClick={closeDiff}>
+          <X className="size-3.5" /> Close Diff
+        </Button>
+      </div>
+    );
+  }
+
   const language = leftNode.type === "file" ? leftNode.language : "plaintext";
   const themeModule = THEME_MODULES[theme];
 

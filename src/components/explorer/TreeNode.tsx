@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { ChevronRight, ChevronDown, Folder, FolderOpen, Star, EyeOff } from "lucide-react";
+import { ChevronRight, ChevronDown, Folder, FolderOpen, Star, EyeOff, Lock } from "lucide-react";
 import { ContextMenu, ContextMenuTrigger, ContextMenuContent } from "@/components/ui/context-menu";
 import { ExplorerContextMenuContent } from "./ExplorerContextMenuContent";
 import { getFileIcon } from "@/lib/fileIcons";
@@ -171,6 +171,9 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
               <span className="flex-1 truncate">{node.name}</span>
             )}
             {isFavorite && !isRenaming && <Star className="size-3 shrink-0 fill-current text-amber-500" />}
+            {node.type === "file" && node.locked && !isRenaming && (
+              <Lock className="size-3 shrink-0 text-muted-foreground" />
+            )}
             {node.hidden && !isRenaming && <EyeOff className="size-3 shrink-0 text-muted-foreground" />}
           </button>
         </ContextMenuTrigger>
