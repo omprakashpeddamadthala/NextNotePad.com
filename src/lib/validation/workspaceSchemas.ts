@@ -8,6 +8,9 @@ const importNodeSchema = z.object({
   language: z.string().optional(),
   encoding: z.string().optional(),
   content: z.string().optional(),
+  locked: z.boolean().optional(),
+  encryptionSalt: z.string().nullable().optional(),
+  encryptionIv: z.string().nullable().optional(),
 });
 
 export const importWorkspaceSchema = z.object({
@@ -29,6 +32,9 @@ export const updateFileSchema = z.object({
   language: z.string().optional(),
   encoding: z.string().optional(),
   hidden: z.boolean().optional(),
+  locked: z.boolean().optional(),
+  encryptionSalt: z.string().nullable().optional(),
+  encryptionIv: z.string().nullable().optional(),
 });
 
 export const createFolderSchema = z.object({

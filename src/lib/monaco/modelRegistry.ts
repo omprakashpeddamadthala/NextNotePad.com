@@ -41,3 +41,12 @@ export function isDirty(fileId: string): boolean {
   if (!entry) return false;
   return entry.model.getValue() !== entry.lastSavedValue;
 }
+
+/** Disposes and forgets a file's model — used when locking a file, so the next time it's opened
+ *  `getModel` correctly returns undefined instead of handing back a stale plaintext model. */
+export function disposeModel(fileId: string): void {
+  const entry = registry.get(fileId);
+  if (!entry) return;
+  entry.model.dispose();
+  registry.delete(fileId);
+}

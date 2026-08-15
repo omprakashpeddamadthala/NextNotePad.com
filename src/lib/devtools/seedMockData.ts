@@ -64,6 +64,9 @@ export function seedMockWorkspace(targetFiles = 2000, targetFolders = 200): void
       size: content.length,
       pinnedFavorite: false,
       hidden: false,
+      locked: false,
+      encryptionSalt: null,
+      encryptionIv: null,
     };
     nodes[id] = file;
     fileContents[id] = content;

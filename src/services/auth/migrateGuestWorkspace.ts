@@ -44,7 +44,14 @@ export async function migrateOrLoadCloudWorkspace(): Promise<void> {
         name: n.name,
         type: n.type,
         ...(n.type === "file"
-          ? { language: n.language, encoding: n.encoding, content: await localRepo.readFileContent(n.id) }
+          ? {
+              language: n.language,
+              encoding: n.encoding,
+              content: await localRepo.readFileContent(n.id),
+              locked: n.locked,
+              encryptionSalt: n.encryptionSalt,
+              encryptionIv: n.encryptionIv,
+            }
           : {}),
       })),
     );

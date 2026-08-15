@@ -53,6 +53,9 @@ export async function POST(request: NextRequest) {
             encoding: node.encoding ?? "UTF-8",
             content,
             size: content.length,
+            locked: node.locked ?? false,
+            encryptionSalt: node.encryptionSalt ?? null,
+            encryptionIv: node.encryptionIv ?? null,
           },
         });
         idMap.set(node.id, created.id);

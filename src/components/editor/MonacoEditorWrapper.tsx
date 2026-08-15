@@ -4,10 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import type { OnMount } from "@monaco-editor/react";
 import type { editor as MonacoEditorNS } from "monaco-editor";
+import { Lock, Unlock } from "lucide-react";
 import { handleMonacoBeforeMount } from "@/lib/monaco/setupMonaco";
 import { THEME_MODULES } from "@/lib/monaco/themes";
 import * as modelRegistry from "@/lib/monaco/modelRegistry";
 import { getActiveRepository } from "@/services/storage/activeRepository";
+import { unlockSingleFile } from "@/services/fileLock";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useSettingsStore } from "@/store/settingsStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useTabsStore } from "@/store/tabsStore";
@@ -37,6 +41,49 @@ interface MonacoEditorWrapperProps {
   registerGlobalActions?: boolean;
 }
 
+/** Covers the editor area for a locked file — nothing is decrypted or readable until the correct
+ *  passphrase is entered. Keyed by fileId in the parent so switching between locked tabs never
+ *  carries over a stale passphrase/error from a different file. */
+function LockedFileOverlay({ fileId }: { fileId: string }) {
+  const [passphrase, setPassphrase] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await unlockSingleFile(fileId, passphrase);
+      if (result.status === "wrong-passphrase") setError("Incorrect passphrase.");
+      // On success, the workspace node's `locked` flips to false, which the parent reacts to.
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background p-6 text-center">
+      <Lock className="size-8 text-muted-foreground" />
+      <p className="text-sm font-medium">This file is locked</p>
+      <form onSubmit={(e) => void handleSubmit(e)} className="flex w-full max-w-xs flex-col gap-2">
+        <Input
+          type="password"
+          autoFocus
+          placeholder="Passphrase"
+          value={passphrase}
+          onChange={(e) => setPassphrase(e.target.value)}
+          autoComplete="off"
+        />
+        {error && <p className="text-xs text-destructive">{error}</p>}
+        <Button type="submit" size="sm" disabled={busy}>
+          <Unlock className="size-4" /> Unlock
+        </Button>
+      </form>
+    </div>
+  );
+}
+
 export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: MonacoEditorWrapperProps) {
   const editorRef = useRef<MonacoEditorNS.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<Parameters<OnMount>[1] | null>(null);
@@ -55,6 +102,7 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
 
   const file = nodes[fileId];
   const language = file?.type === "file" ? file.language : "plaintext";
+  const isLocked = file?.type === "file" && file.locked;
   const readOnly = useTabsStore((s) => s.tabs.find((t) => t.id === tabId)?.readOnly ?? false);
 
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -117,6 +165,16 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
 
     persistViewState(currentTabIdRef.current);
 
+    const node = useWorkspaceStore.getState().nodes[id];
+    if (node?.type === "file" && node.locked) {
+      // Nothing to load until the LockedFileOverlay's passphrase prompt unlocks it — that flips
+      // `node.locked` to false, which re-triggers this effect via the isLocked dependency below.
+      setLoading(false);
+      currentFileIdRef.current = id;
+      currentTabIdRef.current = tid;
+      return;
+    }
+
     let model = modelRegistry.getModel(id);
     if (!model) {
       setLoading(true);
@@ -161,8 +219,10 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
 
   useEffect(() => {
     if (editorRef.current) void switchToFile(fileId, tabId);
+    // isLocked is intentionally included: a locked->unlocked transition (via LockedFileOverlay)
+    // must re-run this to actually load the now-decrypted content into a model.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fileId, tabId]);
+  }, [fileId, tabId, isLocked]);
 
   useEffect(() => {
     const monaco = monacoRef.current;
@@ -289,7 +349,8 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
 
   return (
     <div className="relative h-full">
-      {loading && (
+      {isLocked && <LockedFileOverlay key={fileId} fileId={fileId} />}
+      {loading && !isLocked && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 text-sm text-muted-foreground">
           Loading…
         </div>

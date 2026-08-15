@@ -64,7 +64,7 @@ export async function searchWorkspace(
   if (!regex) return [];
 
   const targetFiles = Object.values(nodes).filter(
-    (n) => n.type === "file" && !n.deleted && (!fileIds || fileIds.includes(n.id)),
+    (n) => n.type === "file" && !n.deleted && !n.locked && (!fileIds || fileIds.includes(n.id)),
   );
 
   const results: FileSearchResult[] = [];
@@ -95,7 +95,7 @@ export async function replaceInFiles(
   if (!regex) return { filesChanged: 0, replacements: 0 };
 
   const targetFiles = Object.values(nodes).filter(
-    (n) => n.type === "file" && !n.deleted && (!fileIds || fileIds.includes(n.id)),
+    (n) => n.type === "file" && !n.deleted && !n.locked && (!fileIds || fileIds.includes(n.id)),
   );
 
   let filesChanged = 0;

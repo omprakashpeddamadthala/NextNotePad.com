@@ -1,6 +1,18 @@
 "use client";
 
-import { FilePlus, FolderPlus, Pencil, Copy, Trash2, Star, ChevronsDownUp, Eye, EyeOff } from "lucide-react";
+import {
+  FilePlus,
+  FolderPlus,
+  Pencil,
+  Copy,
+  Trash2,
+  Star,
+  ChevronsDownUp,
+  Eye,
+  EyeOff,
+  Lock,
+  Unlock,
+} from "lucide-react";
 import { ContextMenuItem, ContextMenuSeparator } from "@/components/ui/context-menu";
 import type { WorkspaceNode } from "@/types/file";
 import { useWorkspaceStore } from "@/store/workspaceStore";
@@ -8,6 +20,7 @@ import { useExplorerSelectionStore } from "@/store/explorerSelectionStore";
 import { useRecentFilesStore } from "@/store/recentFilesStore";
 import { duplicateNode, moveToTrash, toggleNodeHidden } from "@/services/fileOperations";
 import { useCreateAndRename } from "@/hooks/useCreateAndRename";
+import { useLockDialogStore } from "@/store/lockDialogStore";
 import { collectSubtree } from "@/lib/utils/treeUtils";
 
 export function ExplorerContextMenuContent({ node }: { node: WorkspaceNode }) {
@@ -17,6 +30,8 @@ export function ExplorerContextMenuContent({ node }: { node: WorkspaceNode }) {
   const toggleFavorite = useRecentFilesStore((s) => s.toggleFavorite);
   const isFavorite = useRecentFilesStore((s) => s.isFavorite(node.id));
   const { createFileAndRename, createFolderAndRename } = useCreateAndRename();
+  const openLockDialog = useLockDialogStore((s) => s.openLockDialog);
+  const openUnlockDialog = useLockDialogStore((s) => s.openUnlockDialog);
 
   const containerId = node.type === "folder" ? node.id : node.parentId;
 
@@ -43,6 +58,26 @@ export function ExplorerContextMenuContent({ node }: { node: WorkspaceNode }) {
       <ContextMenuItem onSelect={() => toggleNodeHidden(node.id)}>
         {node.hidden ? <Eye /> : <EyeOff />} {node.hidden ? "Unhide" : "Hide"}
       </ContextMenuItem>
+      {node.type === "file" &&
+        (node.locked ? (
+          <ContextMenuItem onSelect={() => openUnlockDialog(node.id)}>
+            <Unlock /> Unlock
+          </ContextMenuItem>
+        ) : (
+          <ContextMenuItem onSelect={() => openLockDialog(node.id)}>
+            <Lock /> Lock
+          </ContextMenuItem>
+        ))}
+      {node.type === "folder" && (
+        <>
+          <ContextMenuItem onSelect={() => openLockDialog(node.id)}>
+            <Lock /> Lock Folder…
+          </ContextMenuItem>
+          <ContextMenuItem onSelect={() => openUnlockDialog(node.id)}>
+            <Unlock /> Unlock Folder…
+          </ContextMenuItem>
+        </>
+      )}
       {node.type === "folder" && (
         <ContextMenuItem
           onSelect={() => {

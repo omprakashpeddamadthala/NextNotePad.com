@@ -39,7 +39,11 @@ export function EditorArea() {
   const activeTab = tabs.find((t) => t.id === activeTabId);
   const activeNode = useWorkspaceStore((s) => (activeTab ? s.nodes[activeTab.fileId] : undefined));
   const showMarkdownPreview =
-    markdownPreviewVisible && !isSplitView && activeNode?.type === "file" && activeNode.language === "markdown";
+    markdownPreviewVisible &&
+    !isSplitView &&
+    activeNode?.type === "file" &&
+    activeNode.language === "markdown" &&
+    !activeNode.locked;
   // Until this resolves, `tabs` may still be a frozen pre-login snapshot (guest mode's
   // localStorage write-freeze while authenticated) that doesn't match which repo reads will
   // hit — rendering it early can try to load a stale id against the wrong backend and 404.

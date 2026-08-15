@@ -36,6 +36,9 @@ export function fileToDto(file: FileModel, includeContent = false) {
     size: file.size,
     pinnedFavorite: false,
     hidden: file.hidden,
+    locked: file.locked,
+    encryptionSalt: file.encryptionSalt,
+    encryptionIv: file.encryptionIv,
     ...(includeContent ? { content: file.content } : {}),
   };
 }
