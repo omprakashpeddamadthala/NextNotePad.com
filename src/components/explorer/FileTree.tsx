@@ -3,14 +3,37 @@
 import { useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { TreeNode } from "./TreeNode";
+import { Skeleton } from "@/components/ui/skeleton";
 import { flattenVisibleTree } from "@/lib/utils/treeUtils";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useExplorerSelectionStore } from "@/store/explorerSelectionStore";
 import { useTabsStore } from "@/store/tabsStore";
 import { useUIStore } from "@/store/uiStore";
+import { useAuthStore } from "@/store/authStore";
+import { useIsMobile } from "@/hooks/useMediaQuery";
 import { moveNode } from "@/services/fileOperations";
 
-const ROW_HEIGHT = 24;
+/** Must stay in sync with TreeNode's row height (h-6 / sm:h-7) — the virtualizer positions rows
+ *  absolutely at this pitch, so a mismatch clips or overlaps them. */
+const ROW_HEIGHT_DESKTOP = 24;
+const ROW_HEIGHT_TOUCH = 28;
+
+/** Placeholder rows shown while the cloud workspace tree is still being fetched — without this
+ *  the explorer renders as an empty tree ("No files yet"), which reads as "your files are gone"
+ *  for the second or two before they arrive. */
+function TreeSkeleton() {
+  const indents = [0, 0, 14, 14, 28, 0, 14, 0];
+  return (
+    <div className="animate-in fade-in space-y-1.5 p-2 duration-150" aria-label="Loading files" role="status">
+      {indents.map((indent, i) => (
+        <div key={i} className="flex items-center gap-1.5" style={{ paddingLeft: indent }}>
+          <Skeleton className="size-3.5 shrink-0" />
+          <Skeleton className="h-3" style={{ width: `${45 + ((i * 17) % 40)}%` }} />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function FileTree() {
   const nodes = useWorkspaceStore((s) => s.nodes);
@@ -24,14 +47,20 @@ export function FileTree() {
   const dropTargetId = useExplorerSelectionStore((s) => s.dropTargetId);
   const setDropTargetId = useExplorerSelectionStore((s) => s.setDropTargetId);
   const openTab = useTabsStore((s) => s.openTab);
+  const isMobile = useIsMobile();
+  const authStatus = useAuthStore((s) => s.status);
+  const workspaceReady = useAuthStore((s) => s.workspaceReady);
+  const workspaceLoading = authStatus === "loading" || (authStatus === "authenticated" && !workspaceReady);
 
   const rows = flattenVisibleTree(nodes, filterQuery, showHiddenFiles);
+
+  const rowHeight = isMobile ? ROW_HEIGHT_TOUCH : ROW_HEIGHT_DESKTOP;
 
   const parentRef = useRef<HTMLDivElement>(null);
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => ROW_HEIGHT,
+    estimateSize: () => rowHeight,
     overscan: 15,
   });
 
@@ -98,7 +127,7 @@ export function FileTree() {
                 top: 0,
                 left: 0,
                 width: "100%",
-                height: ROW_HEIGHT,
+                height: rowHeight,
                 transform: `translateY(${virtualRow.start}px)`,
               }}
             >
@@ -107,15 +136,18 @@ export function FileTree() {
           );
         })}
       </div>
-      {rows.length === 0 && (
-        <div
-          className={`flex h-24 items-center justify-center rounded-sm border-2 border-dashed text-xs text-muted-foreground ${
-            dropTargetId === "root" ? "border-primary" : "border-transparent"
-          }`}
-        >
-          No files yet — right-click to create one.
-        </div>
-      )}
+      {rows.length === 0 &&
+        (workspaceLoading ? (
+          <TreeSkeleton />
+        ) : (
+          <div
+            className={`flex h-24 items-center justify-center rounded-sm border-2 border-dashed text-xs text-muted-foreground ${
+              dropTargetId === "root" ? "border-primary" : "border-transparent"
+            }`}
+          >
+            {filterQuery ? "No files match this filter." : "No files yet — right-click to create one."}
+          </div>
+        ))}
     </div>
   );
 }

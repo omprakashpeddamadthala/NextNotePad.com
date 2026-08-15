@@ -11,8 +11,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 import { useAuthStore } from "@/store/authStore";
 import { syncFromDrive } from "@/services/driveImport";
+import { fetchOk } from "@/lib/api/fetchJson";
 
 function initialsFor(name: string | null, email: string): string {
   const source = name?.trim() || email;
@@ -20,7 +22,13 @@ function initialsFor(name: string | null, email: string): string {
 }
 
 async function handleSignOut() {
-  await fetch("/api/auth/logout", { method: "POST" });
+  try {
+    await fetchOk("/api/auth/logout", { method: "POST", action: "Sign out" });
+  } catch {
+    // Reload regardless: an unhandled rejection here used to leave the menu looking frozen with
+    // no feedback at all. Reloading re-checks the session, so a failed sign-out is self-evident.
+    toast.error("Sign out may not have completed — check your connection.");
+  }
   window.location.reload();
 }
 

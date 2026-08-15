@@ -28,6 +28,30 @@
   border-radius: 9999px;
 }
 
+/* Indeterminate sweep for the top-of-app API progress bar (ApiLoadingBar). Uses transform only,
+ * so it animates on the compositor without laying out on every frame. */
+@keyframes np-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(350%);
+  }
+}
+
+.np-indeterminate-bar {
+  animation: np-indeterminate 1.1s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Respect the OS setting: hold a steady bar instead of sweeping. */
+  .np-indeterminate-bar {
+    animation: none;
+    width: 100%;
+    opacity: 0.6;
+  }
+}
+
 .np-bookmark-glyph {
   background-color: #4a90d9;
   border-radius: 9999px;

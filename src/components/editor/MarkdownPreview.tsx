@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Maximize2, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SkeletonText } from "@/components/ui/skeleton";
+import { LoadFailure } from "@/components/ui/load-failure";
 import { getActiveRepository } from "@/services/storage/activeRepository";
 import { useMarkdownPreviewContentStore } from "@/store/markdownPreviewContentStore";
 import { renderMarkdown } from "@/lib/markdown/renderMarkdown";
@@ -19,6 +21,8 @@ interface MarkdownPreviewProps {
  *  of needing an effect to reset state (which the React Compiler flags as cascading renders). */
 export function MarkdownPreview({ fileId }: MarkdownPreviewProps) {
   const [initialContent, setInitialContent] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
+  const [reloadNonce, setReloadNonce] = useState(0);
   const liveFileId = useMarkdownPreviewContentStore((s) => s.fileId);
   const liveContent = useMarkdownPreviewContentStore((s) => s.content);
 
@@ -28,36 +32,58 @@ export function MarkdownPreview({ fileId }: MarkdownPreviewProps) {
       .readFileContent(fileId)
       .then((content) => {
         if (!cancelled) setInitialContent(content);
+      })
+      // Previously uncaught: a failed read escaped as an unhandled rejection (surfacing as a
+      // "Failed to fetch" runtime overlay) and left this pane on "Loading preview…" indefinitely.
+      .catch((err: unknown) => {
+        if (!cancelled) setError(err);
       });
     return () => {
       cancelled = true;
     };
-  }, [fileId]);
+  }, [fileId, reloadNonce]);
+
+  const retry = useCallback(() => {
+    setError(null);
+    setReloadNonce((n) => n + 1);
+  }, []);
 
   const isLive = liveFileId === fileId;
   const content = isLive ? liveContent : initialContent;
   const html = useMemo(() => renderMarkdown(content ?? ""), [content]);
 
+  if (error && !isLive) {
+    return <LoadFailure error={error} onRetry={retry} />;
+  }
+
   if (content === null) {
     return (
-      <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-        Loading preview…
+      <div className="animate-in fade-in h-full bg-background px-6 py-4 duration-150">
+        <div className="mx-auto max-w-3xl space-y-4">
+          <SkeletonText lines={2} className="max-w-[55%]" />
+          <SkeletonText lines={6} />
+        </div>
       </div>
     );
   }
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-8 shrink-0 items-center justify-end gap-1 border-b bg-[var(--np-toolbar-bg)] px-2">
-        <Button size="sm" variant="ghost" onClick={() => window.print()}>
-          <Printer className="size-3.5" /> Download PDF
+      <div className="flex h-8 shrink-0 items-center justify-end gap-0.5 border-b bg-[var(--np-toolbar-bg)] px-2 sm:gap-1">
+        <Button size="sm" variant="ghost" onClick={() => window.print()} title="Download PDF">
+          <Printer className="size-3.5" />
+          <span className="hidden sm:inline">Download PDF</span>
         </Button>
-        <Button size="sm" variant="ghost" onClick={() => openMarkdownFullPage(fileId)}>
-          <Maximize2 className="size-3.5" /> View Full Page
+        <Button size="sm" variant="ghost" onClick={() => openMarkdownFullPage(fileId)} title="View Full Page">
+          <Maximize2 className="size-3.5" />
+          <span className="hidden sm:inline">View Full Page</span>
         </Button>
       </div>
       <div className="np-scrollbar min-h-0 flex-1 overflow-auto bg-background px-6 py-4">
-        <div className="np-markdown-preview np-print-target mx-auto max-w-3xl" dangerouslySetInnerHTML={{ __html: html }} />
+        <div
+          className="np-markdown-preview np-print-target animate-in fade-in mx-auto max-w-3xl duration-200"
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
       </div>
     </div>
   );

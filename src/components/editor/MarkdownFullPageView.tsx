@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
 import { FileText, Pencil, Printer, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SkeletonText } from "@/components/ui/skeleton";
+import { LoadFailure } from "@/components/ui/load-failure";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useTabsStore } from "@/store/tabsStore";
 import { useRecentFilesStore } from "@/store/recentFilesStore";
@@ -36,6 +37,8 @@ export function MarkdownFullPageView({ fileId }: { fileId: string }) {
   const node = useWorkspaceStore((s) => s.nodes[fileId]);
 
   const [content, setContent] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
+  const [reloadNonce, setReloadNonce] = useState(0);
 
   function handleEdit() {
     openTab(fileId);
@@ -49,13 +52,13 @@ export function MarkdownFullPageView({ fileId }: { fileId: string }) {
       .then((c) => {
         if (!cancelled) setContent(c);
       })
-      .catch(() => {
-        if (!cancelled) toast.error("Couldn't load this file.");
+      .catch((err: unknown) => {
+        if (!cancelled) setError(err);
       });
     return () => {
       cancelled = true;
     };
-  }, [fileId]);
+  }, [fileId, reloadNonce]);
 
   const html = useMemo(() => renderMarkdown(content ?? ""), [content]);
 
@@ -86,24 +89,46 @@ export function MarkdownFullPageView({ fileId }: { fileId: string }) {
       <div className="flex h-9 shrink-0 items-center gap-2 border-b bg-[var(--np-toolbar-bg)] px-2.5 text-sm">
         <FileText className="size-3.5 shrink-0 text-muted-foreground" />
         <span className="truncate font-medium">{node.name}</span>
-        <div className="ml-auto flex shrink-0 items-center gap-1">
-          <Button size="sm" variant="ghost" onClick={handleEdit}>
-            <Pencil className="size-3.5" /> Edit
+        {/* Labels collapse to icons on narrow screens so the filename keeps room to breathe —
+            the title attribute keeps each button identifiable once its text is hidden. */}
+        <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-1">
+          <Button size="sm" variant="ghost" onClick={handleEdit} title="Edit">
+            <Pencil className="size-3.5" />
+            <span className="hidden sm:inline">Edit</span>
           </Button>
-          <Button size="sm" variant="ghost" disabled={content === null} onClick={() => window.print()}>
-            <Printer className="size-3.5" /> Download PDF
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={content === null || error !== null}
+            onClick={() => window.print()}
+            title="Download PDF"
+          >
+            <Printer className="size-3.5" />
+            <span className="hidden sm:inline">Download PDF</span>
           </Button>
-          <Button size="sm" variant="ghost" onClick={closeFullPage}>
-            <X className="size-3.5" /> Close
+          <Button size="sm" variant="ghost" onClick={closeFullPage} title="Close">
+            <X className="size-3.5" />
+            <span className="hidden sm:inline">Close</span>
           </Button>
         </div>
       </div>
       <div className="np-scrollbar h-full overflow-auto bg-background px-6 py-4">
-        {content === null ? (
-          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Loading…</div>
+        {error ? (
+          <LoadFailure
+            error={error}
+            onRetry={() => {
+              setError(null);
+              setReloadNonce((n) => n + 1);
+            }}
+          />
+        ) : content === null ? (
+          <div className="animate-in fade-in mx-auto max-w-3xl space-y-4 duration-150">
+            <SkeletonText lines={2} className="max-w-[55%]" />
+            <SkeletonText lines={8} />
+          </div>
         ) : (
           <div
-            className="np-markdown-preview np-print-target mx-auto max-w-3xl"
+            className="np-markdown-preview np-print-target animate-in fade-in mx-auto max-w-3xl duration-200"
             dangerouslySetInnerHTML={{ __html: html }}
           />
         )}

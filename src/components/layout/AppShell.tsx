@@ -28,6 +28,7 @@ import { SyncOfflineFilesDialog } from "@/components/auth/SyncOfflineFilesDialog
 import { useAppBootstrap } from "@/hooks/useAppBootstrap";
 import { useAuthBootstrap } from "@/hooks/useAuthBootstrap";
 import { GlobalActionsRegistrar } from "./GlobalActionsRegistrar";
+import { ApiLoadingBar } from "./ApiLoadingBar";
 
 export function AppShell() {
   useKeyboardShortcuts();
@@ -43,6 +44,7 @@ export function AppShell() {
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col bg-background text-foreground">
       <GlobalActionsRegistrar />
+      <ApiLoadingBar />
       {isMobile ? (
         <>
           <MobileAppBar />

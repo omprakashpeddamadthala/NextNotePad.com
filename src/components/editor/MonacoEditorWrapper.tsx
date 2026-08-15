@@ -2,9 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { toast } from "sonner";
 import type { OnMount } from "@monaco-editor/react";
 import type { editor as MonacoEditorNS } from "monaco-editor";
 import { Lock, Unlock } from "lucide-react";
+import { SkeletonText } from "@/components/ui/skeleton";
+import { LoadFailure } from "@/components/ui/load-failure";
 import { handleMonacoBeforeMount } from "@/lib/monaco/setupMonaco";
 import { THEME_MODULES } from "@/lib/monaco/themes";
 import * as modelRegistry from "@/lib/monaco/modelRegistry";
@@ -90,6 +93,9 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
   const currentFileIdRef = useRef<string | null>(null);
   const currentTabIdRef = useRef<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown>(null);
+  /** Bumped by the retry button to re-run the load effect after a failure. */
+  const [reloadNonce, setReloadNonce] = useState(0);
 
   const theme = useSettingsStore((s) => s.theme);
   const settings = useSettingsStore((s) => s.settings);
@@ -114,17 +120,31 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
     const delay = AUTO_SAVE_INTERVALS_MS[autoSave] ?? 5000;
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = setTimeout(() => {
-      const model = modelRegistry.getModel(id);
-      if (!model) return;
-      const value = model.getValue();
-      void getActiveRepository()
-        .writeFileContent(id, value)
-        .then(() => {
-          modelRegistry.markSaved(id, value);
-          setDirty(tid, false);
-          updateNode(id, { size: value.length });
-        });
+      void persistFile(id, tid, { silent: true });
     }, delay);
+  }
+
+  /** Single write path for both autosave and Ctrl+S. Only marks the tab clean once the write
+   *  actually succeeded — a failed save has to keep the file dirty, or the user is told their
+   *  work is saved when the server never received it. */
+  async function persistFile(id: string, tid: string, opts?: { silent?: boolean }) {
+    const model = modelRegistry.getModel(id);
+    if (!model) return;
+    const value = model.getValue();
+    try {
+      await getActiveRepository().writeFileContent(id, value);
+      modelRegistry.markSaved(id, value);
+      setDirty(tid, false);
+      updateNode(id, { size: value.length });
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : "Unknown error.";
+      // Autosave failures still surface — silently dropping them is how you lose work — but as
+      // a single id'd toast so a flapping connection can't stack up dozens of them.
+      toast.error(`Couldn't save "${nodes[id]?.name ?? "file"}".`, {
+        id: `save-failed-${id}`,
+        description: opts?.silent ? `${detail} Your changes are still here — retry with Ctrl+S.` : detail,
+      });
+    }
   }
 
   function persistViewState(prevTabId: string | null) {
@@ -178,13 +198,24 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
     let model = modelRegistry.getModel(id);
     if (!model) {
       setLoading(true);
-      const content = await getActiveRepository().readFileContent(id);
-      const node = useWorkspaceStore.getState().nodes[id];
+      setLoadError(null);
+      let content: string;
+      try {
+        content = await getActiveRepository().readFileContent(id);
+      } catch (err) {
+        // Without this, a failed read rejected out of the effect entirely: the error surfaced as
+        // an unhandled rejection and `setLoading(false)` never ran, leaving the pane stuck on
+        // "Loading…" forever with no way to recover short of a page reload.
+        setLoadError(err);
+        setLoading(false);
+        return;
+      }
+      const loadedNode = useWorkspaceStore.getState().nodes[id];
       model = modelRegistry.getOrCreateModel(
         monaco,
         id,
         content,
-        node?.type === "file" ? node.language : "plaintext",
+        loadedNode?.type === "file" ? loadedNode.language : "plaintext",
       );
       setLoading(false);
     }
@@ -220,9 +251,10 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
   useEffect(() => {
     if (editorRef.current) void switchToFile(fileId, tabId);
     // isLocked is intentionally included: a locked->unlocked transition (via LockedFileOverlay)
-    // must re-run this to actually load the now-decrypted content into a model.
+    // must re-run this to actually load the now-decrypted content into a model. reloadNonce lets
+    // the failure state's Try Again button re-run the same load.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fileId, tabId, isLocked]);
+  }, [fileId, tabId, isLocked, reloadNonce]);
 
   useEffect(() => {
     const monaco = monacoRef.current;
@@ -330,16 +362,7 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
     const tid = currentTabIdRef.current;
     if (!id || !tid) return;
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
-    const model = modelRegistry.getModel(id);
-    if (!model) return;
-    const value = model.getValue();
-    void getActiveRepository()
-      .writeFileContent(id, value)
-      .then(() => {
-        modelRegistry.markSaved(id, value);
-        setDirty(tid, false);
-        updateNode(id, { size: value.length });
-      });
+    void persistFile(id, tid);
   }
 
   useMonacoGlobalActions({ registerGlobalActions, editorRef, fileId, tabId, saveActiveFile });
@@ -350,9 +373,20 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
   return (
     <div className="relative h-full">
       {isLocked && <LockedFileOverlay key={fileId} fileId={fileId} />}
-      {loading && !isLocked && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 text-sm text-muted-foreground">
-          Loading…
+      {loadError !== null && !isLocked && (
+        <div className="absolute inset-0 z-10 bg-background">
+          <LoadFailure
+            error={loadError}
+            onRetry={() => {
+              setLoadError(null);
+              setReloadNonce((n) => n + 1);
+            }}
+          />
+        </div>
+      )}
+      {loading && !isLocked && !loadError && (
+        <div className="absolute inset-0 z-10 animate-in fade-in bg-background px-4 py-3 duration-150">
+          <SkeletonText lines={8} />
         </div>
       )}
       <Editor

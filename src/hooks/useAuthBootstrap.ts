@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
-import { useAuthStore } from "@/store/authStore";
+import { useAuthStore, type AuthUser } from "@/store/authStore";
+import { fetchJson, ApiError } from "@/lib/api/fetchJson";
 import { migrateOrLoadCloudWorkspace } from "@/services/auth/migrateGuestWorkspace";
 import { autoSyncFromDriveOnLogin } from "@/services/driveImport";
 
@@ -13,12 +14,10 @@ export function useAuthBootstrap(): void {
 
     (async () => {
       try {
-        const res = await fetch("/api/auth/me");
-        if (!res.ok) {
-          useAuthStore.getState().setGuest();
-          return;
-        }
-        const user = await res.json();
+        // Goes through the shared client so the startup auth + workspace load drives the same
+        // progress indicator as every other API call. A 401 here just means "not signed in",
+        // which the catch below turns into guest mode rather than an error.
+        const user = await fetchJson<AuthUser>("/api/auth/me", { action: "Check session" });
         useAuthStore.getState().setAuthenticated(user);
         await migrateOrLoadCloudWorkspace();
         useAuthStore.getState().setWorkspaceReady();
@@ -26,7 +25,10 @@ export function useAuthBootstrap(): void {
         // device/browser, or directly in Drive) without delaying the workspace becoming usable.
         void autoSyncFromDriveOnLogin();
       } catch (err) {
-        console.error("Auth check failed:", err);
+        // A 401 is the normal signed-out path, so only surface the genuinely unexpected ones.
+        if (!(err instanceof ApiError) || err.status !== 401) {
+          console.error("Auth check failed:", err);
+        }
         useAuthStore.getState().setGuest();
       }
     })();
