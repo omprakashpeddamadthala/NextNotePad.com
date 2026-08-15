@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import * as cloudRepo from "@/services/storage/cloudWorkspaceRepository";
+import { fetchJson } from "@/lib/api/fetchJson";
 import type { WorkspaceNode } from "@/types/file";
 import type { NodeMap } from "@/lib/utils/treeUtils";
 
@@ -15,9 +16,13 @@ function toNodeMap(nodes: WorkspaceNode[]): NodeMap {
 }
 
 async function runDriveImport(): Promise<DriveImportResult> {
-  const res = await fetch("/api/sync/import-from-drive", { method: "POST" });
-  if (!res.ok) throw new Error(`Import failed (${res.status})`);
-  const result: DriveImportResult = await res.json();
+  // Walks the whole Drive folder and can pull down many files, so this gets a much longer
+  // ceiling than a normal request — but still a ceiling, so a stalled call can't hang forever.
+  const result = await fetchJson<DriveImportResult>("/api/sync/import-from-drive", {
+    method: "POST",
+    action: "Drive sync",
+    timeoutMs: 120000,
+  });
 
   if (result.filesImported > 0 || result.foldersImported > 0) {
     const { nodes } = await cloudRepo.fetchWorkspaceTree();

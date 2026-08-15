@@ -1,28 +1,19 @@
 import type { WorkspaceNode } from "@/types/file";
-
-async function parseJsonOrThrow<T>(res: Response, action: string): Promise<T> {
-  if (!res.ok) throw new Error(`${action} failed (${res.status})`);
-  return res.json();
-}
+import { fetchJson, fetchOk, jsonBody } from "@/lib/api/fetchJson";
 
 // --- Same shape as the local repository (services/storage/workspaceRepository.ts) ---
 
 export async function readFileContent(fileId: string): Promise<string> {
-  const res = await fetch(`/api/files/${fileId}`);
-  const data = await parseJsonOrThrow<{ content: string }>(res, "Load file");
+  const data = await fetchJson<{ content: string }>(`/api/files/${fileId}`, { action: "Load file" });
   return data.content ?? "";
 }
 
 export async function writeFileContent(fileId: string, content: string): Promise<void> {
-  await fetch(`/api/files/${fileId}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ content }),
-  });
+  await fetchOk(`/api/files/${fileId}`, { ...jsonBody("PATCH", { content }), action: "Save file" });
 }
 
 export async function deleteFileContent(fileId: string): Promise<void> {
-  await fetch(`/api/files/${fileId}`, { method: "DELETE" });
+  await fetchOk(`/api/files/${fileId}`, { method: "DELETE", action: "Delete file" });
 }
 
 export async function duplicateFileContent(sourceId: string, targetId: string): Promise<void> {
@@ -37,8 +28,9 @@ export async function estimateStorageUsage(): Promise<null> {
 // --- Cloud-only metadata operations, used by fileOperations.ts when authenticated ---
 
 export async function fetchWorkspaceTree(): Promise<{ nodes: WorkspaceNode[]; hasAnyHistory: boolean }> {
-  const res = await fetch("/api/workspace");
-  return parseJsonOrThrow<{ nodes: WorkspaceNode[]; hasAnyHistory: boolean }>(res, "Load workspace");
+  return fetchJson<{ nodes: WorkspaceNode[]; hasAnyHistory: boolean }>("/api/workspace", {
+    action: "Load workspace",
+  });
 }
 
 export async function createCloudFile(
@@ -46,21 +38,17 @@ export async function createCloudFile(
   name: string,
   content: string,
 ): Promise<WorkspaceNode> {
-  const res = await fetch("/api/files", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ parentId, name, content }),
+  return fetchJson<WorkspaceNode>("/api/files", {
+    ...jsonBody("POST", { parentId, name, content }),
+    action: "Create file",
   });
-  return parseJsonOrThrow<WorkspaceNode>(res, "Create file");
 }
 
 export async function createCloudFolder(parentId: string | null, name: string): Promise<WorkspaceNode> {
-  const res = await fetch("/api/folders", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ parentId, name }),
+  return fetchJson<WorkspaceNode>("/api/folders", {
+    ...jsonBody("POST", { parentId, name }),
+    action: "Create folder",
   });
-  return parseJsonOrThrow<WorkspaceNode>(res, "Create folder");
 }
 
 export async function patchCloudFile(
@@ -76,28 +64,24 @@ export async function patchCloudFile(
     encryptionIv?: string | null;
   },
 ): Promise<WorkspaceNode> {
-  const res = await fetch(`/api/files/${fileId}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(patch),
+  return fetchJson<WorkspaceNode>(`/api/files/${fileId}`, {
+    ...jsonBody("PATCH", patch),
+    action: "Update file",
   });
-  return parseJsonOrThrow<WorkspaceNode>(res, "Update file");
 }
 
 export async function patchCloudFolder(
   folderId: string,
   patch: { name?: string; parentId?: string | null; collapsed?: boolean; hidden?: boolean },
 ): Promise<WorkspaceNode> {
-  const res = await fetch(`/api/folders/${folderId}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(patch),
+  return fetchJson<WorkspaceNode>(`/api/folders/${folderId}`, {
+    ...jsonBody("PATCH", patch),
+    action: "Update folder",
   });
-  return parseJsonOrThrow<WorkspaceNode>(res, "Update folder");
 }
 
 export async function deleteCloudFolder(folderId: string): Promise<void> {
-  await fetch(`/api/folders/${folderId}`, { method: "DELETE" });
+  await fetchOk(`/api/folders/${folderId}`, { method: "DELETE", action: "Delete folder" });
 }
 
 export interface ImportNodeInput {
@@ -114,10 +98,11 @@ export interface ImportNodeInput {
 }
 
 export async function importWorkspace(nodes: ImportNodeInput[]): Promise<{ idMap: Record<string, string> }> {
-  const res = await fetch("/api/workspace/import", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ nodes }),
+  return fetchJson<{ idMap: Record<string, string> }>("/api/workspace/import", {
+    // A full guest-workspace migration can be much larger than a normal request, so it gets a
+    // longer leash than the default timeout before being treated as hung.
+    ...jsonBody("POST", { nodes }),
+    action: "Import workspace",
+    timeoutMs: 60000,
   });
-  return parseJsonOrThrow<{ idMap: Record<string, string> }>(res, "Import workspace");
 }

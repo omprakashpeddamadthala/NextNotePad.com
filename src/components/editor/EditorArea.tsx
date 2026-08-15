@@ -8,6 +8,7 @@ import { MonacoEditorWrapper } from "./MonacoEditorWrapper";
 import { SplitEditor } from "./SplitEditor";
 import { DiffTabView } from "./DiffTabView";
 import { Button } from "@/components/ui/button";
+import { SkeletonText } from "@/components/ui/skeleton";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useTabsStore } from "@/store/tabsStore";
 import { useUIStore } from "@/store/uiStore";
@@ -71,8 +72,8 @@ export function EditorArea() {
       <EditorTabs />
       <div className="min-h-0 flex-1">
         {workspaceLoading ? (
-          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-            Loading workspace…
+          <div className="animate-in fade-in h-full px-4 py-3 duration-150">
+            <SkeletonText lines={10} />
           </div>
         ) : diffView ? (
           <DiffTabView diff={diffView} />
