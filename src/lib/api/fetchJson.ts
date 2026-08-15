@@ -8,6 +8,8 @@
  *  - a request that never comes back is aborted rather than leaving a spinner up forever.
  */
 
+import { useApiActivityStore } from "@/store/apiActivityStore";
+
 const DEFAULT_TIMEOUT_MS = 15000;
 
 export class ApiError extends Error {
@@ -31,6 +33,11 @@ interface RequestOptions extends RequestInit {
 }
 
 async function request(url: string, { action, timeoutMs = DEFAULT_TIMEOUT_MS, ...init }: RequestOptions) {
+  // Every internal API call passes through here, so this is also where the shared progress
+  // indicator is driven from — no call site has to remember to report itself.
+  const activity = useApiActivityStore.getState();
+  activity.begin();
+
   let res: Response;
   try {
     res = await fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
@@ -41,6 +48,8 @@ async function request(url: string, { action, timeoutMs = DEFAULT_TIMEOUT_MS, ..
       throw new ApiError(`${action} timed out — the server took too long to respond.`, 408);
     }
     throw new ApiError(`${action} failed — can't reach the server. Check your connection.`, 0);
+  } finally {
+    activity.end();
   }
 
   if (!res.ok) {

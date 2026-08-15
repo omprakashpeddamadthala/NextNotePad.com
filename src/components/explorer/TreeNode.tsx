@@ -139,8 +139,10 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
             onClick={handleClick}
             style={{ paddingLeft: `${depth * 14 + 6}px` }}
             className={cn(
-              "flex h-6 w-full items-center gap-1 pr-2 text-left text-[13px] outline-none",
-              "hover:bg-[var(--np-menu-hover)] focus-visible:ring-1 focus-visible:ring-ring",
+              // Roomier rows on touch screens (24px is hard to hit with a thumb), Notepad++'s
+              // tight 24px on desktop.
+              "flex h-7 w-full items-center gap-1 pr-2 text-left text-[13px] outline-none sm:h-6",
+              "transition-colors duration-100 hover:bg-[var(--np-menu-hover)] focus-visible:ring-1 focus-visible:ring-ring",
               isSelected && "bg-accent text-accent-foreground",
               isDropHighlighted && "outline outline-1 outline-primary",
               node.hidden && "opacity-50 italic",

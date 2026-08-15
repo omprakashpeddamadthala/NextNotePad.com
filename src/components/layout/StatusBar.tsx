@@ -1,15 +1,33 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
 import { useEditorStatusStore } from "@/store/editorStatusStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { useActiveFile } from "@/hooks/useActiveFile";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useUIStore } from "@/store/uiStore";
+import { useApiActivityStore } from "@/store/apiActivityStore";
 import { useIsMobile } from "@/hooks/useMediaQuery";
 import { countNodes } from "@/lib/utils/treeUtils";
 
 function Segment({ children }: { children: React.ReactNode }) {
   return <span className="flex h-full items-center border-l border-black/10 px-2.5">{children}</span>;
+}
+
+/** Mirrors the top progress bar in words — the bar alone is easy to miss at 2px tall, and this
+ *  sits right where the eye already goes for file state. Shares the same delayed `visible` flag,
+ *  so quick calls don't make it flicker. */
+function ApiActivitySegment() {
+  const visible = useApiActivityStore((s) => s.visible);
+  if (!visible) return null;
+  return (
+    <Segment>
+      <span className="flex items-center gap-1.5 text-muted-foreground">
+        <Loader2 className="size-3 animate-spin" />
+        Syncing…
+      </span>
+    </Segment>
+  );
 }
 
 export function StatusBar() {
@@ -62,6 +80,7 @@ export function StatusBar() {
         {stats.files} file{stats.files === 1 ? "" : "s"}, {stats.folders} folder{stats.folders === 1 ? "" : "s"}
       </button>
       <div className="flex h-full flex-1 items-center justify-end">
+        <ApiActivitySegment />
         {file && (
           <>
             <Segment>

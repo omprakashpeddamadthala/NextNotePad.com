@@ -10,9 +10,13 @@ import { useExplorerSelectionStore } from "@/store/explorerSelectionStore";
 import { useTabsStore } from "@/store/tabsStore";
 import { useUIStore } from "@/store/uiStore";
 import { useAuthStore } from "@/store/authStore";
+import { useIsMobile } from "@/hooks/useMediaQuery";
 import { moveNode } from "@/services/fileOperations";
 
-const ROW_HEIGHT = 24;
+/** Must stay in sync with TreeNode's row height (h-6 / sm:h-7) — the virtualizer positions rows
+ *  absolutely at this pitch, so a mismatch clips or overlaps them. */
+const ROW_HEIGHT_DESKTOP = 24;
+const ROW_HEIGHT_TOUCH = 28;
 
 /** Placeholder rows shown while the cloud workspace tree is still being fetched — without this
  *  the explorer renders as an empty tree ("No files yet"), which reads as "your files are gone"
@@ -43,17 +47,20 @@ export function FileTree() {
   const dropTargetId = useExplorerSelectionStore((s) => s.dropTargetId);
   const setDropTargetId = useExplorerSelectionStore((s) => s.setDropTargetId);
   const openTab = useTabsStore((s) => s.openTab);
+  const isMobile = useIsMobile();
   const authStatus = useAuthStore((s) => s.status);
   const workspaceReady = useAuthStore((s) => s.workspaceReady);
   const workspaceLoading = authStatus === "loading" || (authStatus === "authenticated" && !workspaceReady);
 
   const rows = flattenVisibleTree(nodes, filterQuery, showHiddenFiles);
 
+  const rowHeight = isMobile ? ROW_HEIGHT_TOUCH : ROW_HEIGHT_DESKTOP;
+
   const parentRef = useRef<HTMLDivElement>(null);
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => ROW_HEIGHT,
+    estimateSize: () => rowHeight,
     overscan: 15,
   });
 
@@ -120,7 +127,7 @@ export function FileTree() {
                 top: 0,
                 left: 0,
                 width: "100%",
-                height: ROW_HEIGHT,
+                height: rowHeight,
                 transform: `translateY(${virtualRow.start}px)`,
               }}
             >
