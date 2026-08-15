@@ -9,6 +9,8 @@ import { useCreateAndRename } from "@/hooks/useCreateAndRename";
 import { useNewNodeTargetParentId } from "@/hooks/useNewNodeTargetParentId";
 import { importNativeFiles } from "@/services/fileOperations";
 import { openDiffCheckerForActiveTab } from "@/services/diffChecker";
+import { openRegexTesterView } from "@/services/regexTesterView";
+import { openJsonConverterView } from "@/services/jsonConverterView";
 
 /** Headless component: wires the app-level (non-Monaco) actions into the shared action registry. */
 export function GlobalActionsRegistrar() {
@@ -66,6 +68,8 @@ export function GlobalActionsRegistrar() {
   useRegisterAction("search.quickOpen", () => useUIStore.getState().setQuickOpenOpen(true), []);
   useRegisterAction("view.commandPalette", () => useUIStore.getState().setCommandPaletteOpen(true), []);
   useRegisterAction("tools.diffChecker", () => openDiffCheckerForActiveTab(), []);
+  useRegisterAction("tools.regexTester", () => openRegexTesterView(), []);
+  useRegisterAction("tools.jsonConverter", () => openJsonConverterView(), []);
 
   return (
     <input

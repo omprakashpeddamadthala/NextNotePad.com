@@ -18,6 +18,8 @@ import {
   PanelBottom,
   HardDriveDownload,
   FileDiff,
+  Regex,
+  FileJson,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
@@ -175,6 +177,12 @@ export function MobileMenuSheet() {
             <ActionGridButton icon={Replace} label="Replace" onClick={() => runAction("search.replace")} />
             <ActionGridButton icon={Braces} label="Format" onClick={() => runAction("edit.formatDocument")} />
             <ActionGridButton icon={FileDiff} label="Diff Checker" onClick={() => runAction("tools.diffChecker")} />
+            <ActionGridButton icon={Regex} label="Regex Tester" onClick={() => runAction("tools.regexTester")} />
+            <ActionGridButton
+              icon={FileJson}
+              label="JSON Converter"
+              onClick={() => runAction("tools.jsonConverter")}
+            />
             <ActionGridButton
               icon={Eye}
               label="Markdown Preview"

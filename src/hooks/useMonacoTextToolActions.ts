@@ -9,6 +9,15 @@ import {
   urlDecode,
   caseConverters,
   computeHash,
+  decodeJwt,
+  generateUuidV4,
+  convertTimestamp,
+  encodeHtmlEntities,
+  decodeHtmlEntities,
+  slugify,
+  loremIpsum,
+  generateRandomPassword,
+  convertColorFormat,
   type HashAlgorithm,
 } from "@/services/textTools/textTools";
 
@@ -52,6 +61,17 @@ function getActiveEditorSelectionOrDocument(editor: MonacoEditorNS.IStandaloneCo
   const selection = editor.getSelection();
   const hasSelection = Boolean(selection && !selection.isEmpty());
   return hasSelection && selection ? model.getValueInRange(selection) : model.getValue();
+}
+
+/** Inserts text at the cursor (replacing the selection if any) — standard "type this" semantics,
+ *  unlike `transformActiveEditor`'s selection-or-whole-document replace. Backs the generator
+ *  tools (UUID, Lorem Ipsum, random password) where there's no existing content to transform. */
+function insertTextAtCursor(editor: MonacoEditorNS.IStandaloneCodeEditor, text: string): void {
+  const model = editor.getModel();
+  const selection = editor.getSelection();
+  if (!model || !selection) return;
+  editor.executeEdits("tools", [{ range: selection, text, forceMoveMarkers: true }]);
+  editor.pushUndoStop();
 }
 
 async function hashActiveEditor(editor: MonacoEditorNS.IStandaloneCodeEditor, algorithm: HashAlgorithm): Promise<void> {
@@ -214,6 +234,86 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.hash.SHA-512",
     () => {
       if (registerGlobalActions && editorRef.current) void hashActiveEditor(editorRef.current, "SHA-512");
+    },
+    [registerGlobalActions],
+  );
+
+  useRegisterAction(
+    "tools.jwtDecode",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(editorRef.current, decodeJwt, "JWT decoded.", "Couldn't decode — is this a valid JWT?");
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.uuidGenerate",
+    () => {
+      if (registerGlobalActions && editorRef.current) insertTextAtCursor(editorRef.current, generateUuidV4());
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.timestampConvert",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(
+          editorRef.current,
+          convertTimestamp,
+          "Timestamp converted.",
+          "Couldn't recognize this as a timestamp or date.",
+        );
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.htmlEntityEncode",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(editorRef.current, encodeHtmlEntities, "HTML entities encoded.", "Couldn't encode.");
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.htmlEntityDecode",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(editorRef.current, decodeHtmlEntities, "HTML entities decoded.", "Couldn't decode.");
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.colorConvert",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(
+          editorRef.current,
+          convertColorFormat,
+          "Color converted.",
+          "Couldn't recognize this as a HEX, RGB, or HSL color.",
+        );
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.slugGenerate",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(editorRef.current, slugify, "Converted to a slug.", "Couldn't slugify this content.");
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.loremIpsum",
+    () => {
+      if (registerGlobalActions && editorRef.current) insertTextAtCursor(editorRef.current, loremIpsum());
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.randomPassword",
+    () => {
+      if (registerGlobalActions && editorRef.current) insertTextAtCursor(editorRef.current, generateRandomPassword());
     },
     [registerGlobalActions],
   );

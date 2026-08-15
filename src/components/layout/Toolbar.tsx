@@ -18,6 +18,8 @@ import {
   Eye,
   CalendarDays,
   FileDiff,
+  Regex,
+  FileJson,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ToolbarButton } from "./ToolbarButton";
@@ -73,6 +75,8 @@ export function Toolbar() {
         onClick={() => runAction("edit.formatDocument")}
       />
       <ToolbarButton icon={FileDiff} label="Diff Checker" onClick={() => runAction("tools.diffChecker")} />
+      <ToolbarButton icon={Regex} label="Regex Tester" onClick={() => runAction("tools.regexTester")} />
+      <ToolbarButton icon={FileJson} label="JSON Converter" onClick={() => runAction("tools.jsonConverter")} />
       <Separator orientation="vertical" className="mx-1 h-5" />
       <VoiceDictationButton />
       <ToolbarButton

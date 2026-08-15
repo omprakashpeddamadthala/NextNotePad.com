@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 import { useTabsStore } from "@/store/tabsStore";
 import { useDiffViewStore } from "@/store/diffViewStore";
+import { closeAllSpecialViews } from "@/services/specialViews";
 
 /** Opens the diff view comparing the active tab against another open tab (the next one in the
  *  strip) — the Tools menu, toolbar, and command palette's "Diff Checker" all funnel through this
@@ -14,5 +15,6 @@ export function openDiffCheckerForActiveTab(): void {
   }
   const other = tabs.find((t) => t.id !== activeTabId);
   if (!other) return;
+  closeAllSpecialViews();
   useDiffViewStore.getState().openDiff(activeTabId, other.id);
 }
