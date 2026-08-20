@@ -217,8 +217,12 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
         content,
         loadedNode?.type === "file" ? loadedNode.language : "plaintext",
       );
-      setLoading(false);
     }
+    // Must run on every path, not just the fresh-load one above: reopening a file whose model is
+    // still cached from an earlier tab (models outlive tab-close, by design, to keep undo history)
+    // skips that branch entirely, and `loading` starts `true` on every mount — leaving the skeleton
+    // stuck on screen forever over a fully-loaded editor if this were left inside the `if`.
+    setLoading(false);
 
     editor.setModel(model);
     setDirty(tid, modelRegistry.isDirty(id));

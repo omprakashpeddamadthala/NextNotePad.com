@@ -10,7 +10,7 @@ import type { WorkspaceNode } from "@/types/file";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useExplorerSelectionStore } from "@/store/explorerSelectionStore";
 import { useRecentFilesStore } from "@/store/recentFilesStore";
-import { renameNode, moveNode } from "@/services/fileOperations";
+import { renameNode, moveNode, importNativeDrop } from "@/services/fileOperations";
 import { openFileForUser } from "@/services/openFile";
 import { isValidNodeName } from "@/lib/utils/pathUtils";
 import { isDescendant } from "@/lib/utils/treeUtils";
@@ -95,7 +95,17 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
 
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
+    // Stop the OS-file-drop branch from also being handled by FileExplorer's panel-level
+    // onDrop, which would otherwise re-import the same payload again at the root.
+    e.stopPropagation();
     setDropTargetId(null);
+
+    if (e.dataTransfer.files.length > 0) {
+      setDraggedNodeId(null);
+      void importNativeDrop(e.dataTransfer, dropTarget);
+      return;
+    }
+
     const draggedId = e.dataTransfer.getData("text/plain") || draggedNodeId;
     setDraggedNodeId(null);
     if (!draggedId || draggedId === node.id) return;

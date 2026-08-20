@@ -18,6 +18,7 @@ import type { FileNode, FolderNode, WorkspaceNode } from "@/types/file";
 import * as localRepo from "@/services/storage/workspaceRepository";
 import * as cloudRepo from "@/services/storage/cloudWorkspaceRepository";
 import { getActiveRepository, isCloudMode } from "@/services/storage/activeRepository";
+import { closeAllSpecialViews } from "@/services/specialViews";
 
 function splitNameExt(name: string): [string, string] {
   const dotIndex = name.lastIndexOf(".");
@@ -56,6 +57,11 @@ export function nextUntitledFolderName(nodes: NodeMap, parentId: string | null):
 
 /** Opens (or focuses) a file's tab and jumps the editor to a specific line/column. */
 export function openFileAtLocation(fileId: string, line: number, column = 1): void {
+  // Markdown Full Page View (and diff view) render in place of the tab content and are checked
+  // before the active tab in EditorArea, so without this a stale special view for another file
+  // would keep showing even after this tab opens underneath it — e.g. jumping to a search match
+  // while a different markdown file is open in its full-page view.
+  closeAllSpecialViews();
   useTabsStore.getState().openTab(fileId);
   useRecentFilesStore.getState().addRecent(fileId);
   usePendingGotoStore.getState().requestGoto(fileId, line, column);
@@ -391,13 +397,76 @@ export async function permanentlyDelete(nodeId: string): Promise<void> {
   await Promise.all(allFiles.map((f) => getActiveRepository().deleteFileContent(f.id)));
 }
 
-/** Imports OS files dropped onto the explorer (flat — directory drops are handled by the Export/Import zip flow). */
+/** Imports OS files dropped onto the explorer (flat — no folder structure). Used directly for the
+ *  "Open" file-input flow, and as `importNativeDrop`'s fallback when entries aren't available. */
 export async function importNativeFiles(files: FileList | File[], parentId: string | null): Promise<void> {
   for (const file of Array.from(files)) {
     const workspace = useWorkspaceStore.getState();
     const name = uniqueSiblingName(workspace.nodes, parentId, file.name);
     const content = await file.text();
     await createFile(parentId, name, content);
+  }
+}
+
+/** A directory's entries must be paged via repeated `readEntries()` calls — a single call isn't
+ *  guaranteed to return everything in a large folder, per the (non-standard but universally
+ *  implemented) File and Directory Entries API. */
+function readAllDirectoryEntries(reader: FileSystemDirectoryReader): Promise<FileSystemEntry[]> {
+  return new Promise((resolve, reject) => {
+    const all: FileSystemEntry[] = [];
+    function readBatch() {
+      reader.readEntries((batch) => {
+        if (batch.length === 0) {
+          resolve(all);
+          return;
+        }
+        all.push(...batch);
+        readBatch();
+      }, reject);
+    }
+    readBatch();
+  });
+}
+
+function readEntryFile(entry: FileSystemFileEntry): Promise<File> {
+  return new Promise((resolve, reject) => entry.file(resolve, reject));
+}
+
+async function importEntry(entry: FileSystemEntry, parentId: string | null): Promise<void> {
+  const workspace = useWorkspaceStore.getState();
+  const name = uniqueSiblingName(workspace.nodes, parentId, entry.name);
+
+  if (entry.isDirectory) {
+    const folderId = await createFolder(parentId, name);
+    const children = await readAllDirectoryEntries((entry as FileSystemDirectoryEntry).createReader());
+    for (const child of children) {
+      await importEntry(child, folderId);
+    }
+    return;
+  }
+
+  const file = await readEntryFile(entry as FileSystemFileEntry);
+  const content = await file.text();
+  await createFile(parentId, name, content);
+}
+
+/** Imports whatever the OS drag-and-drop payload contains — files and folders alike, preserving
+ *  directory structure — by walking `DataTransferItem.webkitGetAsEntry()`. Falls back to a flat
+ *  file-only import if the browser doesn't expose entries (e.g. a synthetic DataTransfer). */
+export async function importNativeDrop(dataTransfer: DataTransfer, parentId: string | null): Promise<void> {
+  const items = dataTransfer.items ? Array.from(dataTransfer.items) : [];
+  const entries = items
+    .filter((item) => item.kind === "file")
+    .map((item) => item.webkitGetAsEntry?.())
+    .filter((entry): entry is FileSystemEntry => !!entry);
+
+  if (entries.length === 0) {
+    await importNativeFiles(dataTransfer.files, parentId);
+    return;
+  }
+
+  for (const entry of entries) {
+    await importEntry(entry, parentId);
   }
 }
 

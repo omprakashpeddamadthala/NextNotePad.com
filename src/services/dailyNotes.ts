@@ -2,6 +2,7 @@ import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useTabsStore } from "@/store/tabsStore";
 import { useRecentFilesStore } from "@/store/recentFilesStore";
 import { createFile, createFolder } from "@/services/fileOperations";
+import { closeAllSpecialViews } from "@/services/specialViews";
 import type { FolderNode } from "@/types/file";
 
 const DAILY_NOTES_FOLDER_NAME = "Daily Notes";
@@ -39,6 +40,9 @@ export async function openTodayDailyNote(): Promise<void> {
   );
   const fileId = existing ? existing.id : await createFile(folderId, name, "");
 
+  // See openFileAtLocation's comment in fileOperations.ts — the same stale-special-view issue
+  // applies here since this can be triggered while a different markdown file's full-page view is open.
+  closeAllSpecialViews();
   useTabsStore.getState().openTab(fileId);
   useRecentFilesStore.getState().addRecent(fileId);
 }

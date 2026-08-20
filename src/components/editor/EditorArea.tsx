@@ -67,7 +67,9 @@ export function EditorArea() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <EditorTabs />
+      {/* Markdown Full Page View has its own complete header (filename, Edit/Download PDF/Close)
+          and isn't a regular open tab, so the tab strip would only render as an empty bar above it. */}
+      {!markdownFullPageFileId && <EditorTabs />}
       <div className="min-h-0 flex-1">
         {workspaceLoading ? (
           <div className="animate-in fade-in h-full px-4 py-3 duration-150">

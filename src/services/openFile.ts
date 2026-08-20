@@ -2,6 +2,7 @@ import { useTabsStore } from "@/store/tabsStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useRecentFilesStore } from "@/store/recentFilesStore";
 import { openMarkdownFullPage } from "@/services/markdownFullPageView";
+import { closeAllSpecialViews } from "@/services/specialViews";
 
 /**
  * The single "what happens when you open this file" rule, shared by every entry point that
@@ -21,5 +22,9 @@ export function openFileForUser(fileId: string): void {
     openMarkdownFullPage(fileId);
     return;
   }
+  // Markdown Full Page View (and diff view) render in place of the tab content and are checked
+  // before the active tab in EditorArea, so without this the stale special view would keep
+  // showing even after the new tab opens underneath it.
+  closeAllSpecialViews();
   useTabsStore.getState().openTab(fileId);
 }

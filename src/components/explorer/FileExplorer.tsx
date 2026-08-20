@@ -5,13 +5,12 @@ import { FilePlus, FolderPlus, ChevronsDownUp, Trash2, X, Eye, EyeOff } from "lu
 import { Input } from "@/components/ui/input";
 import { ToolbarButton } from "@/components/layout/ToolbarButton";
 import { FileTree } from "./FileTree";
-import { Breadcrumb } from "./Breadcrumb";
 import { RecycleBinPanel } from "@/components/trash/RecycleBinPanel";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useUIStore } from "@/store/uiStore";
 import { useTrashStore } from "@/store/trashStore";
 import { useCreateAndRename } from "@/hooks/useCreateAndRename";
-import { importNativeFiles } from "@/services/fileOperations";
+import { importNativeDrop } from "@/services/fileOperations";
 
 export function FileExplorer() {
   const [showTrash, setShowTrash] = useState(false);
@@ -34,7 +33,7 @@ export function FileExplorer() {
       onDrop={(e) => {
         if (e.dataTransfer.files.length > 0) {
           e.preventDefault();
-          void importNativeFiles(e.dataTransfer.files, null);
+          void importNativeDrop(e.dataTransfer, null);
         }
       }}
     >
@@ -98,8 +97,6 @@ export function FileExplorer() {
           )}
         </div>
       )}
-
-      {!showTrash && <Breadcrumb />}
 
       <div className="min-h-0 flex-1">{showTrash ? <RecycleBinPanel /> : <FileTree />}</div>
     </div>
