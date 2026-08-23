@@ -14,6 +14,7 @@ import {
   CaseSensitive,
   Hash,
   FileDiff,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -155,6 +156,13 @@ export function CommandPalette() {
         icon: FileDiff,
         run: () => runAction("tools.diffChecker"),
       },
+      {
+        id: "tools-ai-fix-grammar",
+        label: "Tools: Fix Grammar & Spelling (AI)",
+        category: "Tools",
+        icon: Sparkles,
+        run: () => runAction("tools.ai.fixGrammar"),
+      },
       ...THEME_ORDER.map((id) => ({
         id: `theme-${id}`,
         label: `Theme: ${THEME_MODULES[id].label}`,
@@ -191,10 +199,16 @@ export function CommandPalette() {
           {commands.map((cmd) => {
             const Icon = cmd.icon;
             return (
-              <CommandItem key={cmd.id} value={`${cmd.label} ${cmd.category}`} onSelect={() => handleSelect(cmd)}>
+              <CommandItem
+                key={cmd.id}
+                value={`${cmd.label} ${cmd.category}`}
+                onSelect={() => handleSelect(cmd)}
+              >
                 {Icon && <Icon className="size-4 shrink-0" />}
                 <span>{cmd.label}</span>
-                {cmd.shortcut && <CommandShortcut>{cmd.shortcut}</CommandShortcut>}
+                {cmd.shortcut && (
+                  <CommandShortcut>{cmd.shortcut}</CommandShortcut>
+                )}
               </CommandItem>
             );
           })}

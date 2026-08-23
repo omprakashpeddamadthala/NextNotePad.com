@@ -22,7 +22,10 @@ export default function Home() {
 
   if (!mounted) {
     return (
-      <div className="flex h-full flex-1 items-center justify-center bg-background text-sm text-muted-foreground">
+      <div
+        className="bg-background text-muted-foreground flex h-full flex-1 items-center justify-center text-sm"
+        suppressHydrationWarning
+      >
         Loading NextNotePad.com…
       </div>
     );

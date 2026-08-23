@@ -1,6 +1,13 @@
 "use client";
 
-import { Binary, Link2, CaseSensitive, Hash, FileDiff } from "lucide-react";
+import {
+  Binary,
+  Link2,
+  CaseSensitive,
+  Hash,
+  FileDiff,
+  Sparkles,
+} from "lucide-react";
 import { TopMenu } from "./TopMenu";
 import {
   DropdownMenuItem,
@@ -10,7 +17,10 @@ import {
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import { runAction } from "@/services/shortcuts/actionRegistry";
-import { HASH_ALGORITHMS, type CaseConverterId } from "@/services/textTools/textTools";
+import {
+  HASH_ALGORITHMS,
+  type CaseConverterId,
+} from "@/services/textTools/textTools";
 
 const CASE_OPTIONS: { id: CaseConverterId; label: string }[] = [
   { id: "upper", label: "UPPERCASE" },
@@ -27,10 +37,15 @@ const CASE_OPTIONS: { id: CaseConverterId; label: string }[] = [
 /** Every item here acts directly on the active tab's selection (or whole document if nothing is
  *  selected) — same convention as Format Document — instead of opening a separate copy/paste
  *  dialog. Diff Checker also stays on-tab: it replaces the editor content with two open tabs
- *  side by side on Monaco's diff editor, rather than a popup. */
+ *  side by side on Monaco's diff editor, rather than a popup. Fix Grammar & Spelling is the one
+ *  async, network-backed item — it calls the server's Gemini-backed `/api/ai/correct` route. */
 export function ToolsMenu() {
   return (
     <TopMenu label="Tools">
+      <DropdownMenuItem onSelect={() => runAction("tools.ai.fixGrammar")}>
+        <Sparkles /> Fix Grammar &amp; Spelling (AI)
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
       <DropdownMenuItem onSelect={() => runAction("tools.base64Encode")}>
         <Binary /> Base64 Encode
       </DropdownMenuItem>
@@ -50,7 +65,10 @@ export function ToolsMenu() {
         </DropdownMenuSubTrigger>
         <DropdownMenuSubContent>
           {CASE_OPTIONS.map(({ id, label }) => (
-            <DropdownMenuItem key={id} onSelect={() => runAction(`tools.case.${id}`)}>
+            <DropdownMenuItem
+              key={id}
+              onSelect={() => runAction(`tools.case.${id}`)}
+            >
               {label}
             </DropdownMenuItem>
           ))}
@@ -62,7 +80,10 @@ export function ToolsMenu() {
         </DropdownMenuSubTrigger>
         <DropdownMenuSubContent>
           {HASH_ALGORITHMS.map((algo) => (
-            <DropdownMenuItem key={algo} onSelect={() => runAction(`tools.hash.${algo}`)}>
+            <DropdownMenuItem
+              key={algo}
+              onSelect={() => runAction(`tools.hash.${algo}`)}
+            >
               {algo} (copy to clipboard)
             </DropdownMenuItem>
           ))}

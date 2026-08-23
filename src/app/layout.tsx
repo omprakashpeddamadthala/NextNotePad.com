@@ -16,14 +16,17 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "NextNotePad.com",
-  description: "NextNotePad.com — a browser-based text editor inspired by Notepad++, with an offline-first guest mode.",
+  description:
+    "NextNotePad.com — a browser-based text editor inspired by Notepad++, with an offline-first guest mode.",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
       { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
       { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
-    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
   },
   appleWebApp: {
     capable: true,
@@ -43,7 +46,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full h-full flex flex-col overflow-hidden">
+      <body
+        className="flex h-full min-h-full flex-col overflow-hidden"
+        suppressHydrationWarning
+      >
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

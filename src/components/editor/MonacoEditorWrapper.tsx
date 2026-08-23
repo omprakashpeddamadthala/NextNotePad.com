@@ -23,20 +23,25 @@ import { AUTO_SAVE_INTERVALS_MS } from "@/lib/constants/defaultSettings";
 import { useExplorerSelectionStore } from "@/store/explorerSelectionStore";
 import { formatActiveEditor } from "@/services/formatting/formatActiveEditor";
 import { toggleBookmark, nextBookmarkLine } from "@/lib/monaco/bookmarks";
+import { runAction } from "@/services/shortcuts/actionRegistry";
 import { usePendingGotoStore } from "@/store/pendingGotoStore";
 import { useMarkdownPreviewContentStore } from "@/store/markdownPreviewContentStore";
 import { useMonacoGlobalActions } from "@/hooks/useMonacoGlobalActions";
 import { useMonacoTextToolActions } from "@/hooks/useMonacoTextToolActions";
+import { useMonacoAiActions } from "@/hooks/useMonacoAiActions";
 import { useVoiceDictationTarget } from "@/hooks/useVoiceDictationTarget";
 
-const Editor = dynamic(() => import("@monaco-editor/react").then((m) => m.default), {
-  ssr: false,
-  loading: () => (
-    <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-      Loading editor…
-    </div>
-  ),
-});
+const Editor = dynamic(
+  () => import("@monaco-editor/react").then((m) => m.default),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
+        Loading editor…
+      </div>
+    ),
+  },
+);
 
 interface MonacoEditorWrapperProps {
   fileId: string;
@@ -58,7 +63,8 @@ function LockedFileOverlay({ fileId }: { fileId: string }) {
     setError(null);
     try {
       const result = await unlockSingleFile(fileId, passphrase);
-      if (result.status === "wrong-passphrase") setError("Incorrect passphrase.");
+      if (result.status === "wrong-passphrase")
+        setError("Incorrect passphrase.");
       // On success, the workspace node's `locked` flips to false, which the parent reacts to.
     } finally {
       setBusy(false);
@@ -66,10 +72,13 @@ function LockedFileOverlay({ fileId }: { fileId: string }) {
   }
 
   return (
-    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background p-6 text-center">
-      <Lock className="size-8 text-muted-foreground" />
+    <div className="bg-background absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 p-6 text-center">
+      <Lock className="text-muted-foreground size-8" />
       <p className="text-sm font-medium">This file is locked</p>
-      <form onSubmit={(e) => void handleSubmit(e)} className="flex w-full max-w-xs flex-col gap-2">
+      <form
+        onSubmit={(e) => void handleSubmit(e)}
+        className="flex w-full max-w-xs flex-col gap-2"
+      >
         <Input
           type="password"
           autoFocus
@@ -78,7 +87,7 @@ function LockedFileOverlay({ fileId }: { fileId: string }) {
           onChange={(e) => setPassphrase(e.target.value)}
           autoComplete="off"
         />
-        {error && <p className="text-xs text-destructive">{error}</p>}
+        {error && <p className="text-destructive text-xs">{error}</p>}
         <Button type="submit" size="sm" disabled={busy}>
           <Unlock className="size-4" /> Unlock
         </Button>
@@ -87,7 +96,11 @@ function LockedFileOverlay({ fileId }: { fileId: string }) {
   );
 }
 
-export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: MonacoEditorWrapperProps) {
+export function MonacoEditorWrapper({
+  fileId,
+  tabId,
+  registerGlobalActions,
+}: MonacoEditorWrapperProps) {
   const editorRef = useRef<MonacoEditorNS.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<Parameters<OnMount>[1] | null>(null);
   const currentFileIdRef = useRef<string | null>(null);
@@ -104,12 +117,16 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
   const setDirty = useTabsStore((s) => s.setDirty);
   const updateViewState = useTabsStore((s) => s.updateViewState);
   const setStatus = useEditorStatusStore((s) => s.setStatus);
-  const setSelectedNodeId = useExplorerSelectionStore((s) => s.setSelectedNodeId);
+  const setSelectedNodeId = useExplorerSelectionStore(
+    (s) => s.setSelectedNodeId,
+  );
 
   const file = nodes[fileId];
   const language = file?.type === "file" ? file.language : "plaintext";
   const isLocked = file?.type === "file" && file.locked;
-  const readOnly = useTabsStore((s) => s.tabs.find((t) => t.id === tabId)?.readOnly ?? false);
+  const readOnly = useTabsStore(
+    (s) => s.tabs.find((t) => t.id === tabId)?.readOnly ?? false,
+  );
 
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -127,7 +144,11 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
   /** Single write path for both autosave and Ctrl+S. Only marks the tab clean once the write
    *  actually succeeded — a failed save has to keep the file dirty, or the user is told their
    *  work is saved when the server never received it. */
-  async function persistFile(id: string, tid: string, opts?: { silent?: boolean }) {
+  async function persistFile(
+    id: string,
+    tid: string,
+    opts?: { silent?: boolean },
+  ) {
     const model = modelRegistry.getModel(id);
     if (!model) return;
     const value = model.getValue();
@@ -142,7 +163,9 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
       // a single id'd toast so a flapping connection can't stack up dozens of them.
       toast.error(`Couldn't save "${nodes[id]?.name ?? "file"}".`, {
         id: `save-failed-${id}`,
-        description: opts?.silent ? `${detail} Your changes are still here — retry with Ctrl+S.` : detail,
+        description: opts?.silent
+          ? `${detail} Your changes are still here — retry with Ctrl+S.`
+          : detail,
       });
     }
   }
@@ -155,7 +178,10 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
     const position = editor.getPosition();
     const selection = editor.getSelection();
     updateViewState(prevTabId, {
-      cursor: { lineNumber: position?.lineNumber ?? 1, column: position?.column ?? 1 },
+      cursor: {
+        lineNumber: position?.lineNumber ?? 1,
+        column: position?.column ?? 1,
+      },
       scrollTop: state.viewState.scrollTop ?? 0,
       selection: selection
         ? {
@@ -170,11 +196,16 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
 
   /** Pushes this pane's current content to `MarkdownPreview` if it's showing a markdown file —
    *  primary pane only, so a split-compare secondary pane never fights it for the preview. */
-  function pushMarkdownPreviewContent(id: string, model: MonacoEditorNS.ITextModel) {
+  function pushMarkdownPreviewContent(
+    id: string,
+    model: MonacoEditorNS.ITextModel,
+  ) {
     if (!registerGlobalActions) return;
     const node = useWorkspaceStore.getState().nodes[id];
     if (node?.type === "file" && node.language === "markdown") {
-      useMarkdownPreviewContentStore.getState().setContent(id, model.getValue());
+      useMarkdownPreviewContentStore
+        .getState()
+        .setContent(id, model.getValue());
     }
   }
 
@@ -262,7 +293,8 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
 
   useEffect(() => {
     const monaco = monacoRef.current;
-    if (monaco && file) modelRegistry.setModelLanguage(monaco, fileId, language);
+    if (monaco && file)
+      modelRegistry.setModelLanguage(monaco, fileId, language);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [language]);
 
@@ -271,7 +303,10 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
     if (!pendingGoto || pendingGoto.fileId !== fileId) return;
     const editor = editorRef.current;
     if (!editor || editor.getModel() !== modelRegistry.getModel(fileId)) return;
-    editor.setPosition({ lineNumber: pendingGoto.line, column: pendingGoto.column });
+    editor.setPosition({
+      lineNumber: pendingGoto.line,
+      column: pendingGoto.column,
+    });
     editor.revealLineInCenter(pendingGoto.line);
     editor.focus();
     usePendingGotoStore.getState().clear();
@@ -283,7 +318,8 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
 
     const initialModel = editor.getModel();
     void switchToFile(fileId, tabId).then(() => {
-      if (initialModel && initialModel !== editorRef.current?.getModel()) initialModel.dispose();
+      if (initialModel && initialModel !== editorRef.current?.getModel())
+        initialModel.dispose();
     });
 
     editor.onDidChangeModelContent(() => {
@@ -327,12 +363,16 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
       editor.getAction("editor.action.copyLinesDownAction")?.run();
     });
 
-    editor.addCommand(monaco.KeyMod.Shift | monaco.KeyMod.Alt | monaco.KeyCode.KeyF, () => {
-      formatActiveEditor(editor);
-    });
+    editor.addCommand(
+      monaco.KeyMod.Shift | monaco.KeyMod.Alt | monaco.KeyCode.KeyF,
+      () => {
+        formatActiveEditor(editor);
+      },
+    );
 
     editor.onMouseDown((e) => {
-      if (e.target.type !== monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN) return;
+      if (e.target.type !== monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN)
+        return;
       const model = editor.getModel();
       const id = currentFileIdRef.current;
       if (model && id && e.target.position) {
@@ -357,6 +397,20 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
         editor.revealLineInCenter(nextLine);
       }
     });
+
+    // Only shows in the right-click menu when text is selected — matches the Tools-menu
+    // command's own selection-or-document convention, but a full-document AI rewrite from a
+    // bare right-click (no selection) would be a surprising, hard-to-undo action to expose there.
+    editor.addAction({
+      id: "tools.ai.fixGrammar.contextMenu",
+      label: "Correct the Sentence (AI)",
+      contextMenuGroupId: "9_ai",
+      contextMenuOrder: 1,
+      precondition: "editorHasSelection",
+      run: () => {
+        runAction("tools.ai.fixGrammar");
+      },
+    });
   };
 
   useVoiceDictationTarget(editorRef, registerGlobalActions);
@@ -369,8 +423,15 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
     void persistFile(id, tid);
   }
 
-  useMonacoGlobalActions({ registerGlobalActions, editorRef, fileId, tabId, saveActiveFile });
+  useMonacoGlobalActions({
+    registerGlobalActions,
+    editorRef,
+    fileId,
+    tabId,
+    saveActiveFile,
+  });
   useMonacoTextToolActions({ registerGlobalActions, editorRef });
+  useMonacoAiActions({ registerGlobalActions, editorRef });
 
   const themeModule = THEME_MODULES[theme];
 
@@ -378,7 +439,7 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
     <div className="relative h-full">
       {isLocked && <LockedFileOverlay key={fileId} fileId={fileId} />}
       {loadError !== null && !isLocked && (
-        <div className="absolute inset-0 z-10 bg-background">
+        <div className="bg-background absolute inset-0 z-10">
           <LoadFailure
             error={loadError}
             onRetry={() => {
@@ -389,7 +450,7 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
         </div>
       )}
       {loading && !isLocked && !loadError && (
-        <div className="absolute inset-0 z-10 animate-in fade-in bg-background px-4 py-3 duration-150">
+        <div className="animate-in fade-in bg-background absolute inset-0 z-10 px-4 py-3 duration-150">
           <SkeletonText lines={8} />
         </div>
       )}
@@ -411,7 +472,9 @@ export function MonacoEditorWrapper({ fileId, tabId, registerGlobalActions }: Mo
           lineNumbers: settings.showLineNumbers ? "on" : "off",
           renderWhitespace: settings.renderWhitespace ? "all" : "none",
           cursorStyle: settings.cursorStyle,
-          autoClosingBrackets: settings.autoClosingBrackets ? "always" : "never",
+          autoClosingBrackets: settings.autoClosingBrackets
+            ? "always"
+            : "never",
           readOnly,
           automaticLayout: true,
           scrollBeyondLastLine: false,

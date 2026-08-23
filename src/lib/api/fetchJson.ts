@@ -69,6 +69,13 @@ export async function fetchOk(url: string, options: RequestOptions): Promise<voi
   await request(url, options);
 }
 
+/** Performs the request and returns the raw Response for the caller to stream from — same
+ *  timeout/offline-error handling as fetchJson, but for endpoints that stream a body instead
+ *  of returning one JSON blob. */
+export async function fetchStream(url: string, options: RequestOptions): Promise<Response> {
+  return request(url, options);
+}
+
 /** Shorthand for the JSON-body-in, JSON-body-out calls that make up most of the repository. */
 export function jsonBody(method: "POST" | "PATCH", body: unknown): RequestInit {
   return {
