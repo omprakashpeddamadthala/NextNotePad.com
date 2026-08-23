@@ -51,3 +51,6 @@ next-env.d.ts
 .agents/
 .claude/
 .windsurf/
+
+# BMAD-METHOD generated planning/implementation artifacts (framework itself, in /_bmad, is committed)
+/_bmad-output/

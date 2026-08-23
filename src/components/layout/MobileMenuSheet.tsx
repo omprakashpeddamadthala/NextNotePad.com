@@ -18,9 +18,16 @@ import {
   PanelBottom,
   HardDriveDownload,
   FileDiff,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetClose,
+} from "@/components/ui/sheet";
 import { FileMenu } from "@/components/menu/FileMenu";
 import { EditMenu } from "@/components/menu/EditMenu";
 import { SearchMenu } from "@/components/menu/SearchMenu";
@@ -49,7 +56,7 @@ import { cn } from "@/lib/utils";
  *  touching the shared component that the desktop menu bar also renders. */
 function MenuGridCell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-md border bg-muted/40 text-center [&>button]:flex [&>button]:h-full [&>button]:w-full [&>button]:items-center [&>button]:justify-center [&>button]:py-2.5">
+    <div className="bg-muted/40 rounded-md border text-center [&>button]:flex [&>button]:h-full [&>button]:w-full [&>button]:items-center [&>button]:justify-center [&>button]:py-2.5">
       {children}
     </div>
   );
@@ -73,7 +80,9 @@ function ActionGridButton({
         onClick={onClick}
         className={cn(
           "flex flex-col items-center gap-1 rounded-md border p-2.5 text-center text-[11px] leading-tight",
-          active ? "border-primary bg-accent text-accent-foreground" : "bg-muted/40",
+          active
+            ? "border-primary bg-accent text-accent-foreground"
+            : "bg-muted/40",
         )}
       >
         <Icon className="size-5" />
@@ -97,13 +106,21 @@ export function MobileMenuSheet() {
   const authStatus = useAuthStore((s) => s.status);
 
   const activeTabId = useTabsStore((s) => s.activeTabId);
-  const activeFileId = useTabsStore((s) => s.tabs.find((t) => t.id === activeTabId)?.fileId);
-  const activeNode = useWorkspaceStore((s) => (activeFileId ? s.nodes[activeFileId] : undefined));
-  const isMarkdownActive = activeNode?.type === "file" && activeNode.language === "markdown";
+  const activeFileId = useTabsStore(
+    (s) => s.tabs.find((t) => t.id === activeTabId)?.fileId,
+  );
+  const activeNode = useWorkspaceStore((s) =>
+    activeFileId ? s.nodes[activeFileId] : undefined,
+  );
+  const isMarkdownActive =
+    activeNode?.type === "file" && activeNode.language === "markdown";
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-lg">
+      <SheetContent
+        side="bottom"
+        className="max-h-[85vh] overflow-y-auto rounded-t-lg"
+      >
         <SheetHeader>
           <SheetTitle>Menu</SheetTitle>
         </SheetHeader>
@@ -116,14 +133,16 @@ export function MobileMenuSheet() {
           </div>
         </div>
         {authStatus === "guest" && (
-          <p className="-mt-2 flex items-center gap-1.5 px-4 pb-2 text-xs text-muted-foreground">
+          <p className="text-muted-foreground -mt-2 flex items-center gap-1.5 px-4 pb-2 text-xs">
             <HardDriveDownload className="size-3.5" />
             Guest Mode — stored locally
           </p>
         )}
 
         <div className="px-4">
-          <p className="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">Menus</p>
+          <p className="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase">
+            Menus
+          </p>
           <div className="grid grid-cols-3 gap-2">
             <MenuGridCell>
               <FileMenu />
@@ -159,36 +178,93 @@ export function MobileMenuSheet() {
         </div>
 
         <div className="px-4 pb-4">
-          <p className="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">Actions</p>
+          <p className="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase">
+            Actions
+          </p>
           <div className="grid grid-cols-3 gap-2">
-            <ActionGridButton icon={FilePlus} label="New File" onClick={() => runAction("file.new")} />
-            <ActionGridButton icon={FolderOpen} label="Open / Import" onClick={() => runAction("file.open")} />
-            <ActionGridButton icon={Save} label="Save" onClick={() => runAction("file.save")} />
+            <ActionGridButton
+              icon={FilePlus}
+              label="New File"
+              onClick={() => runAction("file.new")}
+            />
+            <ActionGridButton
+              icon={FolderOpen}
+              label="Open / Import"
+              onClick={() => runAction("file.open")}
+            />
+            <ActionGridButton
+              icon={Save}
+              label="Save"
+              onClick={() => runAction("file.save")}
+            />
             <ActionGridButton
               icon={CalendarDays}
               label="Daily Note"
-              onClick={() => void openTodayDailyNote().catch(() => toast.error("Couldn't open today's daily note."))}
+              onClick={() =>
+                void openTodayDailyNote().catch(() =>
+                  toast.error("Couldn't open today's daily note."),
+                )
+              }
             />
-            <ActionGridButton icon={Undo2} label="Undo" onClick={() => runAction("edit.undo")} />
-            <ActionGridButton icon={Redo2} label="Redo" onClick={() => runAction("edit.redo")} />
-            <ActionGridButton icon={Search} label="Find" onClick={() => runAction("search.find")} />
-            <ActionGridButton icon={Replace} label="Replace" onClick={() => runAction("search.replace")} />
-            <ActionGridButton icon={Braces} label="Format" onClick={() => runAction("edit.formatDocument")} />
-            <ActionGridButton icon={FileDiff} label="Diff Checker" onClick={() => runAction("tools.diffChecker")} />
+            <ActionGridButton
+              icon={Undo2}
+              label="Undo"
+              onClick={() => runAction("edit.undo")}
+            />
+            <ActionGridButton
+              icon={Redo2}
+              label="Redo"
+              onClick={() => runAction("edit.redo")}
+            />
+            <ActionGridButton
+              icon={Search}
+              label="Find"
+              onClick={() => runAction("search.find")}
+            />
+            <ActionGridButton
+              icon={Replace}
+              label="Replace"
+              onClick={() => runAction("search.replace")}
+            />
+            <ActionGridButton
+              icon={Braces}
+              label="Format"
+              onClick={() => runAction("edit.formatDocument")}
+            />
+            <ActionGridButton
+              icon={FileDiff}
+              label="Diff Checker"
+              onClick={() => runAction("tools.diffChecker")}
+            />
+            <ActionGridButton
+              icon={Sparkles}
+              label="Fix Grammar (AI)"
+              onClick={() => runAction("tools.ai.fixGrammar")}
+            />
             <ActionGridButton
               icon={Eye}
               label="Markdown Preview"
               active={markdownPreviewVisible && isMarkdownActive}
               onClick={() => {
                 if (!isMarkdownActive) {
-                  toast.error("Open a markdown (.md) file first to preview it.");
+                  toast.error(
+                    "Open a markdown (.md) file first to preview it.",
+                  );
                   return;
                 }
                 toggleMarkdownPreview();
               }}
             />
-            <ActionGridButton icon={ZoomOut} label="Zoom Out" onClick={() => runAction("view.zoomOut")} />
-            <ActionGridButton icon={ZoomIn} label="Zoom In" onClick={() => runAction("view.zoomIn")} />
+            <ActionGridButton
+              icon={ZoomOut}
+              label="Zoom Out"
+              onClick={() => runAction("view.zoomOut")}
+            />
+            <ActionGridButton
+              icon={ZoomIn}
+              label="Zoom In"
+              onClick={() => runAction("view.zoomIn")}
+            />
             <ActionGridButton
               icon={WrapText}
               label="Word Wrap"
@@ -201,7 +277,7 @@ export function MobileMenuSheet() {
               active={bottomPanelVisible}
               onClick={() => setBottomPanelVisible(!bottomPanelVisible)}
             />
-            <div className="flex flex-col items-center gap-1 rounded-md border bg-muted/40 p-2.5 text-center text-[11px] leading-tight">
+            <div className="bg-muted/40 flex flex-col items-center gap-1 rounded-md border p-2.5 text-center text-[11px] leading-tight">
               <VoiceDictationButton />
               <span>Voice Typing</span>
             </div>
