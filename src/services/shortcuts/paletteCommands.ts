@@ -28,6 +28,8 @@ import {
   Quote,
   Calculator,
   SquareSlash,
+  FileCode,
+  Wand2,
   type LucideIcon,
 } from "lucide-react";
 import { useDialogStore } from "@/store/dialogStore";
@@ -183,6 +185,20 @@ function buildCommands(): PaletteCommand[] {
       category: "Tools",
       icon: Sparkles,
       run: () => runAction("tools.ai.fixGrammar"),
+    },
+    {
+      id: "tools-ai-generate-md-syntax",
+      label: "Tools: Generate MD Syntax (AI)",
+      category: "Tools",
+      icon: FileCode,
+      run: () => runAction("tools.ai.generateMdSyntax"),
+    },
+    {
+      id: "tools-ai-generate-prompt",
+      label: "Tools: Generate Prompt (AI)",
+      category: "Tools",
+      icon: Wand2,
+      run: () => runAction("tools.ai.generatePrompt"),
     },
     {
       id: "tools-json-format",

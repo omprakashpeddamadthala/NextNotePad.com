@@ -7,6 +7,7 @@ import { GeneralSettingsTab } from "./GeneralSettingsTab";
 import { EditorSettingsTab } from "./EditorSettingsTab";
 import { ThemesSettingsTab } from "./ThemesSettingsTab";
 import { ShortcutsSettingsTab } from "./ShortcutsSettingsTab";
+import { AiConfigSettingsTab } from "./AiConfigSettingsTab";
 
 export function SettingsDialog() {
   const open = useDialogStore((s) => s.open.settings);
@@ -20,11 +21,12 @@ export function SettingsDialog() {
           <DialogDescription>Changes apply immediately and are stored in this browser.</DialogDescription>
         </DialogHeader>
         <Tabs defaultValue="general">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="editor">Editor</TabsTrigger>
             <TabsTrigger value="themes">Themes</TabsTrigger>
             <TabsTrigger value="shortcuts">Shortcuts</TabsTrigger>
+            <TabsTrigger value="ai">AI Config</TabsTrigger>
           </TabsList>
           <div className="max-h-[60vh] overflow-y-auto np-scrollbar py-2">
             <TabsContent value="general">
@@ -38,6 +40,9 @@ export function SettingsDialog() {
             </TabsContent>
             <TabsContent value="shortcuts">
               <ShortcutsSettingsTab />
+            </TabsContent>
+            <TabsContent value="ai">
+              <AiConfigSettingsTab />
             </TabsContent>
           </div>
         </Tabs>

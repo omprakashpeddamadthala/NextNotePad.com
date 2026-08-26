@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useSettingsStore } from "@/store/settingsStore";
-import type { AutoSaveMode, EncodingName } from "@/types/settings";
+import type { AiProvider, AutoSaveMode, EncodingName } from "@/types/settings";
 import { LANGUAGES } from "@/lib/constants/languages";
 
 const AUTO_SAVE_OPTIONS: { value: AutoSaveMode; label: string }[] = [
@@ -16,6 +16,11 @@ const AUTO_SAVE_OPTIONS: { value: AutoSaveMode; label: string }[] = [
 ];
 
 const ENCODINGS: EncodingName[] = ["UTF-8", "UTF-8 BOM", "UTF-16 LE", "UTF-16 BE", "ASCII", "ISO-8859-1"];
+
+const AI_PROVIDER_OPTIONS: { value: AiProvider; label: string }[] = [
+  { value: "gemini", label: "Gemini" },
+  { value: "claude", label: "Claude (via AgentRouter)" },
+];
 
 export function GeneralSettingsTab() {
   const settings = useSettingsStore((s) => s.settings);
@@ -84,6 +89,28 @@ export function GeneralSettingsTab() {
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>AI Provider (Fix Grammar &amp; Spelling)</Label>
+        <Select
+          value={settings.aiProvider ?? "gemini"}
+          onValueChange={(v) => updateSettings({ aiProvider: v as AiProvider })}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {AI_PROVIDER_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground">
+          Requires the corresponding API key to be configured on the server.
+        </p>
       </div>
     </div>
   );

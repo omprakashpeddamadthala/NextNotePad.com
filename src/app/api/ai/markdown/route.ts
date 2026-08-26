@@ -5,12 +5,14 @@ import { correctTextSchema } from "@/lib/validation/aiSchemas";
 import { badRequest } from "@/lib/api/respond";
 
 const SYSTEM_INSTRUCTION =
-  "You are a precise proofreading engine embedded in a text editor. Fix grammar, spelling, and " +
-  "punctuation errors in the user's text. Preserve the original meaning, tone, language, and " +
-  "formatting exactly — including Markdown syntax, line breaks, indentation, and code blocks. " +
-  "Do not rewrite for style, add content, or remove content unless it is an actual error. " +
-  "Respond with only the corrected text and nothing else: no preamble, no explanation, no quotes " +
-  "around it, no markdown code fence wrapping the whole answer.";
+  "You are a Markdown formatting engine embedded in a text editor. Read the user's text, " +
+  "understand its structure and meaning, then rewrite it as clean, well-organized Markdown. Use " +
+  "headings for titles and sections, bullet or numbered lists for enumerations, **bold**/*italic* " +
+  "for emphasis, `inline code` and fenced code blocks for code or commands, > blockquotes for " +
+  "quoted material, and Markdown tables when the content is tabular. Preserve the original " +
+  "meaning, facts, and language — only restructure and format it, never invent or remove " +
+  "information. Respond with only the resulting Markdown and nothing else: no preamble, no " +
+  "explanation, no quotes around it, no code fence wrapping the whole answer.";
 
 function respondToProviderError(err: unknown): NextResponse {
   if (err instanceof AiProviderError) {
@@ -19,14 +21,10 @@ function respondToProviderError(err: unknown): NextResponse {
   throw err;
 }
 
-/** No auth gate — the app's guest mode (no account, local-only storage) is the default way
- *  people use NextNotePad, and this is the one feature that needs a server round-trip. Abuse
- *  exposure is bounded by each provider's own per-key rate limit, not by this route.
- *
- *  Streams the correction back as plain text as it's generated, from whichever provider the
- *  client asked for (Gemini or Claude via AgentRouter) — free-tier/latency here can run into the
- *  tens of seconds, and showing corrected text arrive progressively reads as far more responsive
- *  than a single multi-second blocking wait. */
+/** Same shape and streaming approach as /api/ai/correct — see that route for the rationale on
+ *  no auth gate and priming the first chunk before returning the Response. This route reuses
+ *  `correctTextSchema` (its `{ text, provider }` shape isn't correction-specific) and the same
+ *  generic `streamAiCorrection` provider call, swapping in a Markdown-formatting system prompt. */
 export async function POST(request: NextRequest) {
   const parsed = correctTextSchema.safeParse(await request.json());
   if (!parsed.success) return badRequest(parsed.error);
@@ -39,10 +37,6 @@ export async function POST(request: NextRequest) {
 
   const stream = streamAiCorrection({ provider, text, systemInstruction: SYSTEM_INSTRUCTION });
 
-  // Once the Response below is returned, the status code is committed — a mid-stream failure can
-  // no longer become a 429/502/etc. Priming the first chunk here keeps setup-time failures (bad
-  // key, invalid model, rate limit) mapped to their real status instead of degrading into a 200
-  // stream that immediately errors out.
   let first: IteratorResult<string>;
   try {
     first = await stream.next();

@@ -361,6 +361,28 @@ export function MonacoEditorWrapper({
         runAction("tools.ai.fixGrammar");
       },
     });
+
+    editor.addAction({
+      id: "tools.ai.generateMdSyntax.contextMenu",
+      label: "Generate MD Syntax (AI)",
+      contextMenuGroupId: "9_ai",
+      contextMenuOrder: 2,
+      precondition: "editorHasSelection",
+      run: () => {
+        runAction("tools.ai.generateMdSyntax");
+      },
+    });
+
+    editor.addAction({
+      id: "tools.ai.generatePrompt.contextMenu",
+      label: "Generate Prompt (AI)",
+      contextMenuGroupId: "9_ai",
+      contextMenuOrder: 3,
+      precondition: "editorHasSelection",
+      run: () => {
+        runAction("tools.ai.generatePrompt");
+      },
+    });
   };
 
   useVoiceDictationTarget(editorRef, registerGlobalActions);
