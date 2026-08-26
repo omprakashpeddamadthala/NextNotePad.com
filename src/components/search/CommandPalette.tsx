@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import {
   Palette,
   Settings,
@@ -41,6 +41,7 @@ import {
   CommandGroup,
   CommandItem,
   CommandShortcut,
+  CommandSeparator,
 } from "@/components/ui/command";
 import { useUIStore } from "@/store/uiStore";
 import { useSettingsStore } from "@/store/settingsStore";
@@ -71,6 +72,39 @@ interface PaletteCommand {
   shortcut?: string;
   icon?: LucideIcon;
   run: () => void;
+}
+
+/** Display order for command groups — matches the app's own menu bar order (File, Edit, Search,
+ *  View, Window) before the extra categories the palette adds on top. Anything not listed here
+ *  (there shouldn't be any) falls back to alphabetical, appended at the end. */
+const CATEGORY_ORDER = [
+  "File",
+  "Edit",
+  "Search",
+  "View",
+  "Window",
+  "Tools",
+  "Theme",
+  "Settings",
+  "Help",
+  "Developer",
+];
+
+function groupByCategory(commands: PaletteCommand[]): [string, PaletteCommand[]][] {
+  const groups = new Map<string, PaletteCommand[]>();
+  for (const cmd of commands) {
+    const bucket = groups.get(cmd.category);
+    if (bucket) bucket.push(cmd);
+    else groups.set(cmd.category, [cmd]);
+  }
+  return [...groups.entries()].sort(([a], [b]) => {
+    const ai = CATEGORY_ORDER.indexOf(a);
+    const bi = CATEGORY_ORDER.indexOf(b);
+    if (ai === -1 && bi === -1) return a.localeCompare(b);
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
 }
 
 export function CommandPalette() {
@@ -376,6 +410,8 @@ export function CommandPalette() {
     return [...shortcutCommands, ...extraCommands];
   }, [setTheme]);
 
+  const groupedCommands = useMemo(() => groupByCategory(commands), [commands]);
+
   function handleSelect(cmd: PaletteCommand) {
     setOpen(false);
     cmd.run();
@@ -386,24 +422,29 @@ export function CommandPalette() {
       <CommandInput placeholder="Type a command…" />
       <CommandList>
         <CommandEmpty>No commands found.</CommandEmpty>
-        <CommandGroup heading="Commands">
-          {commands.map((cmd) => {
-            const Icon = cmd.icon;
-            return (
-              <CommandItem
-                key={cmd.id}
-                value={`${cmd.label} ${cmd.category}`}
-                onSelect={() => handleSelect(cmd)}
-              >
-                {Icon && <Icon className="size-4 shrink-0" />}
-                <span>{cmd.label}</span>
-                {cmd.shortcut && (
-                  <CommandShortcut>{cmd.shortcut}</CommandShortcut>
-                )}
-              </CommandItem>
-            );
-          })}
-        </CommandGroup>
+        {groupedCommands.map(([category, categoryCommands], i) => (
+          <Fragment key={category}>
+            {i > 0 && <CommandSeparator />}
+            <CommandGroup heading={category}>
+              {categoryCommands.map((cmd) => {
+                const Icon = cmd.icon;
+                return (
+                  <CommandItem
+                    key={cmd.id}
+                    value={`${cmd.label} ${cmd.category}`}
+                    onSelect={() => handleSelect(cmd)}
+                  >
+                    {Icon && <Icon className="size-4 shrink-0" />}
+                    <span>{cmd.label}</span>
+                    {cmd.shortcut && (
+                      <CommandShortcut>{cmd.shortcut}</CommandShortcut>
+                    )}
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </Fragment>
+        ))}
       </CommandList>
     </CommandDialog>
   );

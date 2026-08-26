@@ -14,16 +14,17 @@ export function AboutDialog() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/icon-192.png" alt="" width={48} height={48} className="rounded-lg" />
           <DialogTitle>NextNotePad.com</DialogTitle>
-          <DialogDescription>Phase 1 — Guest Mode</DialogDescription>
+          <DialogDescription>A Notepad++-style editor for the browser</DialogDescription>
         </DialogHeader>
         <div className="space-y-2 text-sm text-muted-foreground">
           <p>
-            NextNotePad.com is a browser-based text editor inspired by Notepad++, built with Next.js,
-            React, TypeScript, Monaco Editor and Zustand.
+            Built with Next.js, React, TypeScript, Monaco Editor and Zustand — a full tabbed editor,
+            file explorer, find/replace, diff checker, and a growing set of developer text tools,
+            all running in your browser.
           </p>
           <p>
-            Everything in Guest Mode is stored locally in this browser (LocalStorage + IndexedDB) —
-            nothing is sent to a server.
+            Use it in Guest Mode with everything stored locally (LocalStorage + IndexedDB, nothing
+            sent to a server), or sign in with Google to sync your workspace to Drive.
           </p>
         </div>
       </DialogContent>
