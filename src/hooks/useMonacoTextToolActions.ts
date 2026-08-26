@@ -10,6 +10,31 @@ import {
   caseConverters,
   computeHash,
   type HashAlgorithm,
+  formatJson,
+  minifyJson,
+  sortLinesAscending,
+  sortLinesDescending,
+  removeDuplicateLines,
+  trimTrailingWhitespace,
+  collapseBlankLines,
+  tabsToSpaces,
+  spacesToTabs,
+  computeTextStats,
+  generateUuid,
+  unixToIsoDate,
+  isoDateToUnix,
+  decodeJwt,
+  htmlEncode,
+  htmlDecode,
+  escapeJsonString,
+  unescapeJsonString,
+  decimalToHex,
+  hexToDecimal,
+  decimalToBinary,
+  binaryToDecimal,
+  hexToRgb,
+  rgbToHex,
+  slugify,
 } from "@/services/textTools/textTools";
 
 interface UseMonacoTextToolActionsParams {
@@ -63,6 +88,33 @@ async function hashActiveEditor(editor: MonacoEditorNS.IStandaloneCodeEditor, al
   const hex = await computeHash(algorithm, text);
   await navigator.clipboard.writeText(hex);
   toast.success(`${algorithm} copied to clipboard: ${hex}`);
+}
+
+function reportTextStats(editor: MonacoEditorNS.IStandaloneCodeEditor): void {
+  const text = getActiveEditorSelectionOrDocument(editor);
+  if (!text) {
+    toast.error("Open a file first to count its content.");
+    return;
+  }
+  const { characters, charactersNoSpaces, words, lines } = computeTextStats(text);
+  toast.success(
+    `${words} words, ${characters} chars (${charactersNoSpaces} w/o spaces), ${lines} lines.`,
+  );
+}
+
+/** Inserts text at the cursor, or replaces the selection if one exists — the "insert" counterpart
+ *  to `transformActiveEditor`'s "selection-or-document" convention, used by tools (like UUID
+ *  generation) that produce new content rather than transform existing content. */
+function insertAtCursorOrSelection(
+  editor: MonacoEditorNS.IStandaloneCodeEditor,
+  text: string,
+  successMessage: string,
+): void {
+  const selection = editor.getSelection();
+  if (!selection) return;
+  editor.executeEdits("tools", [{ range: selection, text }]);
+  editor.pushUndoStop();
+  toast.success(successMessage);
 }
 
 /** Wires every Tools-menu action (Base64/URL encode-decode, case conversion, hashing) into the
@@ -214,6 +266,262 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.hash.SHA-512",
     () => {
       if (registerGlobalActions && editorRef.current) void hashActiveEditor(editorRef.current, "SHA-512");
+    },
+    [registerGlobalActions],
+  );
+
+  useRegisterAction(
+    "tools.json.format",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(editorRef.current, formatJson, "JSON formatted.", "Invalid JSON — couldn't format.");
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.json.minify",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(editorRef.current, minifyJson, "JSON minified.", "Invalid JSON — couldn't minify.");
+    },
+    [registerGlobalActions],
+  );
+
+  useRegisterAction(
+    "tools.lines.sortAsc",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(editorRef.current, sortLinesAscending, "Lines sorted (A-Z).", "Couldn't sort lines.");
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.lines.sortDesc",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(editorRef.current, sortLinesDescending, "Lines sorted (Z-A).", "Couldn't sort lines.");
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.lines.dedupe",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(
+          editorRef.current,
+          removeDuplicateLines,
+          "Duplicate lines removed.",
+          "Couldn't de-duplicate lines.",
+        );
+    },
+    [registerGlobalActions],
+  );
+
+  useRegisterAction(
+    "tools.whitespace.trimTrailing",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(
+          editorRef.current,
+          trimTrailingWhitespace,
+          "Trailing whitespace trimmed.",
+          "Couldn't trim whitespace.",
+        );
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.whitespace.collapseBlankLines",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(
+          editorRef.current,
+          collapseBlankLines,
+          "Blank lines collapsed.",
+          "Couldn't collapse blank lines.",
+        );
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.whitespace.tabsToSpaces",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(editorRef.current, tabsToSpaces, "Tabs converted to spaces.", "Couldn't convert tabs.");
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.whitespace.spacesToTabs",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(
+          editorRef.current,
+          spacesToTabs,
+          "Spaces converted to tabs.",
+          "Couldn't convert spaces.",
+        );
+    },
+    [registerGlobalActions],
+  );
+
+  useRegisterAction(
+    "tools.textStats",
+    () => {
+      if (registerGlobalActions && editorRef.current) reportTextStats(editorRef.current);
+    },
+    [registerGlobalActions],
+  );
+
+  useRegisterAction(
+    "tools.generateUuid",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        insertAtCursorOrSelection(editorRef.current, generateUuid(), "UUID inserted.");
+    },
+    [registerGlobalActions],
+  );
+
+  useRegisterAction(
+    "tools.timestamp.unixToIso",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(
+          editorRef.current,
+          unixToIsoDate,
+          "Converted to ISO date.",
+          "Couldn't convert — select a valid Unix timestamp.",
+        );
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.timestamp.isoToUnix",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(
+          editorRef.current,
+          isoDateToUnix,
+          "Converted to Unix timestamp.",
+          "Couldn't convert — select a valid date string.",
+        );
+    },
+    [registerGlobalActions],
+  );
+
+  useRegisterAction(
+    "tools.jwtDecode",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(
+          editorRef.current,
+          decodeJwt,
+          "JWT decoded.",
+          "Couldn't decode — select a valid JWT (header.payload.signature).",
+        );
+    },
+    [registerGlobalActions],
+  );
+
+  useRegisterAction(
+    "tools.html.encode",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(editorRef.current, htmlEncode, "HTML-encoded.", "Couldn't HTML-encode this content.");
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.html.decode",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(editorRef.current, htmlDecode, "HTML-decoded.", "Couldn't HTML-decode this content.");
+    },
+    [registerGlobalActions],
+  );
+
+  useRegisterAction(
+    "tools.escapeString.escape",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(
+          editorRef.current,
+          escapeJsonString,
+          "String escaped.",
+          "Couldn't escape this content.",
+        );
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.escapeString.unescape",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(
+          editorRef.current,
+          unescapeJsonString,
+          "String unescaped.",
+          "Couldn't unescape — is this validly-escaped text?",
+        );
+    },
+    [registerGlobalActions],
+  );
+
+  useRegisterAction(
+    "tools.base.decToHex",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(editorRef.current, decimalToHex, "Converted to hex.", "Couldn't convert — not a valid decimal number.");
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.base.hexToDec",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(editorRef.current, hexToDecimal, "Converted to decimal.", "Couldn't convert — not a valid hex number.");
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.base.decToBin",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(editorRef.current, decimalToBinary, "Converted to binary.", "Couldn't convert — not a valid decimal number.");
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.base.binToDec",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(editorRef.current, binaryToDecimal, "Converted to decimal.", "Couldn't convert — not a valid binary number.");
+    },
+    [registerGlobalActions],
+  );
+
+  useRegisterAction(
+    "tools.color.hexToRgb",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(editorRef.current, hexToRgb, "Converted to RGB.", "Couldn't convert — not a valid hex color.");
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.color.rgbToHex",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(editorRef.current, rgbToHex, "Converted to hex.", "Couldn't convert — not a valid rgb() color.");
+    },
+    [registerGlobalActions],
+  );
+
+  useRegisterAction(
+    "tools.slugify",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(editorRef.current, slugify, "Slugified.", "Couldn't slugify this content.");
     },
     [registerGlobalActions],
   );

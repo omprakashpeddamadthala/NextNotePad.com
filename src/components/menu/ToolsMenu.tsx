@@ -7,6 +7,18 @@ import {
   Hash,
   FileDiff,
   Sparkles,
+  FileJson,
+  ArrowDownAZ,
+  Eraser,
+  BarChart3,
+  Fingerprint,
+  Clock,
+  KeyRound,
+  Code2,
+  Quote,
+  Calculator,
+  Palette,
+  SquareSlash,
 } from "lucide-react";
 import { TopMenu } from "./TopMenu";
 import {
@@ -89,6 +101,138 @@ export function ToolsMenu() {
           ))}
         </DropdownMenuSubContent>
       </DropdownMenuSub>
+      <DropdownMenuSub>
+        <DropdownMenuSubTrigger>
+          <FileJson /> JSON
+        </DropdownMenuSubTrigger>
+        <DropdownMenuSubContent>
+          <DropdownMenuItem onSelect={() => runAction("tools.json.format")}>
+            Format JSON
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runAction("tools.json.minify")}>
+            Minify JSON
+          </DropdownMenuItem>
+        </DropdownMenuSubContent>
+      </DropdownMenuSub>
+      <DropdownMenuSub>
+        <DropdownMenuSubTrigger>
+          <ArrowDownAZ /> Sort &amp; Dedupe Lines
+        </DropdownMenuSubTrigger>
+        <DropdownMenuSubContent>
+          <DropdownMenuItem onSelect={() => runAction("tools.lines.sortAsc")}>
+            Sort Ascending (A-Z)
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runAction("tools.lines.sortDesc")}>
+            Sort Descending (Z-A)
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runAction("tools.lines.dedupe")}>
+            Remove Duplicate Lines
+          </DropdownMenuItem>
+        </DropdownMenuSubContent>
+      </DropdownMenuSub>
+      <DropdownMenuSub>
+        <DropdownMenuSubTrigger>
+          <Eraser /> Whitespace Cleanup
+        </DropdownMenuSubTrigger>
+        <DropdownMenuSubContent>
+          <DropdownMenuItem onSelect={() => runAction("tools.whitespace.trimTrailing")}>
+            Trim Trailing Whitespace
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runAction("tools.whitespace.collapseBlankLines")}>
+            Collapse Blank Lines
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runAction("tools.whitespace.tabsToSpaces")}>
+            Tabs to Spaces
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runAction("tools.whitespace.spacesToTabs")}>
+            Spaces to Tabs
+          </DropdownMenuItem>
+        </DropdownMenuSubContent>
+      </DropdownMenuSub>
+      <DropdownMenuSub>
+        <DropdownMenuSubTrigger>
+          <Clock /> Timestamp Converter
+        </DropdownMenuSubTrigger>
+        <DropdownMenuSubContent>
+          <DropdownMenuItem onSelect={() => runAction("tools.timestamp.unixToIso")}>
+            Unix Timestamp to ISO Date
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runAction("tools.timestamp.isoToUnix")}>
+            ISO Date to Unix Timestamp
+          </DropdownMenuItem>
+        </DropdownMenuSubContent>
+      </DropdownMenuSub>
+      <DropdownMenuItem onSelect={() => runAction("tools.generateUuid")}>
+        <Fingerprint /> Generate UUID
+      </DropdownMenuItem>
+      <DropdownMenuItem onSelect={() => runAction("tools.textStats")}>
+        <BarChart3 /> Word / Character Count
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem onSelect={() => runAction("tools.jwtDecode")}>
+        <KeyRound /> Decode JWT
+      </DropdownMenuItem>
+      <DropdownMenuSub>
+        <DropdownMenuSubTrigger>
+          <Code2 /> HTML
+        </DropdownMenuSubTrigger>
+        <DropdownMenuSubContent>
+          <DropdownMenuItem onSelect={() => runAction("tools.html.encode")}>
+            HTML Encode
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runAction("tools.html.decode")}>
+            HTML Decode
+          </DropdownMenuItem>
+        </DropdownMenuSubContent>
+      </DropdownMenuSub>
+      <DropdownMenuSub>
+        <DropdownMenuSubTrigger>
+          <Quote /> Escape String
+        </DropdownMenuSubTrigger>
+        <DropdownMenuSubContent>
+          <DropdownMenuItem onSelect={() => runAction("tools.escapeString.escape")}>
+            Escape (for JSON)
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runAction("tools.escapeString.unescape")}>
+            Unescape (from JSON)
+          </DropdownMenuItem>
+        </DropdownMenuSubContent>
+      </DropdownMenuSub>
+      <DropdownMenuSub>
+        <DropdownMenuSubTrigger>
+          <Calculator /> Number Base Converter
+        </DropdownMenuSubTrigger>
+        <DropdownMenuSubContent>
+          <DropdownMenuItem onSelect={() => runAction("tools.base.decToHex")}>
+            Decimal to Hex
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runAction("tools.base.hexToDec")}>
+            Hex to Decimal
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runAction("tools.base.decToBin")}>
+            Decimal to Binary
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runAction("tools.base.binToDec")}>
+            Binary to Decimal
+          </DropdownMenuItem>
+        </DropdownMenuSubContent>
+      </DropdownMenuSub>
+      <DropdownMenuSub>
+        <DropdownMenuSubTrigger>
+          <Palette /> Color Converter
+        </DropdownMenuSubTrigger>
+        <DropdownMenuSubContent>
+          <DropdownMenuItem onSelect={() => runAction("tools.color.hexToRgb")}>
+            Hex to RGB
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runAction("tools.color.rgbToHex")}>
+            RGB to Hex
+          </DropdownMenuItem>
+        </DropdownMenuSubContent>
+      </DropdownMenuSub>
+      <DropdownMenuItem onSelect={() => runAction("tools.slugify")}>
+        <SquareSlash /> Slugify
+      </DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem onSelect={() => runAction("tools.diffChecker")}>
         <FileDiff /> Diff Checker
