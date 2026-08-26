@@ -11,7 +11,14 @@ import { useIsMobile } from "@/hooks/useMediaQuery";
 import { countNodes } from "@/lib/utils/treeUtils";
 
 function Segment({ children }: { children: React.ReactNode }) {
-  return <span className="flex h-full items-center border-l border-black/10 px-2.5">{children}</span>;
+  return (
+    <span
+      className="flex h-full items-center border-l px-2.5"
+      style={{ borderColor: "var(--np-tab-border)" }}
+    >
+      {children}
+    </span>
+  );
 }
 
 /** Mirrors the top progress bar in words — the bar alone is easy to miss at 2px tall, and this
@@ -51,7 +58,7 @@ export function StatusBar() {
         <button
           type="button"
           onClick={() => setWorkspaceStatsOpen(true)}
-          className="truncate px-2.5"
+          className="truncate px-2.5 transition-colors active:bg-[var(--np-menu-hover)]"
           title="Workspace statistics"
         >
           {stats.files} file{stats.files === 1 ? "" : "s"}, {stats.folders} folder{stats.folders === 1 ? "" : "s"}
@@ -74,7 +81,7 @@ export function StatusBar() {
       <button
         type="button"
         onClick={() => setWorkspaceStatsOpen(true)}
-        className="px-2.5 hover:underline"
+        className="px-2.5 transition-colors hover:bg-[var(--np-menu-hover)]"
         title="Workspace statistics"
       >
         {stats.files} file{stats.files === 1 ? "" : "s"}, {stats.folders} folder{stats.folders === 1 ? "" : "s"}

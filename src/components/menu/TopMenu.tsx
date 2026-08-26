@@ -18,7 +18,7 @@ export function TopMenu({ label, children }: TopMenuProps) {
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          "rounded-sm px-2.5 py-1 text-sm text-foreground/90 outline-none",
+          "rounded-sm px-2.5 py-1 text-sm text-foreground/90 outline-none transition-colors duration-100",
           "hover:bg-[var(--np-menu-hover)] focus-visible:ring-2 focus-visible:ring-ring",
           "data-[state=open]:bg-[var(--np-menu-hover)]",
         )}

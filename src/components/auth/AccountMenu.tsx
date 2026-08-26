@@ -72,7 +72,7 @@ export function AccountMenu() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="flex shrink-0 items-center gap-1.5 rounded-sm px-1 py-0.5 text-xs outline-none hover:bg-[var(--np-menu-hover)]">
+      <DropdownMenuTrigger className="flex shrink-0 items-center gap-1.5 rounded-sm px-1 py-0.5 text-xs outline-none transition-colors hover:bg-[var(--np-menu-hover)]">
         {user.avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={user.avatarUrl} alt="" className="size-5 shrink-0 rounded-full" referrerPolicy="no-referrer" />

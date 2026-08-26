@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { MenuBar } from "./MenuBar";
 import { Toolbar } from "./Toolbar";
 import { MobileAppBar } from "./MobileAppBar";
@@ -17,18 +18,43 @@ import { useIsMobile } from "@/hooks/useMediaQuery";
 import { FileExplorer } from "@/components/explorer/FileExplorer";
 import { EditorArea } from "@/components/editor/EditorArea";
 import { BottomPanel } from "@/components/panels/BottomPanel";
-import { SettingsDialog } from "@/components/settings/SettingsDialog";
-import { QuickOpenDialog } from "@/components/search/QuickOpenDialog";
-import { CommandPalette } from "@/components/search/CommandPalette";
-import { AboutDialog } from "@/components/dialogs/AboutDialog";
-import { ExportImportDialog } from "@/components/dialogs/ExportImportDialog";
-import { WorkspaceStatsDialog } from "@/components/dialogs/WorkspaceStatsDialog";
-import { LockUnlockDialog } from "@/components/dialogs/LockUnlockDialog";
-import { SyncOfflineFilesDialog } from "@/components/auth/SyncOfflineFilesDialog";
 import { useAppBootstrap } from "@/hooks/useAppBootstrap";
 import { useAuthBootstrap } from "@/hooks/useAuthBootstrap";
 import { GlobalActionsRegistrar } from "./GlobalActionsRegistrar";
 import { ApiLoadingBar } from "./ApiLoadingBar";
+
+// None of these render anything visible until the user opens them (Settings, Command Palette,
+// Export/Import, ...), so their weight — react-hook-form + zod for Settings, jszip + file-saver
+// for Export/Import, cmdk for the palette — doesn't need to sit in the initial bundle every
+// visitor downloads. Same ssr:false pattern already used for Monaco and the Markdown views.
+const SettingsDialog = dynamic(() => import("@/components/settings/SettingsDialog").then((m) => m.SettingsDialog), {
+  ssr: false,
+});
+const QuickOpenDialog = dynamic(() => import("@/components/search/QuickOpenDialog").then((m) => m.QuickOpenDialog), {
+  ssr: false,
+});
+const CommandPalette = dynamic(() => import("@/components/search/CommandPalette").then((m) => m.CommandPalette), {
+  ssr: false,
+});
+const AboutDialog = dynamic(() => import("@/components/dialogs/AboutDialog").then((m) => m.AboutDialog), {
+  ssr: false,
+});
+const ExportImportDialog = dynamic(
+  () => import("@/components/dialogs/ExportImportDialog").then((m) => m.ExportImportDialog),
+  { ssr: false },
+);
+const WorkspaceStatsDialog = dynamic(
+  () => import("@/components/dialogs/WorkspaceStatsDialog").then((m) => m.WorkspaceStatsDialog),
+  { ssr: false },
+);
+const LockUnlockDialog = dynamic(
+  () => import("@/components/dialogs/LockUnlockDialog").then((m) => m.LockUnlockDialog),
+  { ssr: false },
+);
+const SyncOfflineFilesDialog = dynamic(
+  () => import("@/components/auth/SyncOfflineFilesDialog").then((m) => m.SyncOfflineFilesDialog),
+  { ssr: false },
+);
 
 export function AppShell() {
   useKeyboardShortcuts();

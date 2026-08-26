@@ -31,16 +31,18 @@ export function MobileAppBar() {
         label="Toggle File Explorer"
         active={mobileSidebarOpen}
         onClick={() => toggleMobileSidebar()}
+        size="touch"
       />
-      <ToolbarButton icon={Menu} label="Menu" onClick={() => setMobileMenuSheetOpen(true)} />
+      <ToolbarButton icon={Menu} label="Menu" onClick={() => setMobileMenuSheetOpen(true)} size="touch" />
       <span className="min-w-0 flex-1 truncate px-1 text-center text-sm font-medium">
         {file ? file.name : "NextNotePad.com"}
       </span>
-      <ToolbarButton icon={Search} label="Find (Ctrl+F)" onClick={() => runAction("search.find")} />
+      <ToolbarButton icon={Search} label="Find (Ctrl+F)" onClick={() => runAction("search.find")} size="touch" />
       <ToolbarButton
         icon={CommandIcon}
         label="Command Palette"
         onClick={() => setCommandPaletteOpen(true)}
+        size="touch"
       />
     </div>
   );

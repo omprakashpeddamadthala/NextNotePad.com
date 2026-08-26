@@ -56,7 +56,7 @@ import { cn } from "@/lib/utils";
  *  touching the shared component that the desktop menu bar also renders. */
 function MenuGridCell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-muted/40 rounded-md border text-center [&>button]:flex [&>button]:h-full [&>button]:w-full [&>button]:items-center [&>button]:justify-center [&>button]:py-2.5">
+    <div className="bg-muted/40 rounded-md border text-center transition-colors active:bg-accent [&>button]:flex [&>button]:h-full [&>button]:w-full [&>button]:items-center [&>button]:justify-center [&>button]:py-2.5">
       {children}
     </div>
   );
@@ -79,10 +79,10 @@ function ActionGridButton({
         type="button"
         onClick={onClick}
         className={cn(
-          "flex flex-col items-center gap-1 rounded-md border p-2.5 text-center text-[11px] leading-tight",
+          "flex flex-col items-center gap-1 rounded-md border p-2.5 text-center text-[11px] leading-tight transition-colors",
           active
             ? "border-primary bg-accent text-accent-foreground"
-            : "bg-muted/40",
+            : "bg-muted/40 active:bg-accent active:text-accent-foreground",
         )}
       >
         <Icon className="size-5" />
@@ -177,7 +177,7 @@ export function MobileMenuSheet() {
           </div>
         </div>
 
-        <div className="px-4 pb-4">
+        <div className="px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
           <p className="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase">
             Actions
           </p>

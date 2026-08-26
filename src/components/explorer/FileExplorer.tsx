@@ -37,17 +37,31 @@ export function FileExplorer() {
         }
       }}
     >
-      <div className="flex h-8 shrink-0 items-center gap-1 border-b px-2">
-        <span className="flex-1 truncate text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+      <div className="flex h-8 shrink-0 items-center gap-0.5 border-b px-2">
+        <span
+          className="min-w-0 flex-1 truncate text-xs font-semibold text-muted-foreground uppercase"
+          title={showTrash ? "Recycle Bin" : "Explorer"}
+        >
           {showTrash ? "Recycle Bin" : "Explorer"}
         </span>
         {!showTrash && (
           <>
-            <ToolbarButton icon={FilePlus} label="New File" onClick={() => createFileAndRename(null)} />
-            <ToolbarButton icon={FolderPlus} label="New Folder" onClick={() => createFolderAndRename(null)} />
+            <ToolbarButton
+              icon={FilePlus}
+              label="New File"
+              onClick={() => createFileAndRename(null)}
+              size="compact"
+            />
+            <ToolbarButton
+              icon={FolderPlus}
+              label="New Folder"
+              onClick={() => createFolderAndRename(null)}
+              size="compact"
+            />
             <ToolbarButton
               icon={ChevronsDownUp}
               label="Collapse All"
+              size="compact"
               onClick={() => {
                 for (const node of Object.values(nodes)) {
                   if (node.type === "folder") setCollapsed(node.id, true);
@@ -58,6 +72,7 @@ export function FileExplorer() {
               icon={showHiddenFiles ? EyeOff : Eye}
               label={showHiddenFiles ? "Hide Hidden Items" : "Show Hidden Items"}
               active={showHiddenFiles}
+              size="compact"
               onClick={() => toggleShowHiddenFiles()}
             />
           </>
@@ -66,6 +81,7 @@ export function FileExplorer() {
           icon={Trash2}
           label={showTrash ? "Back to Explorer" : `Recycle Bin (${trashCount})`}
           active={showTrash}
+          size="compact"
           onClick={() => setShowTrash((v) => !v)}
         />
       </div>
