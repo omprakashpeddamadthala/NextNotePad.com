@@ -3,15 +3,16 @@
 import { useMemo } from "react";
 import { CommandDialog, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
 import { getFileIcon } from "@/lib/fileIcons";
-import { useUIStore } from "@/store/uiStore";
+import { useDialogStore } from "@/store/dialogStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useRecentFilesStore } from "@/store/recentFilesStore";
 import { useTabsStore } from "@/store/tabsStore";
 import type { FileNode } from "@/types/file";
 
 export function QuickOpenDialog() {
-  const open = useUIStore((s) => s.quickOpenOpen);
-  const setOpen = useUIStore((s) => s.setQuickOpenOpen);
+  const open = useDialogStore((s) => s.open.quickOpen);
+  const setDialogOpen = useDialogStore((s) => s.setDialogOpen);
+  const setOpen = (v: boolean) => setDialogOpen("quickOpen", v);
   const nodes = useWorkspaceStore((s) => s.nodes);
   const recent = useRecentFilesStore((s) => s.recent);
   const addRecent = useRecentFilesStore((s) => s.addRecent);

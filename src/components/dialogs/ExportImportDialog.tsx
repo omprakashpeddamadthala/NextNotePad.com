@@ -5,13 +5,14 @@ import { toast } from "sonner";
 import { Download, Upload } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useUIStore } from "@/store/uiStore";
+import { useDialogStore } from "@/store/dialogStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { exportWorkspaceZip, importWorkspaceZip } from "@/services/exportImport/zipService";
 
 export function ExportImportDialog() {
-  const open = useUIStore((s) => s.exportImportDialogOpen);
-  const setOpen = useUIStore((s) => s.setExportImportDialogOpen);
+  const open = useDialogStore((s) => s.open.exportImport);
+  const setDialogOpen = useDialogStore((s) => s.setDialogOpen);
+  const setOpen = (v: boolean) => setDialogOpen("exportImport", v);
   const nodes = useWorkspaceStore((s) => s.nodes);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   Search,
@@ -12,6 +12,7 @@ import {
   ChevronDown,
   Loader2,
 } from "lucide-react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ToolbarButton } from "@/components/layout/ToolbarButton";
@@ -25,6 +26,15 @@ import {
 } from "@/services/search/searchService";
 import { openFileAtLocation } from "@/services/fileOperations";
 import { useDebouncedCallback } from "@/hooks/useDebounce";
+
+type ResultRow =
+  | { kind: "file"; fileResult: FileSearchResult }
+  | { kind: "match"; fileId: string; match: FileSearchResult["matches"][number]; index: number };
+
+// Must stay in sync with the row markup below (file header row vs. match row) — the virtualizer
+// positions rows absolutely at this pitch, so a mismatch clips or overlaps them.
+const ROW_HEIGHT_FILE = 28;
+const ROW_HEIGHT_MATCH = 20;
 
 export function SearchResultsPanel() {
   const nodes = useWorkspaceStore((s) => s.nodes);
@@ -84,6 +94,27 @@ export function SearchResultsPanel() {
       return next;
     });
   }
+
+  const rows = useMemo<ResultRow[]>(() => {
+    const out: ResultRow[] = [];
+    for (const fileResult of results) {
+      out.push({ kind: "file", fileResult });
+      if (!collapsedFiles.has(fileResult.fileId)) {
+        fileResult.matches.forEach((match, index) => {
+          out.push({ kind: "match", fileId: fileResult.fileId, match, index });
+        });
+      }
+    }
+    return out;
+  }, [results, collapsedFiles]);
+
+  const parentRef = useRef<HTMLDivElement>(null);
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: (i) => (rows[i].kind === "file" ? ROW_HEIGHT_FILE : ROW_HEIGHT_MATCH),
+    overscan: 15,
+  });
 
   return (
     <div className="flex h-full flex-col text-sm">
@@ -152,42 +183,63 @@ export function SearchResultsPanel() {
         )}
       </div>
 
-      <div className="np-scrollbar min-h-0 flex-1 overflow-y-auto">
-        {results.map((fileResult) => {
-          const collapsed = collapsedFiles.has(fileResult.fileId);
-          return (
-            <div key={fileResult.fileId}>
-              <button
-                type="button"
-                onClick={() => toggleFileCollapsed(fileResult.fileId)}
-                className="flex w-full items-center gap-1 px-2 py-1 text-left hover:bg-[var(--np-menu-hover)]"
+      <div ref={parentRef} className="np-scrollbar min-h-0 flex-1 overflow-y-auto">
+        <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
+          {virtualizer.getVirtualItems().map((virtualRow) => {
+            const row = rows[virtualRow.index];
+            const height = row.kind === "file" ? ROW_HEIGHT_FILE : ROW_HEIGHT_MATCH;
+            return (
+              <div
+                key={row.kind === "file" ? row.fileResult.fileId : `${row.fileId}:${row.index}`}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height,
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
               >
-                {collapsed ? <ChevronRight className="size-3.5" /> : <ChevronDown className="size-3.5" />}
-                <span className="font-medium">{fileResult.fileName}</span>
-                <span className="truncate text-muted-foreground">{fileResult.filePath}</span>
-                <span className="ml-auto shrink-0 text-muted-foreground">{fileResult.matches.length}</span>
-              </button>
-              {!collapsed &&
-                fileResult.matches.map((match, i) => (
+                {row.kind === "file" ? (
                   <button
-                    key={i}
                     type="button"
-                    onClick={() => openFileAtLocation(fileResult.fileId, match.line, match.column)}
-                    className="flex w-full items-center gap-2 py-0.5 pr-2 pl-7 text-left font-mono text-xs hover:bg-[var(--np-menu-hover)]"
+                    onClick={() => toggleFileCollapsed(row.fileResult.fileId)}
+                    className="flex h-full w-full items-center gap-1 px-2 text-left hover:bg-[var(--np-menu-hover)]"
                   >
-                    <span className="shrink-0 text-muted-foreground">{match.line}:</span>
-                    <span className="truncate">
-                      {match.lineText.slice(0, match.column - 1)}
-                      <mark className="bg-yellow-300/60 text-inherit">
-                        {match.lineText.slice(match.column - 1, match.column - 1 + match.length)}
-                      </mark>
-                      {match.lineText.slice(match.column - 1 + match.length)}
+                    {collapsedFiles.has(row.fileResult.fileId) ? (
+                      <ChevronRight className="size-3.5" />
+                    ) : (
+                      <ChevronDown className="size-3.5" />
+                    )}
+                    <span className="font-medium">{row.fileResult.fileName}</span>
+                    <span className="truncate text-muted-foreground">{row.fileResult.filePath}</span>
+                    <span className="ml-auto shrink-0 text-muted-foreground">
+                      {row.fileResult.matches.length}
                     </span>
                   </button>
-                ))}
-            </div>
-          );
-        })}
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => openFileAtLocation(row.fileId, row.match.line, row.match.column)}
+                    className="flex h-full w-full items-center gap-2 pr-2 pl-7 text-left font-mono text-xs hover:bg-[var(--np-menu-hover)]"
+                  >
+                    <span className="shrink-0 text-muted-foreground">{row.match.line}:</span>
+                    <span className="truncate">
+                      {row.match.lineText.slice(0, row.match.column - 1)}
+                      <mark className="bg-yellow-300/60 text-inherit">
+                        {row.match.lineText.slice(
+                          row.match.column - 1,
+                          row.match.column - 1 + row.match.length,
+                        )}
+                      </mark>
+                      {row.match.lineText.slice(row.match.column - 1 + row.match.length)}
+                    </span>
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

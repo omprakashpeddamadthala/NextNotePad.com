@@ -3,8 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Maximize2, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SkeletonText } from "@/components/ui/skeleton";
-import { LoadFailure } from "@/components/ui/load-failure";
+import { MarkdownRenderPane } from "./MarkdownRenderPane";
 import { getActiveRepository } from "@/services/storage/activeRepository";
 import { useMarkdownPreviewContentStore } from "@/store/markdownPreviewContentStore";
 import { renderMarkdown } from "@/lib/markdown/renderMarkdown";
@@ -53,17 +52,17 @@ export function MarkdownPreview({ fileId }: MarkdownPreviewProps) {
   const html = useMemo(() => renderMarkdown(content ?? ""), [content]);
 
   if (error && !isLive) {
-    return <LoadFailure error={error} onRetry={retry} />;
+    return <MarkdownRenderPane state="error" error={error} onRetry={retry} />;
   }
 
   if (content === null) {
     return (
-      <div className="animate-in fade-in h-full bg-background px-6 py-4 duration-150">
-        <div className="mx-auto max-w-3xl space-y-4">
-          <SkeletonText lines={2} className="max-w-[55%]" />
-          <SkeletonText lines={6} />
-        </div>
-      </div>
+      <MarkdownRenderPane
+        state="loading"
+        skeletonBodyLines={6}
+        onRetry={retry}
+        className="h-full bg-background px-6 py-4"
+      />
     );
   }
 
@@ -80,10 +79,7 @@ export function MarkdownPreview({ fileId }: MarkdownPreviewProps) {
         </Button>
       </div>
       <div className="np-scrollbar min-h-0 flex-1 overflow-auto bg-background px-6 py-4">
-        <div
-          className="np-markdown-preview np-print-target animate-in fade-in mx-auto max-w-3xl duration-200"
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
+        <MarkdownRenderPane state="ready" html={html} onRetry={retry} />
       </div>
     </div>
   );

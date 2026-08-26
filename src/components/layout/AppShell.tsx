@@ -69,6 +69,14 @@ export function AppShell() {
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col bg-background text-foreground">
+      {/* First focusable element on the page — lets a keyboard user jump straight past the menu
+          bar, toolbar, and (on desktop) the whole file explorer to the editor's content. */}
+      <a
+        href="#editor-main"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-sm focus:bg-background focus:px-3 focus:py-1.5 focus:text-sm focus:font-medium focus:text-foreground focus:ring-2 focus:ring-ring"
+      >
+        Skip to editor
+      </a>
       <GlobalActionsRegistrar />
       <ApiLoadingBar />
       {isMobile ? (

@@ -5,7 +5,7 @@ import { useEditorStatusStore } from "@/store/editorStatusStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { useActiveFile } from "@/hooks/useActiveFile";
 import { useWorkspaceStore } from "@/store/workspaceStore";
-import { useUIStore } from "@/store/uiStore";
+import { useDialogStore } from "@/store/dialogStore";
 import { useApiActivityStore } from "@/store/apiActivityStore";
 import { useIsMobile } from "@/hooks/useMediaQuery";
 import { countNodes } from "@/lib/utils/treeUtils";
@@ -42,7 +42,7 @@ export function StatusBar() {
   const zoomLevel = useSettingsStore((s) => s.settings.zoomLevel);
   const { file } = useActiveFile();
   const nodes = useWorkspaceStore((s) => s.nodes);
-  const setWorkspaceStatsOpen = useUIStore((s) => s.setWorkspaceStatsOpen);
+  const openDialog = useDialogStore((s) => s.openDialog);
   const isMobile = useIsMobile();
   const stats = countNodes(nodes);
 
@@ -57,7 +57,7 @@ export function StatusBar() {
       >
         <button
           type="button"
-          onClick={() => setWorkspaceStatsOpen(true)}
+          onClick={() => openDialog("workspaceStats")}
           className="truncate px-2.5 transition-colors active:bg-[var(--np-menu-hover)]"
           title="Workspace statistics"
         >
@@ -80,7 +80,7 @@ export function StatusBar() {
     >
       <button
         type="button"
-        onClick={() => setWorkspaceStatsOpen(true)}
+        onClick={() => openDialog("workspaceStats")}
         className="px-2.5 transition-colors hover:bg-[var(--np-menu-hover)]"
         title="Workspace statistics"
       >

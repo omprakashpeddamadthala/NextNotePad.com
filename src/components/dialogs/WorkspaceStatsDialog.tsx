@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useUIStore } from "@/store/uiStore";
+import { useDialogStore } from "@/store/dialogStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useTrashStore } from "@/store/trashStore";
 import { countNodes } from "@/lib/utils/treeUtils";
@@ -10,8 +10,8 @@ import { formatBytes } from "@/lib/utils/formatBytes";
 import { estimateStorageUsage, type StorageEstimate } from "@/services/storage/workspaceRepository";
 
 export function WorkspaceStatsDialog() {
-  const open = useUIStore((s) => s.workspaceStatsOpen);
-  const setOpen = useUIStore((s) => s.setWorkspaceStatsOpen);
+  const open = useDialogStore((s) => s.open.workspaceStats);
+  const setDialogOpen = useDialogStore((s) => s.setDialogOpen);
   const nodes = useWorkspaceStore((s) => s.nodes);
   const trashCount = useTrashStore((s) => s.entries.length);
   const [estimate, setEstimate] = useState<StorageEstimate | null>(null);
@@ -27,7 +27,7 @@ export function WorkspaceStatsDialog() {
   );
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(v) => setDialogOpen("workspaceStats", v)}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>Workspace Statistics</DialogTitle>

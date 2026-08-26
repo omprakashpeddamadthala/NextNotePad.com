@@ -23,23 +23,23 @@ interface TreeNodeProps {
 
 export function TreeNode({ node, depth }: TreeNodeProps) {
   const toggleCollapsed = useWorkspaceStore((s) => s.toggleCollapsed);
-  const nodes = useWorkspaceStore((s) => s.nodes);
   const isFavorite = useRecentFilesStore((s) => s.isFavorite(node.id));
 
-  const selectedNodeId = useExplorerSelectionStore((s) => s.selectedNodeId);
+  // Selectors are narrowed to a per-node boolean (rather than the raw selected/renaming/drag id)
+  // so a change elsewhere in the tree — selecting a different file, dragging over another row —
+  // doesn't re-render every mounted TreeNode, only the one or two rows whose boolean actually flips.
+  const isSelected = useExplorerSelectionStore((s) => s.selectedNodeId === node.id);
   const setSelectedNodeId = useExplorerSelectionStore((s) => s.setSelectedNodeId);
-  const renamingNodeId = useExplorerSelectionStore((s) => s.renamingNodeId);
+  const isRenaming = useExplorerSelectionStore((s) => s.renamingNodeId === node.id);
   const setRenamingNodeId = useExplorerSelectionStore((s) => s.setRenamingNodeId);
-  const draggedNodeId = useExplorerSelectionStore((s) => s.draggedNodeId);
   const setDraggedNodeId = useExplorerSelectionStore((s) => s.setDraggedNodeId);
-  const dropTargetId = useExplorerSelectionStore((s) => s.dropTargetId);
   const setDropTargetId = useExplorerSelectionStore((s) => s.setDropTargetId);
 
-  const isSelected = selectedNodeId === node.id;
-  const isRenaming = renamingNodeId === node.id;
   const isFolder = node.type === "folder";
   const dropTarget = isFolder ? node.id : node.parentId;
-  const isDropHighlighted = dropTargetId === dropTarget && draggedNodeId !== node.id;
+  const isDropHighlighted = useExplorerSelectionStore(
+    (s) => s.dropTargetId === dropTarget && s.draggedNodeId !== node.id,
+  );
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -90,7 +90,7 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
   }
 
   function handleDragLeave() {
-    if (dropTargetId === dropTarget) setDropTargetId(null);
+    if (useExplorerSelectionStore.getState().dropTargetId === dropTarget) setDropTargetId(null);
   }
 
   function handleDrop(e: React.DragEvent) {
@@ -106,10 +106,11 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
       return;
     }
 
-    const draggedId = e.dataTransfer.getData("text/plain") || draggedNodeId;
+    const draggedId =
+      e.dataTransfer.getData("text/plain") || useExplorerSelectionStore.getState().draggedNodeId;
     setDraggedNodeId(null);
     if (!draggedId || draggedId === node.id) return;
-    if (isFolder && isDescendant(nodes, draggedId, node.id)) return;
+    if (isFolder && isDescendant(useWorkspaceStore.getState().nodes, draggedId, node.id)) return;
     moveNode(draggedId, dropTarget);
   }
 
