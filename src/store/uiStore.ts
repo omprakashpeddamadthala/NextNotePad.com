@@ -15,12 +15,6 @@ interface UIState {
   mobileMenuSheetOpen: boolean;
   bottomPanelVisible: boolean;
   activeBottomTab: BottomPanelTab;
-  commandPaletteOpen: boolean;
-  quickOpenOpen: boolean;
-  settingsDialogOpen: boolean;
-  aboutDialogOpen: boolean;
-  exportImportDialogOpen: boolean;
-  workspaceStatsOpen: boolean;
   isSplitView: boolean;
   markdownPreviewVisible: boolean;
   /** Explorer's "Show Hidden Items" toggle — hidden files/folders stay out of the tree until this
@@ -36,12 +30,6 @@ interface UIActions {
   setMobileMenuSheetOpen: (open: boolean) => void;
   setBottomPanelVisible: (visible: boolean) => void;
   setActiveBottomTab: (tab: BottomPanelTab) => void;
-  setCommandPaletteOpen: (open: boolean) => void;
-  setQuickOpenOpen: (open: boolean) => void;
-  setSettingsDialogOpen: (open: boolean) => void;
-  setAboutDialogOpen: (open: boolean) => void;
-  setExportImportDialogOpen: (open: boolean) => void;
-  setWorkspaceStatsOpen: (open: boolean) => void;
   setSplitView: (isSplit: boolean) => void;
   toggleMarkdownPreview: () => void;
   toggleShowHiddenFiles: () => void;
@@ -55,12 +43,6 @@ export const useUIStore = create<UIState & UIActions>()(
       mobileMenuSheetOpen: false,
       bottomPanelVisible: false,
       activeBottomTab: "search",
-      commandPaletteOpen: false,
-      quickOpenOpen: false,
-      settingsDialogOpen: false,
-      aboutDialogOpen: false,
-      exportImportDialogOpen: false,
-      workspaceStatsOpen: false,
       isSplitView: false,
       markdownPreviewVisible: false,
       showHiddenFiles: false,
@@ -72,12 +54,6 @@ export const useUIStore = create<UIState & UIActions>()(
       setMobileMenuSheetOpen: (mobileMenuSheetOpen) => set({ mobileMenuSheetOpen }),
       setBottomPanelVisible: (bottomPanelVisible) => set({ bottomPanelVisible }),
       setActiveBottomTab: (activeBottomTab) => set({ activeBottomTab }),
-      setCommandPaletteOpen: (commandPaletteOpen) => set({ commandPaletteOpen }),
-      setQuickOpenOpen: (quickOpenOpen) => set({ quickOpenOpen }),
-      setSettingsDialogOpen: (settingsDialogOpen) => set({ settingsDialogOpen }),
-      setAboutDialogOpen: (aboutDialogOpen) => set({ aboutDialogOpen }),
-      setExportImportDialogOpen: (exportImportDialogOpen) => set({ exportImportDialogOpen }),
-      setWorkspaceStatsOpen: (workspaceStatsOpen) => set({ workspaceStatsOpen }),
       setSplitView: (isSplitView) => set({ isSplitView }),
       toggleMarkdownPreview: () => set((state) => ({ markdownPreviewVisible: !state.markdownPreviewVisible })),
       toggleShowHiddenFiles: () => set((state) => ({ showHiddenFiles: !state.showHiddenFiles })),

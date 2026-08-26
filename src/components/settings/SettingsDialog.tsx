@@ -2,18 +2,18 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { useUIStore } from "@/store/uiStore";
+import { useDialogStore } from "@/store/dialogStore";
 import { GeneralSettingsTab } from "./GeneralSettingsTab";
 import { EditorSettingsTab } from "./EditorSettingsTab";
 import { ThemesSettingsTab } from "./ThemesSettingsTab";
 import { ShortcutsSettingsTab } from "./ShortcutsSettingsTab";
 
 export function SettingsDialog() {
-  const open = useUIStore((s) => s.settingsDialogOpen);
-  const setOpen = useUIStore((s) => s.setSettingsDialogOpen);
+  const open = useDialogStore((s) => s.open.settings);
+  const setDialogOpen = useDialogStore((s) => s.setDialogOpen);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(v) => setDialogOpen("settings", v)}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>

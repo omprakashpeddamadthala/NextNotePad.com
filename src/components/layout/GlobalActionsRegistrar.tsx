@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { useRegisterAction } from "@/hooks/useRegisterAction";
 import { useUIStore } from "@/store/uiStore";
+import { useDialogStore } from "@/store/dialogStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { useTabsStore } from "@/store/tabsStore";
 import { useCreateAndRename } from "@/hooks/useCreateAndRename";
@@ -63,8 +64,8 @@ export function GlobalActionsRegistrar() {
     },
     [],
   );
-  useRegisterAction("search.quickOpen", () => useUIStore.getState().setQuickOpenOpen(true), []);
-  useRegisterAction("view.commandPalette", () => useUIStore.getState().setCommandPaletteOpen(true), []);
+  useRegisterAction("search.quickOpen", () => useDialogStore.getState().openDialog("quickOpen"), []);
+  useRegisterAction("view.commandPalette", () => useDialogStore.getState().openDialog("commandPalette"), []);
   useRegisterAction("tools.diffChecker", () => openDiffCheckerForActiveTab(), []);
 
   return (

@@ -8,7 +8,7 @@ import { openTodayDailyNote } from "@/services/dailyNotes";
 import { SHORTCUTS } from "@/lib/constants/shortcuts";
 import { useRecentFilesStore } from "@/store/recentFilesStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
-import { useUIStore } from "@/store/uiStore";
+import { useDialogStore } from "@/store/dialogStore";
 import { openFileForUser } from "@/services/openFile";
 
 /** Shortcuts worth surfacing on an empty editor — the ones that get someone productive fastest,
@@ -64,7 +64,7 @@ function QuickAction({
 export function EditorWelcome() {
   const recent = useRecentFilesStore((s) => s.recent);
   const nodes = useWorkspaceStore((s) => s.nodes);
-  const setCommandPaletteOpen = useUIStore((s) => s.setCommandPaletteOpen);
+  const openDialog = useDialogStore((s) => s.openDialog);
 
   const shortcuts = FEATURED_ACTIONS.map((id) => SHORTCUTS.find((s) => s.action === id)).filter(
     (s): s is (typeof SHORTCUTS)[number] => Boolean(s),
@@ -98,7 +98,7 @@ export function EditorWelcome() {
           <QuickAction
             icon={CommandIcon}
             label="Command Palette"
-            onClick={() => setCommandPaletteOpen(true)}
+            onClick={() => openDialog("commandPalette")}
           />
         </div>
 

@@ -77,7 +77,7 @@ export async function fetchStream(url: string, options: RequestOptions): Promise
 }
 
 /** Shorthand for the JSON-body-in, JSON-body-out calls that make up most of the repository. */
-export function jsonBody(method: "POST" | "PATCH", body: unknown): RequestInit {
+export function jsonBody(method: "POST" | "PATCH" | "PUT", body: unknown): RequestInit {
   return {
     method,
     headers: { "Content-Type": "application/json" },

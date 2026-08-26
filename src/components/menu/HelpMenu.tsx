@@ -3,22 +3,20 @@
 import { Keyboard, Info, BarChart3 } from "lucide-react";
 import { TopMenu } from "./TopMenu";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { useUIStore } from "@/store/uiStore";
+import { useDialogStore } from "@/store/dialogStore";
 
 export function HelpMenu() {
-  const setAboutOpen = useUIStore((s) => s.setAboutDialogOpen);
-  const setCommandPaletteOpen = useUIStore((s) => s.setCommandPaletteOpen);
-  const setWorkspaceStatsOpen = useUIStore((s) => s.setWorkspaceStatsOpen);
+  const openDialog = useDialogStore((s) => s.openDialog);
 
   return (
     <TopMenu label="Help">
-      <DropdownMenuItem onSelect={() => setCommandPaletteOpen(true)}>
+      <DropdownMenuItem onSelect={() => openDialog("commandPalette")}>
         <Keyboard /> Keyboard Shortcuts &amp; Commands
       </DropdownMenuItem>
-      <DropdownMenuItem onSelect={() => setWorkspaceStatsOpen(true)}>
+      <DropdownMenuItem onSelect={() => openDialog("workspaceStats")}>
         <BarChart3 /> Workspace Statistics
       </DropdownMenuItem>
-      <DropdownMenuItem onSelect={() => setAboutOpen(true)}>
+      <DropdownMenuItem onSelect={() => openDialog("about")}>
         <Info /> About NextNotePad.com
       </DropdownMenuItem>
     </TopMenu>

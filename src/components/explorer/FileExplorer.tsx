@@ -26,6 +26,8 @@ export function FileExplorer() {
 
   return (
     <div
+      role="complementary"
+      aria-label="File Explorer"
       className="flex h-full flex-col bg-background"
       onDragOver={(e) => {
         if (e.dataTransfer.types.includes("Files")) e.preventDefault();

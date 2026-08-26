@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useAuthStore, type AuthUser } from "@/store/authStore";
 import { fetchJson, ApiError } from "@/lib/api/fetchJson";
 import { migrateOrLoadCloudWorkspace } from "@/services/auth/migrateGuestWorkspace";
+import { syncSettingsOnLogin } from "@/services/settingsSync";
 import { autoSyncFromDriveOnLogin } from "@/services/driveImport";
 
 /** Runs once on mount: checks for an existing session and, if found, loads the cloud workspace. */
@@ -20,6 +21,7 @@ export function useAuthBootstrap(): void {
         const user = await fetchJson<AuthUser>("/api/auth/me", { action: "Check session" });
         useAuthStore.getState().setAuthenticated(user);
         await migrateOrLoadCloudWorkspace();
+        await syncSettingsOnLogin();
         useAuthStore.getState().setWorkspaceReady();
         // Fire-and-forget: catches up with anything sitting in Drive (added from another
         // device/browser, or directly in Drive) without delaying the workspace becoming usable.

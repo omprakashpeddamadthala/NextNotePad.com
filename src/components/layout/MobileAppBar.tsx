@@ -3,6 +3,7 @@
 import { Menu, PanelLeft, Search, Command as CommandIcon } from "lucide-react";
 import { ToolbarButton } from "./ToolbarButton";
 import { useUIStore } from "@/store/uiStore";
+import { useDialogStore } from "@/store/dialogStore";
 import { useActiveFile } from "@/hooks/useActiveFile";
 import { runAction } from "@/services/shortcuts/actionRegistry";
 
@@ -17,7 +18,7 @@ export function MobileAppBar() {
   const mobileSidebarOpen = useUIStore((s) => s.mobileSidebarOpen);
   const toggleMobileSidebar = useUIStore((s) => s.toggleMobileSidebar);
   const setMobileMenuSheetOpen = useUIStore((s) => s.setMobileMenuSheetOpen);
-  const setCommandPaletteOpen = useUIStore((s) => s.setCommandPaletteOpen);
+  const openDialog = useDialogStore((s) => s.openDialog);
   const { file } = useActiveFile();
 
   return (
@@ -41,7 +42,7 @@ export function MobileAppBar() {
       <ToolbarButton
         icon={CommandIcon}
         label="Command Palette"
-        onClick={() => setCommandPaletteOpen(true)}
+        onClick={() => openDialog("commandPalette")}
         size="touch"
       />
     </div>

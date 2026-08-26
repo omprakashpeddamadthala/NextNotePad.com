@@ -1,14 +1,14 @@
 "use client";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { useUIStore } from "@/store/uiStore";
+import { useDialogStore } from "@/store/dialogStore";
 
 export function AboutDialog() {
-  const open = useUIStore((s) => s.aboutDialogOpen);
-  const setOpen = useUIStore((s) => s.setAboutDialogOpen);
+  const open = useDialogStore((s) => s.open.about);
+  const setDialogOpen = useDialogStore((s) => s.setDialogOpen);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(v) => setDialogOpen("about", v)}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           {/* eslint-disable-next-line @next/next/no-img-element */}

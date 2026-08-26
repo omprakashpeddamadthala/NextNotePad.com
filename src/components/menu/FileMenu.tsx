@@ -24,13 +24,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SHORTCUT_BY_ACTION } from "@/lib/constants/shortcuts";
 import { runAction } from "@/services/shortcuts/actionRegistry";
-import { useUIStore } from "@/store/uiStore";
+import { useDialogStore } from "@/store/dialogStore";
 import { useRecentFilesStore } from "@/store/recentFilesStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useTabsStore } from "@/store/tabsStore";
 
 export function FileMenu() {
-  const setExportImportOpen = useUIStore((s) => s.setExportImportDialogOpen);
+  const openDialog = useDialogStore((s) => s.openDialog);
   const recent = useRecentFilesStore((s) => s.recent);
   const nodes = useWorkspaceStore((s) => s.nodes);
   const openTab = useTabsStore((s) => s.openTab);
@@ -91,10 +91,10 @@ export function FileMenu() {
         </DropdownMenuSubContent>
       </DropdownMenuSub>
       <DropdownMenuSeparator />
-      <DropdownMenuItem onSelect={() => setExportImportOpen(true)}>
+      <DropdownMenuItem onSelect={() => openDialog("exportImport")}>
         <Download /> Export Workspace (.zip)
       </DropdownMenuItem>
-      <DropdownMenuItem onSelect={() => setExportImportOpen(true)}>
+      <DropdownMenuItem onSelect={() => openDialog("exportImport")}>
         <Upload /> Import Workspace…
       </DropdownMenuItem>
     </TopMenu>

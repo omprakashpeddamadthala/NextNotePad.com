@@ -3,8 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { FileText, Pencil, Printer, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SkeletonText } from "@/components/ui/skeleton";
-import { LoadFailure } from "@/components/ui/load-failure";
+import { MarkdownRenderPane } from "./MarkdownRenderPane";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useTabsStore } from "@/store/tabsStore";
 import { useRecentFilesStore } from "@/store/recentFilesStore";
@@ -113,25 +112,17 @@ export function MarkdownFullPageView({ fileId }: { fileId: string }) {
         </div>
       </div>
       <div className="np-scrollbar h-full overflow-auto bg-background px-6 py-4">
-        {error ? (
-          <LoadFailure
-            error={error}
-            onRetry={() => {
-              setError(null);
-              setReloadNonce((n) => n + 1);
-            }}
-          />
-        ) : content === null ? (
-          <div className="animate-in fade-in mx-auto max-w-3xl space-y-4 duration-150">
-            <SkeletonText lines={2} className="max-w-[55%]" />
-            <SkeletonText lines={8} />
-          </div>
-        ) : (
-          <div
-            className="np-markdown-preview np-print-target animate-in fade-in mx-auto max-w-3xl duration-200"
-            dangerouslySetInnerHTML={{ __html: html }}
-          />
-        )}
+        <MarkdownRenderPane
+          state={error ? "error" : content === null ? "loading" : "ready"}
+          error={error}
+          html={html}
+          skeletonBodyLines={8}
+          centered={false}
+          onRetry={() => {
+            setError(null);
+            setReloadNonce((n) => n + 1);
+          }}
+        />
       </div>
     </div>
   );

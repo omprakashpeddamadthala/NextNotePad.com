@@ -12,7 +12,7 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
-import { useUIStore } from "@/store/uiStore";
+import { useDialogStore } from "@/store/dialogStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import type { AutoSaveMode } from "@/types/settings";
 
@@ -25,13 +25,13 @@ const AUTO_SAVE_OPTIONS: { value: AutoSaveMode; label: string }[] = [
 ];
 
 export function SettingsMenu() {
-  const setSettingsDialogOpen = useUIStore((s) => s.setSettingsDialogOpen);
+  const openDialog = useDialogStore((s) => s.openDialog);
   const settings = useSettingsStore((s) => s.settings);
   const updateSettings = useSettingsStore((s) => s.updateSettings);
 
   return (
     <TopMenu label="Settings">
-      <DropdownMenuItem onSelect={() => setSettingsDialogOpen(true)}>
+      <DropdownMenuItem onSelect={() => openDialog("settings")}>
         <Settings /> Preferences…
       </DropdownMenuItem>
       <DropdownMenuSeparator />

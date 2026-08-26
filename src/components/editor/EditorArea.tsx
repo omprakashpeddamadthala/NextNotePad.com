@@ -66,7 +66,13 @@ export function EditorArea() {
   }, [workspaceLoading, isSplitView, splitView, tabs, activeTabId, setSplitView]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div
+      id="editor-main"
+      role="main"
+      aria-label="Editor"
+      tabIndex={-1}
+      className="flex h-full min-h-0 flex-col outline-none"
+    >
       {/* Markdown Full Page View has its own complete header (filename, Edit/Download PDF/Close)
           and isn't a regular open tab, so the tab strip would only render as an empty bar above it. */}
       {!markdownFullPageFileId && <EditorTabs />}

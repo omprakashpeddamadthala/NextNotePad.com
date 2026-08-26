@@ -24,6 +24,7 @@ import { ToolbarButton } from "./ToolbarButton";
 import { Separator } from "@/components/ui/separator";
 import { runAction } from "@/services/shortcuts/actionRegistry";
 import { useUIStore } from "@/store/uiStore";
+import { useDialogStore } from "@/store/dialogStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { useTabsStore } from "@/store/tabsStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
@@ -35,7 +36,7 @@ export function Toolbar() {
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const bottomPanelVisible = useUIStore((s) => s.bottomPanelVisible);
   const setBottomPanelVisible = useUIStore((s) => s.setBottomPanelVisible);
-  const setCommandPaletteOpen = useUIStore((s) => s.setCommandPaletteOpen);
+  const openDialog = useDialogStore((s) => s.openDialog);
   const markdownPreviewVisible = useUIStore((s) => s.markdownPreviewVisible);
   const toggleMarkdownPreview = useUIStore((s) => s.toggleMarkdownPreview);
   const settings = useSettingsStore((s) => s.settings);
@@ -112,7 +113,7 @@ export function Toolbar() {
       <ToolbarButton
         icon={CommandIcon}
         label="Command Palette (Ctrl+Shift+P)"
-        onClick={() => setCommandPaletteOpen(true)}
+        onClick={() => openDialog("commandPalette")}
       />
     </div>
   );
