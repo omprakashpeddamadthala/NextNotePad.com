@@ -134,3 +134,22 @@ model UserSettings {
 
   updatedAt DateTime @updatedAt
 }
+
+/**
+ * Singleton row (always id "singleton") holding the deployment-wide AI provider config editable
+ * from Settings > AI Config — lets the operator (gated by ADMIN_EMAIL) rotate the Gemini/AgentRouter
+ * API keys and model ids without redeploying. Any field left null here falls back to the
+ * corresponding env var (GEMINI_API_KEY, GEMINI_MODEL, AGENTROUTER_API_KEY, CLAUDE_MODEL), so a
+ * deployment that never touches this UI behaves exactly as if this table didn't exist. Plain text,
+ * same trust boundary as the .env files these values would otherwise live in.
+ */
+model AppConfig {
+  id String @id @default("singleton")
+
+  geminiApiKey      String?
+  geminiModel       String?
+  agentRouterApiKey String?
+  claudeModel       String?
+
+  updatedAt DateTime @updatedAt
+}

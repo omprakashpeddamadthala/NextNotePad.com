@@ -19,6 +19,8 @@ import {
   HardDriveDownload,
   FileDiff,
   Sparkles,
+  FileCode,
+  Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -240,6 +242,16 @@ export function MobileMenuSheet() {
               icon={Sparkles}
               label="Fix Grammar (AI)"
               onClick={() => runAction("tools.ai.fixGrammar")}
+            />
+            <ActionGridButton
+              icon={FileCode}
+              label="Generate MD Syntax (AI)"
+              onClick={() => runAction("tools.ai.generateMdSyntax")}
+            />
+            <ActionGridButton
+              icon={Wand2}
+              label="Generate Prompt (AI)"
+              onClick={() => runAction("tools.ai.generatePrompt")}
             />
             <ActionGridButton
               icon={Eye}

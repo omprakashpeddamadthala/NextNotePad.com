@@ -19,6 +19,8 @@ import {
   Calculator,
   Palette,
   SquareSlash,
+  FileCode,
+  Wand2,
 } from "lucide-react";
 import { TopMenu } from "./TopMenu";
 import {
@@ -50,13 +52,50 @@ const CASE_OPTIONS: { id: CaseConverterId; label: string }[] = [
  *  selected) — same convention as Format Document — instead of opening a separate copy/paste
  *  dialog. Diff Checker also stays on-tab: it replaces the editor content with two open tabs
  *  side by side on Monaco's diff editor, rather than a popup. Fix Grammar & Spelling is the one
- *  async, network-backed item — it calls the server's Gemini-backed `/api/ai/correct` route. */
+ *  async, network-backed item — its submenu picks which provider (Gemini or Claude via
+ *  AgentRouter) handles this one call, overriding Settings > General's default for just this run. */
 export function ToolsMenu() {
   return (
     <TopMenu label="Tools">
-      <DropdownMenuItem onSelect={() => runAction("tools.ai.fixGrammar")}>
-        <Sparkles /> Fix Grammar &amp; Spelling (AI)
-      </DropdownMenuItem>
+      <DropdownMenuSub>
+        <DropdownMenuSubTrigger>
+          <Sparkles /> Fix Grammar &amp; Spelling (AI)
+        </DropdownMenuSubTrigger>
+        <DropdownMenuSubContent>
+          <DropdownMenuItem onSelect={() => runAction("tools.ai.fixGrammar.gemini")}>
+            Gemini
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runAction("tools.ai.fixGrammar.claude")}>
+            Claude (via AgentRouter)
+          </DropdownMenuItem>
+        </DropdownMenuSubContent>
+      </DropdownMenuSub>
+      <DropdownMenuSub>
+        <DropdownMenuSubTrigger>
+          <FileCode /> Generate MD Syntax (AI)
+        </DropdownMenuSubTrigger>
+        <DropdownMenuSubContent>
+          <DropdownMenuItem onSelect={() => runAction("tools.ai.generateMdSyntax.gemini")}>
+            Gemini
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runAction("tools.ai.generateMdSyntax.claude")}>
+            Claude (via AgentRouter)
+          </DropdownMenuItem>
+        </DropdownMenuSubContent>
+      </DropdownMenuSub>
+      <DropdownMenuSub>
+        <DropdownMenuSubTrigger>
+          <Wand2 /> Generate Prompt (AI)
+        </DropdownMenuSubTrigger>
+        <DropdownMenuSubContent>
+          <DropdownMenuItem onSelect={() => runAction("tools.ai.generatePrompt.gemini")}>
+            Gemini
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runAction("tools.ai.generatePrompt.claude")}>
+            Claude (via AgentRouter)
+          </DropdownMenuItem>
+        </DropdownMenuSubContent>
+      </DropdownMenuSub>
       <DropdownMenuSeparator />
       <DropdownMenuItem onSelect={() => runAction("tools.base64Encode")}>
         <Binary /> Base64 Encode
