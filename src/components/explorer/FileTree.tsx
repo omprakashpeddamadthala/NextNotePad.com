@@ -11,7 +11,7 @@ import { useTabsStore } from "@/store/tabsStore";
 import { useUIStore } from "@/store/uiStore";
 import { useAuthStore } from "@/store/authStore";
 import { useIsMobile } from "@/hooks/useMediaQuery";
-import { moveNode } from "@/services/fileOperations";
+import { moveNode, setFolderCollapsed } from "@/services/fileOperations";
 
 /** Must stay in sync with TreeNode's row height (h-6 / sm:h-7) — the virtualizer positions rows
  *  absolutely at this pitch, so a mismatch clips or overlaps them. */
@@ -39,7 +39,6 @@ export function FileTree() {
   const nodes = useWorkspaceStore((s) => s.nodes);
   const filterQuery = useWorkspaceStore((s) => s.filterQuery);
   const showHiddenFiles = useUIStore((s) => s.showHiddenFiles);
-  const toggleCollapsed = useWorkspaceStore((s) => s.toggleCollapsed);
   const selectedNodeId = useExplorerSelectionStore((s) => s.selectedNodeId);
   const setSelectedNodeId = useExplorerSelectionStore((s) => s.setSelectedNodeId);
   const draggedNodeId = useExplorerSelectionStore((s) => s.draggedNodeId);
@@ -79,17 +78,17 @@ export function FileTree() {
       if (prev) setSelectedNodeId(prev.node.id);
     } else if (e.key === "ArrowRight") {
       e.preventDefault();
-      if (row.node.type === "folder" && row.node.collapsed) toggleCollapsed(row.node.id);
+      if (row.node.type === "folder" && row.node.collapsed) setFolderCollapsed(row.node.id, false);
     } else if (e.key === "ArrowLeft") {
       e.preventDefault();
       if (row.node.type === "folder" && !row.node.collapsed) {
-        toggleCollapsed(row.node.id);
+        setFolderCollapsed(row.node.id, true);
       } else if (row.node.parentId) {
         setSelectedNodeId(row.node.parentId);
       }
     } else if (e.key === "Enter") {
       e.preventDefault();
-      if (row.node.type === "folder") toggleCollapsed(row.node.id);
+      if (row.node.type === "folder") setFolderCollapsed(row.node.id, !row.node.collapsed);
       else openTab(row.node.id);
     }
   }

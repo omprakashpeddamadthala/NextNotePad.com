@@ -351,38 +351,65 @@ export function MonacoEditorWrapper({
     // Only shows in the right-click menu when text is selected — matches the Tools-menu
     // command's own selection-or-document convention, but a full-document AI rewrite from a
     // bare right-click (no selection) would be a surprising, hard-to-undo action to expose there.
-    editor.addAction({
-      id: "tools.ai.fixGrammar.contextMenu",
-      label: "Correct the Sentence (AI)",
-      contextMenuGroupId: "9_ai",
-      contextMenuOrder: 1,
-      precondition: "editorHasSelection",
-      run: () => {
-        runAction("tools.ai.fixGrammar");
+    // Monaco's context menu has no submenu API, so provider choice (matching the Tools menu's
+    // Gemini/Claude split) is exposed as two flat, explicitly-labeled actions per feature rather
+    // than one default-provider action.
+    const AI_CONTEXT_MENU_ACTIONS: {
+      id: string;
+      label: string;
+      order: number;
+      actionId: string;
+    }[] = [
+      {
+        id: "tools.ai.fixGrammar.contextMenu.gemini",
+        label: "Correct the Sentence (AI) — Gemini",
+        order: 1,
+        actionId: "tools.ai.fixGrammar.gemini",
       },
-    });
+      {
+        id: "tools.ai.fixGrammar.contextMenu.claude",
+        label: "Correct the Sentence (AI) — Claude",
+        order: 2,
+        actionId: "tools.ai.fixGrammar.claude",
+      },
+      {
+        id: "tools.ai.generateMdSyntax.contextMenu.gemini",
+        label: "Generate MD Syntax (AI) — Gemini",
+        order: 3,
+        actionId: "tools.ai.generateMdSyntax.gemini",
+      },
+      {
+        id: "tools.ai.generateMdSyntax.contextMenu.claude",
+        label: "Generate MD Syntax (AI) — Claude",
+        order: 4,
+        actionId: "tools.ai.generateMdSyntax.claude",
+      },
+      {
+        id: "tools.ai.generatePrompt.contextMenu.gemini",
+        label: "Generate Prompt (AI) — Gemini",
+        order: 5,
+        actionId: "tools.ai.generatePrompt.gemini",
+      },
+      {
+        id: "tools.ai.generatePrompt.contextMenu.claude",
+        label: "Generate Prompt (AI) — Claude",
+        order: 6,
+        actionId: "tools.ai.generatePrompt.claude",
+      },
+    ];
 
-    editor.addAction({
-      id: "tools.ai.generateMdSyntax.contextMenu",
-      label: "Generate MD Syntax (AI)",
-      contextMenuGroupId: "9_ai",
-      contextMenuOrder: 2,
-      precondition: "editorHasSelection",
-      run: () => {
-        runAction("tools.ai.generateMdSyntax");
-      },
-    });
-
-    editor.addAction({
-      id: "tools.ai.generatePrompt.contextMenu",
-      label: "Generate Prompt (AI)",
-      contextMenuGroupId: "9_ai",
-      contextMenuOrder: 3,
-      precondition: "editorHasSelection",
-      run: () => {
-        runAction("tools.ai.generatePrompt");
-      },
-    });
+    for (const { id, label, order, actionId } of AI_CONTEXT_MENU_ACTIONS) {
+      editor.addAction({
+        id,
+        label,
+        contextMenuGroupId: "9_ai",
+        contextMenuOrder: order,
+        precondition: "editorHasSelection",
+        run: () => {
+          runAction(actionId);
+        },
+      });
+    }
   };
 
   useVoiceDictationTarget(editorRef, registerGlobalActions);

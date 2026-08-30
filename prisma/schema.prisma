@@ -22,6 +22,13 @@ model User {
   googleRefreshToken    String?
   googleTokenExpiresAt  DateTime?
 
+  // Promoted admin status. The `ADMIN_EMAIL` account is always treated as admin regardless of
+  // this flag (see getAdminUser()) — this field is for admins promoted through the Admin Panel.
+  isAdmin Boolean @default(false)
+  // Checked on every session lookup (getSessionUser) — takes effect on the blocked user's very
+  // next request, no re-login needed.
+  blocked Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -56,7 +63,7 @@ model Folder {
 
   name      String
   path      String
-  collapsed Boolean @default(false)
+  collapsed Boolean @default(true)
   hidden    Boolean @default(false)
 
   driveFileId String? // unused until Phase 2b

@@ -13,6 +13,7 @@ import { useTabsStore } from "@/store/tabsStore";
 import { useUIStore } from "@/store/uiStore";
 import { useDiffViewStore } from "@/store/diffViewStore";
 import { useMarkdownFullPageViewStore } from "@/store/markdownFullPageViewStore";
+import { useAdminViewStore } from "@/store/adminViewStore";
 import { useAuthStore } from "@/store/authStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 
@@ -33,6 +34,12 @@ const MarkdownFullPageView = dynamic(
     ),
   },
 );
+const AdminView = dynamic(() => import("@/components/admin/AdminView").then((m) => m.AdminView), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Loading…</div>
+  ),
+});
 
 export function EditorArea() {
   const tabs = useTabsStore((s) => s.tabs);
@@ -42,6 +49,7 @@ export function EditorArea() {
   const isSplitView = useUIStore((s) => s.isSplitView);
   const diffView = useDiffViewStore((s) => s.diffView);
   const markdownFullPageFileId = useMarkdownFullPageViewStore((s) => s.fileId);
+  const adminViewOpen = useAdminViewStore((s) => s.isOpen);
   const markdownPreviewVisible = useUIStore((s) => s.markdownPreviewVisible);
   const authStatus = useAuthStore((s) => s.status);
   const workspaceReady = useAuthStore((s) => s.workspaceReady);
@@ -75,9 +83,13 @@ export function EditorArea() {
     >
       {/* Markdown Full Page View has its own complete header (filename, Edit/Download PDF/Close)
           and isn't a regular open tab, so the tab strip would only render as an empty bar above it. */}
-      {!markdownFullPageFileId && <EditorTabs />}
+      {!markdownFullPageFileId && !adminViewOpen && <EditorTabs />}
       <div className="min-h-0 flex-1">
-        {workspaceLoading ? (
+        {adminViewOpen ? (
+          // Checked first, ahead of workspaceLoading — managing users has nothing to do with
+          // whether this admin's own notes workspace has finished loading/syncing.
+          <AdminView />
+        ) : workspaceLoading ? (
           <div className="animate-in fade-in h-full px-4 py-3 duration-150">
             <SkeletonText lines={10} />
           </div>

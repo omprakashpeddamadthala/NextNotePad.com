@@ -29,7 +29,7 @@ function Kbd({ combo }: { combo: string }) {
       {combo.split("+").map((key) => (
         <kbd
           key={key}
-          className="min-w-5 rounded-sm border border-b-2 bg-muted px-1.5 py-0.5 text-center font-mono text-[10px] leading-4 text-muted-foreground"
+          className="min-w-5 rounded-sm border border-b-2 bg-muted px-1.5 py-0.5 text-center font-mono text-xs leading-4 text-muted-foreground"
         >
           {key}
         </kbd>
@@ -51,7 +51,7 @@ function QuickAction({
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-2 rounded-sm border bg-background px-3 py-2 text-left text-[13px] transition-colors hover:border-primary/40 hover:bg-accent focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+      className="flex items-center gap-2 rounded-sm border bg-background px-3 py-2 text-left text-xs transition-colors hover:border-primary/40 hover:bg-accent focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
     >
       <Icon className="size-4 shrink-0 text-muted-foreground" />
       {label}
@@ -79,13 +79,13 @@ export function EditorWelcome() {
 
   return (
     <div className="np-scrollbar h-full overflow-auto px-6 py-8">
-      <div className="animate-in fade-in mx-auto max-w-2xl duration-200">
+      <div className="animate-in fade-in duration-200">
         <h1 className="font-heading text-lg font-medium">NextNotePad.com</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           A Notepad++-style editor in your browser. Nothing to install.
         </p>
 
-        <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
           <QuickAction icon={FilePlus} label="New File" onClick={() => runAction("file.new")} />
           <QuickAction icon={FolderOpen} label="Open / Import…" onClick={() => runAction("file.open")} />
           <QuickAction
@@ -115,7 +115,7 @@ export function EditorWelcome() {
                     <button
                       type="button"
                       onClick={() => openFileForUser(node.id)}
-                      className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-[13px] transition-colors hover:bg-accent focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+                      className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs transition-colors hover:bg-accent focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
                     >
                       <Icon className="size-3.5 shrink-0 text-muted-foreground" />
                       <span className="truncate">{node.name}</span>
@@ -134,7 +134,7 @@ export function EditorWelcome() {
           <h2 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Shortcuts</h2>
           <ul className="mt-2 divide-y rounded-sm border">
             {shortcuts.map((s) => (
-              <li key={s.action} className="flex items-center justify-between gap-4 px-3 py-2 text-[13px]">
+              <li key={s.action} className="flex items-center justify-between gap-4 px-3 py-2 text-xs">
                 <span className="truncate">{s.label}</span>
                 <Kbd combo={s.keys} />
               </li>

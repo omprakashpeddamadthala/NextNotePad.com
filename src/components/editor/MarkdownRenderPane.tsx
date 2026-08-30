@@ -33,13 +33,19 @@ export function MarkdownRenderPane({
   className,
 }: MarkdownRenderPaneProps) {
   if (state === "error") {
-    return <LoadFailure error={error} onRetry={onRetry} className={className} />;
+    return (
+      <LoadFailure error={error} onRetry={onRetry} className={className} />
+    );
   }
 
   if (state === "loading") {
     return (
       <div
-        className={cn("animate-in fade-in max-w-3xl space-y-4 duration-150", centered && "mx-auto", className)}
+        className={cn(
+          "animate-in fade-in space-y-4 duration-150",
+          centered ? "mx-auto max-w-3xl" : "max-w-none",
+          className,
+        )}
       >
         <SkeletonText lines={2} className="max-w-[55%]" />
         <SkeletonText lines={skeletonBodyLines} />
@@ -50,8 +56,8 @@ export function MarkdownRenderPane({
   return (
     <div
       className={cn(
-        "np-markdown-preview np-print-target animate-in fade-in max-w-3xl duration-200",
-        centered && "mx-auto",
+        "np-markdown-preview np-print-target animate-in fade-in duration-200",
+        centered ? "mx-auto max-w-3xl" : "max-w-none",
         className,
       )}
       dangerouslySetInnerHTML={{ __html: html ?? "" }}

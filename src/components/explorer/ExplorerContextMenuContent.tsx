@@ -18,14 +18,13 @@ import type { WorkspaceNode } from "@/types/file";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useExplorerSelectionStore } from "@/store/explorerSelectionStore";
 import { useRecentFilesStore } from "@/store/recentFilesStore";
-import { duplicateNode, moveToTrash, toggleNodeHidden } from "@/services/fileOperations";
+import { duplicateNode, moveToTrash, toggleNodeHidden, setFolderCollapsed } from "@/services/fileOperations";
 import { useCreateAndRename } from "@/hooks/useCreateAndRename";
 import { useLockDialogStore } from "@/store/lockDialogStore";
 import { collectSubtree } from "@/lib/utils/treeUtils";
 
 export function ExplorerContextMenuContent({ node }: { node: WorkspaceNode }) {
   const setRenamingNodeId = useExplorerSelectionStore((s) => s.setRenamingNodeId);
-  const setCollapsed = useWorkspaceStore((s) => s.setCollapsed);
   const nodes = useWorkspaceStore((s) => s.nodes);
   const toggleFavorite = useRecentFilesStore((s) => s.toggleFavorite);
   const isFavorite = useRecentFilesStore((s) => s.isFavorite(node.id));
@@ -82,7 +81,7 @@ export function ExplorerContextMenuContent({ node }: { node: WorkspaceNode }) {
         <ContextMenuItem
           onSelect={() => {
             for (const child of collectSubtree(nodes, node.id)) {
-              if (child.type === "folder") setCollapsed(child.id, true);
+              if (child.type === "folder") setFolderCollapsed(child.id, true);
             }
           }}
         >
