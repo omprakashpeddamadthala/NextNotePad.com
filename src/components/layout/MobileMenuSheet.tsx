@@ -30,6 +30,12 @@ import {
   SheetTitle,
   SheetClose,
 } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { FileMenu } from "@/components/menu/FileMenu";
 import { EditMenu } from "@/components/menu/EditMenu";
 import { SearchMenu } from "@/components/menu/SearchMenu";
@@ -58,7 +64,7 @@ import { cn } from "@/lib/utils";
  *  touching the shared component that the desktop menu bar also renders. */
 function MenuGridCell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-muted/40 rounded-md border text-center transition-colors active:bg-accent [&>button]:flex [&>button]:h-full [&>button]:w-full [&>button]:items-center [&>button]:justify-center [&>button]:py-2.5">
+    <div className="bg-muted/40 active:bg-accent rounded-md border text-center transition-colors [&>button]:flex [&>button]:h-full [&>button]:w-full [&>button]:items-center [&>button]:justify-center [&>button]:py-2.5">
       {children}
     </div>
   );
@@ -81,7 +87,7 @@ function ActionGridButton({
         type="button"
         onClick={onClick}
         className={cn(
-          "flex flex-col items-center gap-1 rounded-md border p-2.5 text-center text-[11px] leading-tight transition-colors",
+          "flex flex-col items-center gap-1 rounded-md border p-2.5 text-center text-xs leading-tight transition-colors",
           active
             ? "border-primary bg-accent text-accent-foreground"
             : "bg-muted/40 active:bg-accent active:text-accent-foreground",
@@ -91,6 +97,49 @@ function ActionGridButton({
         <span>{label}</span>
       </button>
     </SheetClose>
+  );
+}
+
+/** Same look as ActionGridButton, but for actions that need a provider choice (AI features) —
+ *  opens a small menu instead of firing immediately. Can't wrap the trigger in SheetClose like
+ *  ActionGridButton does, since that would close the sheet before the menu could open; each item
+ *  closes the sheet itself once a provider is actually chosen. */
+function ActionGridMenuButton({
+  icon: Icon,
+  label,
+  items,
+  onCloseSheet,
+}: {
+  icon: LucideIcon;
+  label: string;
+  items: { label: string; onSelect: () => void }[];
+  onCloseSheet: () => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="bg-muted/40 active:bg-accent active:text-accent-foreground flex flex-col items-center gap-1 rounded-md border p-2.5 text-center text-xs leading-tight transition-colors"
+        >
+          <Icon className="size-5" />
+          <span>{label}</span>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="center">
+        {items.map((item) => (
+          <DropdownMenuItem
+            key={item.label}
+            onSelect={() => {
+              item.onSelect();
+              onCloseSheet();
+            }}
+          >
+            {item.label}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -238,20 +287,50 @@ export function MobileMenuSheet() {
               label="Diff Checker"
               onClick={() => runAction("tools.diffChecker")}
             />
-            <ActionGridButton
+            <ActionGridMenuButton
               icon={Sparkles}
               label="Fix Grammar (AI)"
-              onClick={() => runAction("tools.ai.fixGrammar")}
+              onCloseSheet={() => setOpen(false)}
+              items={[
+                {
+                  label: "Gemini",
+                  onSelect: () => runAction("tools.ai.fixGrammar.gemini"),
+                },
+                {
+                  label: "Claude (via AgentRouter)",
+                  onSelect: () => runAction("tools.ai.fixGrammar.claude"),
+                },
+              ]}
             />
-            <ActionGridButton
+            <ActionGridMenuButton
               icon={FileCode}
               label="Generate MD Syntax (AI)"
-              onClick={() => runAction("tools.ai.generateMdSyntax")}
+              onCloseSheet={() => setOpen(false)}
+              items={[
+                {
+                  label: "Gemini",
+                  onSelect: () => runAction("tools.ai.generateMdSyntax.gemini"),
+                },
+                {
+                  label: "Claude (via AgentRouter)",
+                  onSelect: () => runAction("tools.ai.generateMdSyntax.claude"),
+                },
+              ]}
             />
-            <ActionGridButton
+            <ActionGridMenuButton
               icon={Wand2}
               label="Generate Prompt (AI)"
-              onClick={() => runAction("tools.ai.generatePrompt")}
+              onCloseSheet={() => setOpen(false)}
+              items={[
+                {
+                  label: "Gemini",
+                  onSelect: () => runAction("tools.ai.generatePrompt.gemini"),
+                },
+                {
+                  label: "Claude (via AgentRouter)",
+                  onSelect: () => runAction("tools.ai.generatePrompt.claude"),
+                },
+              ]}
             />
             <ActionGridButton
               icon={Eye}
@@ -289,7 +368,7 @@ export function MobileMenuSheet() {
               active={bottomPanelVisible}
               onClick={() => setBottomPanelVisible(!bottomPanelVisible)}
             />
-            <div className="bg-muted/40 flex flex-col items-center gap-1 rounded-md border p-2.5 text-center text-[11px] leading-tight">
+            <div className="bg-muted/40 flex flex-col items-center gap-1 rounded-md border p-2.5 text-center text-xs leading-tight">
               <VoiceDictationButton />
               <span>Voice Typing</span>
             </div>

@@ -21,6 +21,7 @@ import {
   SquareSlash,
   FileCode,
   Wand2,
+  Command as CommandIcon,
 } from "lucide-react";
 import { TopMenu } from "./TopMenu";
 import {
@@ -31,6 +32,7 @@ import {
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import { runAction } from "@/services/shortcuts/actionRegistry";
+import { useDialogStore } from "@/store/dialogStore";
 import {
   HASH_ALGORITHMS,
   type CaseConverterId,
@@ -62,10 +64,14 @@ export function ToolsMenu() {
           <Sparkles /> Fix Grammar &amp; Spelling (AI)
         </DropdownMenuSubTrigger>
         <DropdownMenuSubContent>
-          <DropdownMenuItem onSelect={() => runAction("tools.ai.fixGrammar.gemini")}>
+          <DropdownMenuItem
+            onSelect={() => runAction("tools.ai.fixGrammar.gemini")}
+          >
             Gemini
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runAction("tools.ai.fixGrammar.claude")}>
+          <DropdownMenuItem
+            onSelect={() => runAction("tools.ai.fixGrammar.claude")}
+          >
             Claude (via AgentRouter)
           </DropdownMenuItem>
         </DropdownMenuSubContent>
@@ -75,10 +81,14 @@ export function ToolsMenu() {
           <FileCode /> Generate MD Syntax (AI)
         </DropdownMenuSubTrigger>
         <DropdownMenuSubContent>
-          <DropdownMenuItem onSelect={() => runAction("tools.ai.generateMdSyntax.gemini")}>
+          <DropdownMenuItem
+            onSelect={() => runAction("tools.ai.generateMdSyntax.gemini")}
+          >
             Gemini
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runAction("tools.ai.generateMdSyntax.claude")}>
+          <DropdownMenuItem
+            onSelect={() => runAction("tools.ai.generateMdSyntax.claude")}
+          >
             Claude (via AgentRouter)
           </DropdownMenuItem>
         </DropdownMenuSubContent>
@@ -88,10 +98,14 @@ export function ToolsMenu() {
           <Wand2 /> Generate Prompt (AI)
         </DropdownMenuSubTrigger>
         <DropdownMenuSubContent>
-          <DropdownMenuItem onSelect={() => runAction("tools.ai.generatePrompt.gemini")}>
+          <DropdownMenuItem
+            onSelect={() => runAction("tools.ai.generatePrompt.gemini")}
+          >
             Gemini
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runAction("tools.ai.generatePrompt.claude")}>
+          <DropdownMenuItem
+            onSelect={() => runAction("tools.ai.generatePrompt.claude")}
+          >
             Claude (via AgentRouter)
           </DropdownMenuItem>
         </DropdownMenuSubContent>
@@ -174,16 +188,24 @@ export function ToolsMenu() {
           <Eraser /> Whitespace Cleanup
         </DropdownMenuSubTrigger>
         <DropdownMenuSubContent>
-          <DropdownMenuItem onSelect={() => runAction("tools.whitespace.trimTrailing")}>
+          <DropdownMenuItem
+            onSelect={() => runAction("tools.whitespace.trimTrailing")}
+          >
             Trim Trailing Whitespace
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runAction("tools.whitespace.collapseBlankLines")}>
+          <DropdownMenuItem
+            onSelect={() => runAction("tools.whitespace.collapseBlankLines")}
+          >
             Collapse Blank Lines
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runAction("tools.whitespace.tabsToSpaces")}>
+          <DropdownMenuItem
+            onSelect={() => runAction("tools.whitespace.tabsToSpaces")}
+          >
             Tabs to Spaces
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runAction("tools.whitespace.spacesToTabs")}>
+          <DropdownMenuItem
+            onSelect={() => runAction("tools.whitespace.spacesToTabs")}
+          >
             Spaces to Tabs
           </DropdownMenuItem>
         </DropdownMenuSubContent>
@@ -193,10 +215,14 @@ export function ToolsMenu() {
           <Clock /> Timestamp Converter
         </DropdownMenuSubTrigger>
         <DropdownMenuSubContent>
-          <DropdownMenuItem onSelect={() => runAction("tools.timestamp.unixToIso")}>
+          <DropdownMenuItem
+            onSelect={() => runAction("tools.timestamp.unixToIso")}
+          >
             Unix Timestamp to ISO Date
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runAction("tools.timestamp.isoToUnix")}>
+          <DropdownMenuItem
+            onSelect={() => runAction("tools.timestamp.isoToUnix")}
+          >
             ISO Date to Unix Timestamp
           </DropdownMenuItem>
         </DropdownMenuSubContent>
@@ -229,10 +255,14 @@ export function ToolsMenu() {
           <Quote /> Escape String
         </DropdownMenuSubTrigger>
         <DropdownMenuSubContent>
-          <DropdownMenuItem onSelect={() => runAction("tools.escapeString.escape")}>
+          <DropdownMenuItem
+            onSelect={() => runAction("tools.escapeString.escape")}
+          >
             Escape (for JSON)
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runAction("tools.escapeString.unescape")}>
+          <DropdownMenuItem
+            onSelect={() => runAction("tools.escapeString.unescape")}
+          >
             Unescape (from JSON)
           </DropdownMenuItem>
         </DropdownMenuSubContent>
@@ -275,6 +305,12 @@ export function ToolsMenu() {
       <DropdownMenuSeparator />
       <DropdownMenuItem onSelect={() => runAction("tools.diffChecker")}>
         <FileDiff /> Diff Checker
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        onSelect={() => useDialogStore.getState().openDialog("commandPalette")}
+      >
+        <CommandIcon /> Search All Commands (Ctrl+Shift+P)
       </DropdownMenuItem>
     </TopMenu>
   );

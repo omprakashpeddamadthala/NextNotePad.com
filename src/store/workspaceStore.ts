@@ -16,7 +16,6 @@ interface WorkspaceActions {
   updatePaths: (patch: Record<string, string>) => void;
   removeNode: (id: string) => void;
   removeNodes: (ids: string[]) => void;
-  toggleCollapsed: (id: string) => void;
   setCollapsed: (id: string, collapsed: boolean) => void;
   setFilterQuery: (query: string) => void;
   replaceAll: (nodes: NodeMap) => void;
@@ -75,23 +74,13 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>()(
           return { nodes: next };
         }),
 
-      toggleCollapsed: (id) =>
-        set((state) => {
-          const existing = state.nodes[id];
-          if (!existing || existing.type !== "folder") return state;
-          return {
-            nodes: {
-              ...state.nodes,
-              [id]: { ...existing, collapsed: !existing.collapsed },
-            },
-          };
-        }),
-
       setCollapsed: (id, collapsed) =>
         set((state) => {
           const existing = state.nodes[id];
           if (!existing || existing.type !== "folder") return state;
-          return { nodes: { ...state.nodes, [id]: { ...existing, collapsed } } };
+          return {
+            nodes: { ...state.nodes, [id]: { ...existing, collapsed } },
+          };
         }),
 
       setFilterQuery: (filterQuery) => set({ filterQuery }),

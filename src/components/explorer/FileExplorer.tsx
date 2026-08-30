@@ -10,7 +10,7 @@ import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useUIStore } from "@/store/uiStore";
 import { useTrashStore } from "@/store/trashStore";
 import { useCreateAndRename } from "@/hooks/useCreateAndRename";
-import { importNativeDrop } from "@/services/fileOperations";
+import { importNativeDrop, setFolderCollapsed } from "@/services/fileOperations";
 
 export function FileExplorer() {
   const [showTrash, setShowTrash] = useState(false);
@@ -18,7 +18,6 @@ export function FileExplorer() {
   const filterQuery = useWorkspaceStore((s) => s.filterQuery);
   const setFilterQuery = useWorkspaceStore((s) => s.setFilterQuery);
   const nodes = useWorkspaceStore((s) => s.nodes);
-  const setCollapsed = useWorkspaceStore((s) => s.setCollapsed);
   const showHiddenFiles = useUIStore((s) => s.showHiddenFiles);
   const toggleShowHiddenFiles = useUIStore((s) => s.toggleShowHiddenFiles);
   const trashCount = useTrashStore((s) => s.entries.length);
@@ -66,7 +65,7 @@ export function FileExplorer() {
               size="compact"
               onClick={() => {
                 for (const node of Object.values(nodes)) {
-                  if (node.type === "folder") setCollapsed(node.id, true);
+                  if (node.type === "folder") setFolderCollapsed(node.id, true);
                 }
               }}
             />

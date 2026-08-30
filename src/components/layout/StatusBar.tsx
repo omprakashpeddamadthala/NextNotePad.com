@@ -29,7 +29,7 @@ function ApiActivitySegment() {
   if (!visible) return null;
   return (
     <Segment>
-      <span className="flex items-center gap-1.5 text-muted-foreground">
+      <span className="text-muted-foreground flex items-center gap-1.5">
         <Loader2 className="size-3 animate-spin" />
         Syncing…
       </span>
@@ -38,7 +38,8 @@ function ApiActivitySegment() {
 }
 
 export function StatusBar() {
-  const { line, column, selectionLength, totalLines, insertMode, eol } = useEditorStatusStore();
+  const { line, column, selectionLength, totalLines, insertMode, eol } =
+    useEditorStatusStore();
   const zoomLevel = useSettingsStore((s) => s.settings.zoomLevel);
   const { file } = useActiveFile();
   const nodes = useWorkspaceStore((s) => s.nodes);
@@ -58,10 +59,11 @@ export function StatusBar() {
         <button
           type="button"
           onClick={() => openDialog("workspaceStats")}
-          className="truncate px-2.5 transition-colors active:bg-[var(--np-menu-hover)]"
+          className="focus-visible:ring-ring truncate px-2.5 transition-colors focus-visible:ring-1 focus-visible:outline-none focus-visible:ring-inset active:bg-[var(--np-menu-hover)]"
           title="Workspace statistics"
         >
-          {stats.files} file{stats.files === 1 ? "" : "s"}, {stats.folders} folder{stats.folders === 1 ? "" : "s"}
+          {stats.files} file{stats.files === 1 ? "" : "s"}, {stats.folders}{" "}
+          folder{stats.folders === 1 ? "" : "s"}
         </button>
         {file && (
           <span className="shrink-0 truncate px-2.5">
@@ -81,10 +83,11 @@ export function StatusBar() {
       <button
         type="button"
         onClick={() => openDialog("workspaceStats")}
-        className="px-2.5 transition-colors hover:bg-[var(--np-menu-hover)]"
+        className="focus-visible:ring-ring px-2.5 transition-colors hover:bg-[var(--np-menu-hover)] focus-visible:ring-1 focus-visible:outline-none focus-visible:ring-inset"
         title="Workspace statistics"
       >
-        {stats.files} file{stats.files === 1 ? "" : "s"}, {stats.folders} folder{stats.folders === 1 ? "" : "s"}
+        {stats.files} file{stats.files === 1 ? "" : "s"}, {stats.folders} folder
+        {stats.folders === 1 ? "" : "s"}
       </button>
       <div className="flex h-full flex-1 items-center justify-end">
         <ApiActivitySegment />
@@ -95,7 +98,9 @@ export function StatusBar() {
               {selectionLength > 0 ? ` : Sel ${selectionLength}` : ""}
             </Segment>
             <Segment>{totalLines} lines</Segment>
-            <Segment>{eol === "CRLF" ? "Windows (CR LF)" : "Unix (LF)"}</Segment>
+            <Segment>
+              {eol === "CRLF" ? "Windows (CR LF)" : "Unix (LF)"}
+            </Segment>
             <Segment>{file.encoding}</Segment>
             <Segment>
               <span className="capitalize">{file.language}</span>

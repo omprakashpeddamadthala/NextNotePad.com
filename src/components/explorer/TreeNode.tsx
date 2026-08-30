@@ -10,7 +10,7 @@ import type { WorkspaceNode } from "@/types/file";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useExplorerSelectionStore } from "@/store/explorerSelectionStore";
 import { useRecentFilesStore } from "@/store/recentFilesStore";
-import { renameNode, moveNode, importNativeDrop } from "@/services/fileOperations";
+import { renameNode, moveNode, importNativeDrop, setFolderCollapsed } from "@/services/fileOperations";
 import { openFileForUser } from "@/services/openFile";
 import { isValidNodeName } from "@/lib/utils/pathUtils";
 import { isDescendant } from "@/lib/utils/treeUtils";
@@ -22,7 +22,6 @@ interface TreeNodeProps {
 }
 
 export function TreeNode({ node, depth }: TreeNodeProps) {
-  const toggleCollapsed = useWorkspaceStore((s) => s.toggleCollapsed);
   const isFavorite = useRecentFilesStore((s) => s.isFavorite(node.id));
 
   // Selectors are narrowed to a per-node boolean (rather than the raw selected/renaming/drag id)
@@ -71,7 +70,7 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
   function handleClick() {
     setSelectedNodeId(node.id);
     if (isFolder) {
-      toggleCollapsed(node.id);
+      setFolderCollapsed(node.id, !node.collapsed);
       return;
     }
     openFileForUser(node.id);
@@ -141,7 +140,7 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
             className={cn(
               // Roomier rows on touch screens (24px is hard to hit with a thumb), Notepad++'s
               // tight 24px on desktop.
-              "flex h-7 w-full items-center gap-1 pr-2 text-left text-[13px] outline-none sm:h-6",
+              "flex h-7 w-full items-center gap-1 pr-2 text-left text-xs outline-none sm:h-6",
               "transition-colors duration-100 hover:bg-[var(--np-menu-hover)] focus-visible:ring-1 focus-visible:ring-ring",
               isSelected && "bg-accent text-accent-foreground",
               isDropHighlighted && "outline outline-1 outline-primary",
@@ -175,7 +174,7 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
                     setRenamingNodeId(null);
                   }
                 }}
-                className="h-5 flex-1 rounded-sm border border-ring bg-background px-1 text-[13px] outline-none"
+                className="h-5 flex-1 rounded-sm border border-ring bg-background px-1 text-xs outline-none"
               />
             ) : (
               <span className="flex-1 truncate">{node.name}</span>

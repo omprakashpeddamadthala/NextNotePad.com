@@ -10,7 +10,12 @@ export async function getSessionUser() {
   const payload = await verifySessionToken(token);
   if (!payload) return null;
 
-  return prisma.user.findUnique({ where: { id: payload.userId } });
+  const user = await prisma.user.findUnique({ where: { id: payload.userId } });
+  // Re-checked on every call (this isn't cached anywhere), so a block takes effect on the
+  // blocked user's very next request — no re-login or token expiry needed.
+  if (!user || user.blocked) return null;
+
+  return user;
 }
 
 /** Most routes just need the caller's workspace id — resolves both in one place. */

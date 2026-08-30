@@ -139,7 +139,7 @@ export async function createFolder(parentId: string | null, name: string): Promi
     version: 1,
     checksum: null,
     deleted: false,
-    collapsed: false,
+    collapsed: true,
     hidden: false,
   };
   workspace.addNode(node);
@@ -199,6 +199,23 @@ export function toggleNodeHidden(id: string): void {
   if (isCloudMode()) {
     const patchFn = node.type === "folder" ? cloudRepo.patchCloudFolder : cloudRepo.patchCloudFile;
     void patchFn(id, { hidden }).catch(() => toast.error(`Failed to sync visibility of "${node.name}".`));
+  }
+}
+
+/** Expands/collapses a folder in the explorer tree. Mirrors `toggleNodeHidden`'s
+ *  local-update-then-sync shape — without the cloud sync, this state only lived in the in-memory
+ *  Zustand store (`guestOnlyLocalStorage` deliberately skips persisting it for signed-in users),
+ *  so it silently reverted to the database's value on every reload/refetch. */
+export function setFolderCollapsed(id: string, collapsed: boolean): void {
+  const workspace = useWorkspaceStore.getState();
+  const node = workspace.nodes[id];
+  if (!node || node.type !== "folder") return;
+  workspace.setCollapsed(id, collapsed);
+
+  if (isCloudMode()) {
+    void cloudRepo
+      .patchCloudFolder(id, { collapsed })
+      .catch(() => toast.error(`Failed to sync folder state for "${node.name}".`));
   }
 }
 

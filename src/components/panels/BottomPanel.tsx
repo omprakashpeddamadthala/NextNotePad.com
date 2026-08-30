@@ -11,14 +11,16 @@ export function BottomPanel() {
   const setBottomPanelVisible = useUIStore((s) => s.setBottomPanelVisible);
 
   return (
-    <div className="flex h-full flex-col border-t bg-background">
+    <div className="bg-background flex h-full flex-col border-t">
       <div className="flex h-7 shrink-0 items-center border-b">
         <button
           type="button"
           onClick={() => setActiveBottomTab("search")}
           className={cn(
-            "flex h-full items-center gap-1.5 border-r px-3 text-xs",
-            activeBottomTab === "search" ? "bg-background font-medium" : "bg-[var(--np-tab-inactive-bg)] text-muted-foreground",
+            "focus-visible:ring-ring flex h-full items-center gap-1.5 border-r px-3 text-xs focus-visible:ring-1 focus-visible:outline-none focus-visible:ring-inset",
+            activeBottomTab === "search"
+              ? "bg-background font-medium"
+              : "text-muted-foreground bg-[var(--np-tab-inactive-bg)]",
           )}
         >
           <Search className="size-3.5" /> Search Results
@@ -27,8 +29,10 @@ export function BottomPanel() {
           type="button"
           onClick={() => setActiveBottomTab("console")}
           className={cn(
-            "flex h-full items-center gap-1.5 border-r px-3 text-xs",
-            activeBottomTab === "console" ? "bg-background font-medium" : "bg-[var(--np-tab-inactive-bg)] text-muted-foreground",
+            "focus-visible:ring-ring flex h-full items-center gap-1.5 border-r px-3 text-xs focus-visible:ring-1 focus-visible:outline-none focus-visible:ring-inset",
+            activeBottomTab === "console"
+              ? "bg-background font-medium"
+              : "text-muted-foreground bg-[var(--np-tab-inactive-bg)]",
           )}
         >
           <Terminal className="size-3.5" /> Console
@@ -37,7 +41,7 @@ export function BottomPanel() {
           type="button"
           aria-label="Close panel"
           onClick={() => setBottomPanelVisible(false)}
-          className="ml-auto flex h-full items-center px-2 text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground focus-visible:ring-ring ml-auto flex h-full items-center px-2 focus-visible:ring-1 focus-visible:outline-none focus-visible:ring-inset"
         >
           <X className="size-3.5" />
         </button>
@@ -46,9 +50,9 @@ export function BottomPanel() {
         {activeBottomTab === "search" ? (
           <SearchResultsPanel />
         ) : (
-          <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-            No console output. (Guest Mode runs entirely in the browser — there&apos;s no build/run step to
-            show here.)
+          <div className="text-muted-foreground flex h-full items-center justify-center text-xs">
+            No console output. (Guest Mode runs entirely in the browser —
+            there&apos;s no build/run step to show here.)
           </div>
         )}
       </div>

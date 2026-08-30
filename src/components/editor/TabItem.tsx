@@ -58,7 +58,7 @@ export function TabItem({ tab, node, isActive, isDirty, index, onActivate, onDra
           aria-selected={isActive}
           className={cn(
             "focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none",
-            "group relative flex h-8 shrink-0 cursor-default items-center gap-1.5 border-r px-2.5 text-[13px] transition-colors select-none",
+            "group relative flex h-8 shrink-0 cursor-default items-center gap-1.5 border-r px-2.5 text-xs transition-colors select-none",
             // A 2px top accent on the active tab — the background alone is a subtle difference in
             // the lighter themes, and this is the standard editor cue for "you are here".
             isActive
@@ -88,8 +88,9 @@ export function TabItem({ tab, node, isActive, isDirty, index, onActivate, onDra
                 closeTab(tab.id);
               }}
               className={cn(
-                "absolute inset-0 flex items-center justify-center rounded-sm hover:bg-[var(--np-menu-hover)]",
-                isDirty ? "hidden group-hover:flex" : "opacity-0 group-hover:opacity-100",
+                "absolute inset-0 flex items-center justify-center rounded-sm hover:bg-[var(--np-menu-hover)] focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                // group-hover reveals the close button on devices that support hovering; touch devices get no hover state at all, so they'd otherwise never see it.
+                isDirty ? "hidden group-hover:flex focus-visible:flex [@media(hover:none)]:flex" : "opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100",
               )}
             >
               <X className="size-3.5" />

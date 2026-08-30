@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { AppShell } from "@/components/layout/AppShell";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 function subscribeNever() {
   return () => {};
@@ -31,5 +32,9 @@ export default function Home() {
     );
   }
 
-  return <AppShell />;
+  return (
+    <ErrorBoundary>
+      <AppShell />
+    </ErrorBoundary>
+  );
 }

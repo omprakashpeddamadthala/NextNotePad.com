@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LogIn, LogOut, User as UserIcon, CloudDownload, Loader2 } from "lucide-react";
+import { LogIn, LogOut, User as UserIcon, CloudDownload, Loader2, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/authStore";
+import { useAdminViewStore } from "@/store/adminViewStore";
 import { syncFromDrive } from "@/services/driveImport";
 import { fetchOk } from "@/lib/api/fetchJson";
 
@@ -77,7 +78,7 @@ export function AccountMenu() {
           // eslint-disable-next-line @next/next/no-img-element
           <img src={user.avatarUrl} alt="" className="size-5 shrink-0 rounded-full" referrerPolicy="no-referrer" />
         ) : (
-          <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
+          <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
             {initialsFor(user.name, user.email)}
           </span>
         )}
@@ -104,6 +105,11 @@ export function AccountMenu() {
           {syncing ? <Loader2 className="animate-spin" /> : <CloudDownload />}
           {syncing ? "Syncing…" : "Sync from Drive"}
         </DropdownMenuItem>
+        {user.isAdmin && (
+          <DropdownMenuItem onSelect={() => useAdminViewStore.getState().open()}>
+            <ShieldCheck /> Admin Panel
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => void handleSignOut()}>
           <LogOut /> Sign Out

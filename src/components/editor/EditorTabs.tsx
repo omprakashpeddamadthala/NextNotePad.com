@@ -24,9 +24,7 @@ export function EditorTabs() {
   const dragIndexRef = useRef<number | null>(null);
   const [, forceRerender] = useState(0);
 
-  if (tabs.length === 0) {
-    return <div className="h-8 shrink-0 border-b bg-[var(--np-tab-inactive-bg)]" />;
-  }
+  if (tabs.length === 0) return null;
 
   return (
     <div

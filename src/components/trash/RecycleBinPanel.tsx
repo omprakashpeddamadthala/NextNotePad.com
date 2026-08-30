@@ -2,8 +2,23 @@
 
 import { Trash2, RotateCcw, XCircle, Folder, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useTrashStore } from "@/store/trashStore";
-import { restoreFromTrash, permanentlyDelete, emptyTrash } from "@/services/fileOperations";
+import {
+  restoreFromTrash,
+  permanentlyDelete,
+  emptyTrash,
+} from "@/services/fileOperations";
 
 function formatRelativeTime(timestamp: number): string {
   const diffMs = Date.now() - timestamp;
@@ -20,7 +35,7 @@ export function RecycleBinPanel() {
 
   if (entries.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center p-4 text-center text-xs text-muted-foreground">
+      <div className="text-muted-foreground flex h-full items-center justify-center p-4 text-center text-xs">
         Recycle bin is empty.
       </div>
     );
@@ -29,14 +44,33 @@ export function RecycleBinPanel() {
   return (
     <div className="flex h-full flex-col">
       <div className="flex justify-end border-b p-1.5">
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-6 text-xs text-destructive hover:text-destructive"
-          onClick={() => void emptyTrash()}
-        >
-          <Trash2 className="size-3.5" /> Empty Recycle Bin
-        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-destructive hover:text-destructive h-6 text-xs"
+            >
+              <Trash2 className="size-3.5" /> Empty Recycle Bin
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Empty Recycle Bin?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This permanently deletes all {entries.length} item
+                {entries.length === 1 ? "" : "s"} in the recycle bin. This
+                can&apos;t be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => void emptyTrash()}>
+                Empty Recycle Bin
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
       <div className="np-scrollbar min-h-0 flex-1 overflow-y-auto">
         {entries.map((entry) => {
@@ -46,31 +80,54 @@ export function RecycleBinPanel() {
               key={entry.node.id}
               className="flex items-center gap-2 border-b px-2 py-1.5 text-xs last:border-b-0"
             >
-              <Icon className="size-3.5 shrink-0 text-muted-foreground" />
+              <Icon className="text-muted-foreground size-3.5 shrink-0" />
               <div className="min-w-0 flex-1">
                 <div className="truncate">{entry.node.name}</div>
-                <div className="truncate text-muted-foreground">
-                  {entry.node.path} · deleted {formatRelativeTime(entry.deletedAt)}
+                <div className="text-muted-foreground truncate">
+                  {entry.node.path} · deleted{" "}
+                  {formatRelativeTime(entry.deletedAt)}
                 </div>
               </div>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="icon-xs"
                 aria-label={`Restore ${entry.node.name}`}
                 title="Restore"
                 onClick={() => restoreFromTrash(entry.node.id)}
-                className="shrink-0 rounded-sm p-1 hover:bg-[var(--np-menu-hover)]"
               >
                 <RotateCcw className="size-3.5" />
-              </button>
-              <button
-                type="button"
-                aria-label={`Permanently delete ${entry.node.name}`}
-                title="Delete Permanently"
-                onClick={() => void permanentlyDelete(entry.node.id)}
-                className="shrink-0 rounded-sm p-1 text-destructive hover:bg-destructive/10"
-              >
-                <XCircle className="size-3.5" />
-              </button>
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    aria-label={`Permanently delete ${entry.node.name}`}
+                    title="Delete Permanently"
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <XCircle className="size-3.5" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      Permanently delete &quot;{entry.node.name}&quot;?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This can&apos;t be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => void permanentlyDelete(entry.node.id)}
+                    >
+                      Delete Permanently
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           );
         })}
