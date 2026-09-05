@@ -13,8 +13,8 @@ import { countNodes } from "@/lib/utils/treeUtils";
 function Segment({ children }: { children: React.ReactNode }) {
   return (
     <span
-      className="flex h-full items-center border-l px-2.5"
-      style={{ borderColor: "var(--np-tab-border)" }}
+      className="flex h-full items-center border-l px-2.5 font-mono text-[11px]"
+      style={{ borderColor: "rgba(255,255,255,0.15)" }}
     >
       {children}
     </span>
@@ -54,12 +54,12 @@ export function StatusBar() {
       <div
         role="status"
         aria-label="Status bar"
-        className="flex h-[22px] shrink-0 items-center justify-between bg-[var(--np-statusbar-bg)] text-xs text-[var(--np-statusbar-fg)] select-none"
+        className="flex h-[24px] shrink-0 items-center justify-between bg-[var(--np-statusbar-bg)] text-[11px] text-[var(--np-statusbar-fg)] select-none"
       >
         <button
           type="button"
           onClick={() => openDialog("workspaceStats")}
-          className="focus-visible:ring-ring truncate px-2.5 transition-colors focus-visible:ring-1 focus-visible:outline-none focus-visible:ring-inset active:bg-[var(--np-menu-hover)]"
+        className="focus-visible:ring-ring truncate px-2.5 text-[11px] transition-colors focus-visible:ring-1 focus-visible:outline-none focus-visible:ring-inset active:bg-white/10 hover:bg-white/10"
           title="Workspace statistics"
         >
           {stats.files} file{stats.files === 1 ? "" : "s"}, {stats.folders}{" "}
@@ -78,12 +78,12 @@ export function StatusBar() {
     <div
       role="status"
       aria-label="Status bar"
-      className="flex h-[22px] shrink-0 items-center bg-[var(--np-statusbar-bg)] text-xs text-[var(--np-statusbar-fg)] select-none"
+      className="flex h-[24px] shrink-0 items-center bg-[var(--np-statusbar-bg)] text-[11px] text-[var(--np-statusbar-fg)] select-none"
     >
       <button
         type="button"
         onClick={() => openDialog("workspaceStats")}
-        className="focus-visible:ring-ring px-2.5 transition-colors hover:bg-[var(--np-menu-hover)] focus-visible:ring-1 focus-visible:outline-none focus-visible:ring-inset"
+        className="focus-visible:ring-ring px-2.5 text-[11px] transition-colors hover:bg-white/10 focus-visible:ring-1 focus-visible:outline-none focus-visible:ring-inset tabular-nums [font-feature-settings:'tnum']"
         title="Workspace statistics"
       >
         {stats.files} file{stats.files === 1 ? "" : "s"}, {stats.folders} folder

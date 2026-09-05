@@ -58,25 +58,24 @@ export function TabItem({ tab, node, isActive, isDirty, index, onActivate, onDra
           aria-selected={isActive}
           className={cn(
             "focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none",
-            "group relative flex h-8 shrink-0 cursor-default items-center gap-1.5 border-r px-2.5 text-xs transition-colors select-none",
-            // A 2px top accent on the active tab — the background alone is a subtle difference in
-            // the lighter themes, and this is the standard editor cue for "you are here".
+            "group relative flex h-9 shrink-0 cursor-default items-center gap-1.5 border-r px-3 text-xs transition-colors select-none",
+            // Bottom accent on active tab — modern Zed/VS Code convention
             isActive
-              ? "bg-[var(--np-tab-active-bg)] text-foreground before:absolute before:inset-x-0 before:top-0 before:h-0.5 before:bg-primary"
+              ? "bg-[var(--np-tab-active-bg)] text-foreground after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-primary"
               : "bg-[var(--np-tab-inactive-bg)] text-muted-foreground hover:bg-[var(--np-menu-hover)] hover:text-foreground",
           )}
           style={{ borderColor: "var(--np-tab-border)" }}
           title={node?.path}
         >
-          {tab.pinned && <Pin className="size-3 shrink-0 fill-current" />}
+          {tab.pinned && <Pin className="size-3 shrink-0 fill-current opacity-60" />}
           {/* Icon is chosen from a fixed set of stable icon components, not created during render. */}
           {/* eslint-disable-next-line react-hooks/static-components */}
-          <Icon className="size-3.5 shrink-0" />
-          <span className="max-w-40 truncate">{node?.name ?? "Untitled"}</span>
-          <span className="relative ml-1 flex size-4 shrink-0 items-center justify-center">
+          <Icon className="size-3.5 shrink-0 opacity-80" />
+          <span className="max-w-36 truncate">{node?.name ?? "Untitled"}</span>
+          <span className="relative ml-0.5 flex size-4 shrink-0 items-center justify-center">
             {isDirty && (
               <span
-                className="size-2 rounded-full bg-foreground/70 group-hover:hidden"
+                className="size-1.5 rounded-full bg-primary/70 group-hover:hidden"
                 aria-label="Unsaved changes"
               />
             )}
@@ -88,12 +87,11 @@ export function TabItem({ tab, node, isActive, isDirty, index, onActivate, onDra
                 closeTab(tab.id);
               }}
               className={cn(
-                "absolute inset-0 flex items-center justify-center rounded-sm hover:bg-[var(--np-menu-hover)] focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-                // group-hover reveals the close button on devices that support hovering; touch devices get no hover state at all, so they'd otherwise never see it.
+                "absolute inset-0 flex items-center justify-center rounded-sm transition-opacity hover:bg-muted-foreground/15 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
                 isDirty ? "hidden group-hover:flex focus-visible:flex [@media(hover:none)]:flex" : "opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100",
               )}
             >
-              <X className="size-3.5" />
+              <X className="size-3" />
             </button>
           </span>
         </div>

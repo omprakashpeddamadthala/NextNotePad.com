@@ -61,7 +61,7 @@ export function DeleteWorkspaceModal() {
             <DialogTitle>Delete Workspace</DialogTitle>
           </div>
           <DialogDescription>
-            Are you sure you want to delete workspace <strong className="text-foreground">"{targetWorkspace?.name}"</strong>?
+            Are you sure you want to delete workspace <strong className="text-foreground">&ldquo;{targetWorkspace?.name}&rdquo;</strong>?
           </DialogDescription>
         </DialogHeader>
 

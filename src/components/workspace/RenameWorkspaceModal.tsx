@@ -31,6 +31,7 @@ export function RenameWorkspaceModal() {
 
   useEffect(() => {
     if (targetWorkspace) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setName(targetWorkspace.name);
       setDescription(targetWorkspace.description ?? "");
       setNameError("");

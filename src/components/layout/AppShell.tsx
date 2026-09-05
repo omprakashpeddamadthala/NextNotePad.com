@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState } from "react";
+
 import { MenuBar } from "./MenuBar";
 import { MobileAppBar } from "./MobileAppBar";
 import { MobileMenuSheet } from "./MobileMenuSheet";
@@ -72,7 +72,7 @@ export function AppShell() {
   useAuthBootstrap();
   useAppBootstrap();
 
-  const [activeNav, setActiveNav] = useState("collections");
+
   const sidebarVisible = useUIStore((s) => s.sidebarVisible);
   const bottomPanelVisible = useUIStore((s) => s.bottomPanelVisible);
   const mobileSidebarOpen = useUIStore((s) => s.mobileSidebarOpen);
@@ -126,7 +126,7 @@ export function AppShell() {
         /* ── Desktop: icon rail (fixed 40px) + resizable panels ───────────── */
         <div className="flex min-h-0 flex-1">
           {/* Narrow icon nav rail — containing the main Collections icon */}
-          <IconNavRail activeNav={activeNav} onNavChange={setActiveNav} />
+          <IconNavRail />
 
           {/* min-h-0 flex-1 gives react-resizable-panels a properly-sized parent */}
           <div className="min-h-0 flex-1 overflow-hidden">

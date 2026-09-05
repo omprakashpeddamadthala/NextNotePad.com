@@ -25,11 +25,15 @@ export function MenuBar() {
     <nav
       role="menubar"
       aria-label="Application menu"
-      className="flex h-8 shrink-0 items-center gap-0.5 border-b bg-background px-1 select-none"
+      className="flex h-9 shrink-0 items-center gap-0 border-b bg-[var(--np-toolbar-bg)] px-1.5 select-none"
+      style={{ borderBottomColor: "var(--np-tab-border)" }}
     >
-      <div className="np-scrollbar flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto overflow-y-hidden">
-        <WorkspaceDropdown />
-        <Separator orientation="vertical" className="mx-1 h-4" />
+      {/* Workspace selector — visually prominent, left-anchored */}
+      <WorkspaceDropdown />
+      <Separator orientation="vertical" className="mx-1.5 h-4 opacity-50" />
+
+      {/* Application menus */}
+      <div className="np-scrollbar flex min-w-0 flex-1 items-center gap-0 overflow-x-auto overflow-y-hidden">
         <FileMenu />
         <EditMenu />
         <SearchMenu />
@@ -41,12 +45,14 @@ export function MenuBar() {
         <WindowMenu />
         <HelpMenu />
       </div>
+
+      {/* Right side: status indicators and account */}
       <div className="ml-auto flex shrink-0 items-center gap-2 pl-2">
         <InstallAppButton />
         {authStatus === "guest" && (
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <HardDriveDownload className="size-3.5" />
-            Guest Mode — stored locally
+          <span className="flex items-center gap-1.5 rounded-sm bg-muted/60 px-2 py-0.5 text-[11px] text-muted-foreground">
+            <HardDriveDownload className="size-3" />
+            Guest Mode
           </span>
         )}
         <SyncStatusBadge />

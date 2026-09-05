@@ -73,7 +73,7 @@ function ActionIconButton({
           aria-label={label}
           onClick={onClick}
           className={cn(
-            "flex size-8 items-center justify-center rounded-md transition-colors shrink-0 text-muted-foreground",
+            "flex size-9 items-center justify-center rounded-md transition-all duration-150 shrink-0 text-muted-foreground",
             "hover:bg-accent hover:text-accent-foreground",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           )}
@@ -81,7 +81,7 @@ function ActionIconButton({
           <Icon className="size-4" />
         </button>
       </TooltipTrigger>
-      <TooltipContent side="left">{label}</TooltipContent>
+      <TooltipContent side="left" className="text-xs">{label}</TooltipContent>
     </Tooltip>
   );
 }
@@ -104,7 +104,7 @@ function DropdownIconButton({
               type="button"
               aria-label={label}
               className={cn(
-                "flex size-8 items-center justify-center rounded-md transition-colors shrink-0 text-muted-foreground",
+                "flex size-9 items-center justify-center rounded-md transition-all duration-150 shrink-0 text-muted-foreground",
                 "hover:bg-accent hover:text-accent-foreground outline-none",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               )}
@@ -113,10 +113,10 @@ function DropdownIconButton({
             </button>
           </DropdownMenuTrigger>
         </TooltipTrigger>
-        <TooltipContent side="left">{label}</TooltipContent>
+        <TooltipContent side="left" className="text-xs">{label}</TooltipContent>
       </Tooltip>
       <DropdownMenuContent side="left" align="start" className="w-52">
-        <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        <DropdownMenuLabel className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
           {label}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -133,7 +133,8 @@ export function ToolsNavRail() {
     <TooltipProvider>
       <nav
         aria-label="Tools vertical right rail"
-        className="np-scrollbar flex w-10 shrink-0 flex-col items-center gap-1 border-l bg-background py-2 overflow-y-auto overflow-x-hidden"
+        className="np-scrollbar flex w-11 shrink-0 flex-col items-center gap-0.5 border-l bg-[var(--np-toolbar-bg)] py-2 overflow-y-auto overflow-x-hidden"
+        style={{ borderLeftColor: "var(--np-tab-border)" }}
       >
         {/* ── AI Tools ────────────────────────────────────────────────────── */}
         <DropdownIconButton icon={Sparkles} label="Fix Grammar & Spelling (AI)">
@@ -163,7 +164,7 @@ export function ToolsNavRail() {
           </DropdownMenuItem>
         </DropdownIconButton>
 
-        <Separator className="my-1 w-6" />
+        <Separator className="my-1 w-5 opacity-40" />
 
         {/* ── Encoders & Text Tools ───────────────────────────────────────── */}
         <DropdownIconButton icon={Binary} label="Base64 Encode / Decode">
@@ -257,7 +258,7 @@ export function ToolsNavRail() {
           onClick={() => runAction("tools.textStats")}
         />
 
-        <Separator className="my-1 w-6" />
+        <Separator className="my-1 w-5 opacity-40" />
 
         <ActionIconButton
           icon={KeyRound}
@@ -313,7 +314,7 @@ export function ToolsNavRail() {
           onClick={() => runAction("tools.slugify")}
         />
 
-        <Separator className="my-1 w-6" />
+        <Separator className="my-1 w-5 opacity-40" />
 
         <ActionIconButton
           icon={FileDiff}
