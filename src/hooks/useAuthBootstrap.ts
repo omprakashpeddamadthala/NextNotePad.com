@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { toast } from "sonner";
 import { useAuthStore, type AuthUser } from "@/store/authStore";
 import { fetchJson, ApiError } from "@/lib/api/fetchJson";
 import { migrateOrLoadCloudWorkspace } from "@/services/auth/migrateGuestWorkspace";
@@ -12,6 +13,25 @@ export function useAuthBootstrap(): void {
   useEffect(() => {
     if (ranRef.current) return;
     ranRef.current = true;
+
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const authError = params.get("authError");
+      if (authError) {
+        let message = "Google Sign-in failed. Please try again.";
+        if (authError === "invalid_state") {
+          message = "Sign-in session expired or state mismatch. Please try signing in again.";
+        } else if (authError === "access_denied") {
+          message = "Google Sign-in was cancelled or access was denied.";
+        } else if (authError === "oauth_failed") {
+          message = "Google OAuth authentication failed. Please try again.";
+        }
+        toast.error(message);
+        const url = new URL(window.location.href);
+        url.searchParams.delete("authError");
+        window.history.replaceState({}, document.title, url.pathname + url.search);
+      }
+    }
 
     (async () => {
       try {

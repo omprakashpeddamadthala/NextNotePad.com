@@ -1,7 +1,7 @@
 import type { drive_v3 } from "googleapis";
 import { prisma } from "@/lib/db/prisma";
 import { getDriveClientForUser } from "./driveClient";
-import { ensureRootFolder } from "./rootFolder";
+import { ensureWorkspaceFolder } from "./workspaceFolder";
 import { detectLanguageFromFilename } from "@/lib/constants/languages";
 
 const FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
@@ -45,17 +45,13 @@ export interface DriveImportResult {
 }
 
 /**
- * One-time (on-demand) pull: walks the user's "NextNotePad.com" Drive folder and creates a local
- * File/Folder row for anything found there that isn't already linked (by driveFileId) to an
- * existing row — the read counterpart to the push-only sync `pushSync.ts` already does, for files
- * added directly in Drive (or from before this integration existed) that never made it into the
- * app's own workspace. Native Google Docs/Sheets/Slides are skipped — no plain-text content to
- * pull without a format conversion this app doesn't do.
+ * One-time (on-demand) pull: walks the user's workspace subfolder in Drive ("NextNotePad.com/<Workspace Name>")
+ * and creates a local File/Folder row for anything found there that isn't already linked (by driveFileId).
  */
 export async function importFromDrive(workspaceId: string): Promise<DriveImportResult> {
   const workspace = await prisma.workspace.findUniqueOrThrow({ where: { id: workspaceId }, include: { user: true } });
   const drive = getDriveClientForUser(workspace.user);
-  const rootFolderId = await ensureRootFolder(drive, workspaceId);
+  const workspaceFolderId = await ensureWorkspaceFolder(drive, workspaceId);
 
   const [knownFolders, knownFiles] = await Promise.all([
     prisma.folder.findMany({ where: { workspaceId, driveFileId: { not: null } } }),
@@ -67,10 +63,9 @@ export async function importFromDrive(workspaceId: string): Promise<DriveImportR
   let foldersImported = 0;
   let skipped = 0;
 
-  // BFS over the Drive tree, rooted at the "NextNotePad.com" folder. `localParentId: null` at the
-  // root matches this app's top-level-node convention.
+  // BFS over the Drive tree, rooted at the workspace's subfolder under NextNotePad.com.
   const queue: { driveId: string; localParentId: string | null; parentPath: string }[] = [
-    { driveId: rootFolderId, localParentId: null, parentPath: "" },
+    { driveId: workspaceFolderId, localParentId: null, parentPath: "" },
   ];
 
   while (queue.length > 0) {

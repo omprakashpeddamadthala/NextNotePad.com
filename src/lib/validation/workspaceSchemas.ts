@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+// Existing schemas untouched
 const importNodeSchema = z.object({
   id: z.string(),
   parentId: z.string().nullable(),
@@ -52,4 +53,15 @@ export const updateFolderSchema = z.object({
 export const updateSettingsSchema = z.object({
   theme: z.string().min(1),
   json: z.string().min(1),
+});
+
+// New multi-workspace schemas
+export const createWorkspaceSchema = z.object({
+  name: z.string().min(1, "Workspace name is required").max(100, "Name must be 100 characters or less").trim(),
+  description: z.string().max(500).optional(),
+});
+
+export const updateWorkspaceSchema = z.object({
+  name: z.string().min(1).max(100).trim().optional(),
+  description: z.string().max(500).nullable().optional(),
 });

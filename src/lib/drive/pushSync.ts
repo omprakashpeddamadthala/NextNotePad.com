@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db/prisma";
 import { getDriveClientForUser } from "./driveClient";
-import { ensureRootFolder } from "./rootFolder";
+import { ensureWorkspaceFolder } from "./workspaceFolder";
 
 type EntityType = "file" | "folder";
 type Operation = "create" | "update" | "delete";
@@ -45,7 +45,7 @@ async function getDriveContextForWorkspace(workspaceId: string) {
     include: { user: true },
   });
   const drive = getDriveClientForUser(workspace.user);
-  const rootFolderId = await ensureRootFolder(drive, workspaceId);
+  const rootFolderId = await ensureWorkspaceFolder(drive, workspaceId);
   return { drive, rootFolderId };
 }
 
