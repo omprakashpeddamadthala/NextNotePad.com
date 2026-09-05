@@ -30,7 +30,8 @@ export function EditorTabs() {
     <div
       role="tablist"
       aria-label="Open editor tabs"
-      className="flex h-8 shrink-0 items-stretch overflow-x-auto overflow-y-hidden border-b np-scrollbar"
+      className="flex h-9 shrink-0 items-stretch overflow-x-auto overflow-y-hidden border-b np-scrollbar"
+      style={{ borderBottomColor: "var(--np-tab-border)" }}
     >
       {tabs.map((tab, index) => (
         <TabItem

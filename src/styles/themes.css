@@ -1,16 +1,17 @@
 /*
- * Default (pre-hydration) chrome variables — mirrors the "notepad-plus-plus" theme.
+ * Default (pre-hydration) chrome variables.
  * ThemeApplier overwrites these on the client to match the active theme.
+ * Light-mode defaults aligned to the new slate-indigo professional palette.
  */
 :root {
-  --np-toolbar-bg: #f3f3f3;
-  --np-statusbar-bg: #e8e8e8;
-  --np-statusbar-fg: #000000;
+  --np-toolbar-bg: #f4f4f6;
+  --np-statusbar-bg: #6366f1;
+  --np-statusbar-fg: #ffffff;
   --np-tab-active-bg: #ffffff;
-  --np-tab-inactive-bg: #e4e4e4;
-  --np-tab-border: #c8c8c8;
-  --np-scrollbar: #c2c2c2;
-  --np-menu-hover: #dbe9f9;
+  --np-tab-inactive-bg: #eeeef2;
+  --np-tab-border: #dddde6;
+  --np-scrollbar: #c4c4d0;
+  --np-menu-hover: #ebebf5;
 }
 
 .np-scrollbar {
