@@ -17,7 +17,7 @@ model User {
   avatarUrl String?
   googleId  String   @unique
 
-  // Stored for future Drive API access (Phase 2b). Plain text for now — see plan notes on hardening.
+  // Stored for Drive API access. Plain text for now — see plan notes on hardening.
   googleAccessToken     String?
   googleRefreshToken    String?
   googleTokenExpiresAt  DateTime?
@@ -29,26 +29,41 @@ model User {
   // next request, no re-login needed.
   blocked Boolean @default(false)
 
+  // The currently-active workspace for this user. Null until the first workspace is created/resolved.
+  activeWorkspaceId String?
+  activeWorkspace   Workspace? @relation("UserActiveWorkspace", fields: [activeWorkspaceId], references: [id], onDelete: SetNull)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  workspace Workspace?
-  settings  UserSettings?
+  workspaces Workspace[] @relation("UserWorkspaces")
+  settings   UserSettings?
 }
 
 model Workspace {
   id     String @id @default(cuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation("UserWorkspaces", fields: [userId], references: [id], onDelete: Cascade)
+
+  // Human-readable workspace name (e.g. "My Workspace", "Project Alpha")
+  name        String  @default("My Workspace")
+  description String?
 
   folders Folder[]
   files   File[]
 
-  // Cached id of the "NextNotePad.com" root folder in the user's Drive (Phase 2b).
+  // Cached id of the "NextNotePad.com" app-root folder in the user's Drive.
   driveRootFolderId String?
+  // Cached id of this specific workspace's subfolder inside the app root (e.g. "NextNotePad.com/My Workspace/").
+  driveWorkspaceFolderId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Back-relation: users who have this workspace as their active workspace.
+  activeForUsers User[] @relation("UserActiveWorkspace")
+
+  @@index([userId])
 }
 
 model Folder {
@@ -66,7 +81,7 @@ model Folder {
   collapsed Boolean @default(true)
   hidden    Boolean @default(false)
 
-  driveFileId String? // unused until Phase 2b
+  driveFileId String?
   version     Int     @default(1)
   deletedAt   DateTime?
 
@@ -92,7 +107,7 @@ model File {
   size     Int     @default(0)
   hidden   Boolean @default(false)
 
-  driveFileId String? // unused until Phase 2b
+  driveFileId String?
   version     Int     @default(1)
   checksum    String?
   deletedAt   DateTime?

@@ -25,7 +25,20 @@ function toNodeMap(nodes: WorkspaceNode[]): NodeMap {
  * in shouldn't silently push local-only content to Drive without consent.
  */
 export async function migrateOrLoadCloudWorkspace(): Promise<void> {
-  const { nodes: cloudNodes, hasAnyHistory } = await cloudRepo.fetchWorkspaceTree();
+  let cloudNodes: WorkspaceNode[] = [];
+  let hasAnyHistory = false;
+
+  try {
+    const tree = await cloudRepo.fetchWorkspaceTree();
+    cloudNodes = tree.nodes;
+    hasAnyHistory = tree.hasAnyHistory;
+  } catch (err) {
+    console.error("Failed to load cloud workspace tree:", err);
+    useWorkspaceStore.getState().replaceAll({});
+    useTabsStore.getState().resetSession();
+    return;
+  }
+
   const guestNodeList = Object.values(useWorkspaceStore.getState().nodes).filter((n) => !n.deleted);
 
   if (!hasAnyHistory && guestNodeList.length > 0) {

@@ -23,5 +23,14 @@ export async function GET() {
     );
   }
 
-  return NextResponse.redirect(authUrl);
+  const response = NextResponse.redirect(authUrl);
+  response.cookies.set(OAUTH_STATE_COOKIE_NAME, state, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 600,
+    path: "/",
+  });
+
+  return response;
 }

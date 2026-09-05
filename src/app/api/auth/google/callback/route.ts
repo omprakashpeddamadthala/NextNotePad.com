@@ -13,13 +13,17 @@ export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
   const expectedState = cookieStore.get(OAUTH_STATE_COOKIE_NAME)?.value;
   cookieStore.delete(OAUTH_STATE_COOKIE_NAME);
-  const appOrigin = getAppOrigin();
+  const appOrigin = getAppOrigin(request);
 
   if (oauthError) {
-    return NextResponse.redirect(new URL(`/?authError=${encodeURIComponent(oauthError)}`, appOrigin));
+    const res = NextResponse.redirect(new URL(`/?authError=${encodeURIComponent(oauthError)}`, appOrigin));
+    res.cookies.delete(OAUTH_STATE_COOKIE_NAME);
+    return res;
   }
   if (!code || !state || !expectedState || state !== expectedState) {
-    return NextResponse.redirect(new URL("/?authError=invalid_state", appOrigin));
+    const res = NextResponse.redirect(new URL("/?authError=invalid_state", appOrigin));
+    res.cookies.delete(OAUTH_STATE_COOKIE_NAME);
+    return res;
   }
 
   try {
@@ -47,11 +51,22 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    await prisma.workspace.upsert({
-      where: { userId: user.id },
-      update: {},
-      create: { userId: user.id },
-    });
+    // Ensure the user has at least one workspace (their "My Workspace" default).
+    // We find-or-create because userId is no longer unique (multi-workspace support).
+    const existingWorkspace = await prisma.workspace.findFirst({ where: { userId: user.id } });
+    let workspaceId: string;
+    if (existingWorkspace) {
+      workspaceId = existingWorkspace.id;
+    } else {
+      const created = await prisma.workspace.create({ data: { userId: user.id, name: "My Workspace" } });
+      workspaceId = created.id;
+    }
+
+    // Ensure the user's activeWorkspaceId is set (may be null for very old rows).
+    if (!user.activeWorkspaceId) {
+      await prisma.user.update({ where: { id: user.id }, data: { activeWorkspaceId: workspaceId } });
+    }
+
 
     const sessionToken = await signSessionToken({ userId: user.id });
     cookieStore.set(SESSION_COOKIE_NAME, sessionToken, {
@@ -62,9 +77,21 @@ export async function GET(request: NextRequest) {
       path: "/",
     });
 
-    return NextResponse.redirect(new URL("/", appOrigin));
+    const response = NextResponse.redirect(new URL("/", appOrigin));
+    response.cookies.set(SESSION_COOKIE_NAME, sessionToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: SESSION_TTL_SECONDS,
+      path: "/",
+    });
+    response.cookies.delete(OAUTH_STATE_COOKIE_NAME);
+
+    return response;
   } catch (err) {
     console.error("Google OAuth callback failed:", err);
-    return NextResponse.redirect(new URL("/?authError=oauth_failed", appOrigin));
+    const res = NextResponse.redirect(new URL("/?authError=oauth_failed", appOrigin));
+    res.cookies.delete(OAUTH_STATE_COOKIE_NAME);
+    return res;
   }
 }

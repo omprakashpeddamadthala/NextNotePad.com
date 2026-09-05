@@ -22,8 +22,21 @@ function getEnv(name: string): string {
  * already the one piece of config that must be the true public URL (Google itself redirects here),
  * so reuse its origin rather than adding another env var or trusting client-controlled headers.
  */
-export function getAppOrigin(): string {
-  return new URL(getEnv("GOOGLE_REDIRECT_URI")).origin;
+export function getAppOrigin(request?: { headers: Headers; url: string }): string {
+  if (request) {
+    const host = request.headers.get("x-forwarded-host") || request.headers.get("host");
+    const proto = request.headers.get("x-forwarded-proto") || (request.url.startsWith("https") ? "https" : "http");
+    if (host) {
+      return `${proto}://${host}`;
+    }
+  }
+  const envUri = process.env.GOOGLE_REDIRECT_URI;
+  if (envUri) {
+    try {
+      return new URL(envUri).origin;
+    } catch {}
+  }
+  return "http://localhost:3000";
 }
 
 export function buildGoogleAuthUrl(state: string): string {

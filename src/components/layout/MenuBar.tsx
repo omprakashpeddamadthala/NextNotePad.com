@@ -15,6 +15,8 @@ import { useAuthStore } from "@/store/authStore";
 import { AccountMenu } from "@/components/auth/AccountMenu";
 import { SyncStatusBadge } from "@/components/auth/SyncStatusBadge";
 import { InstallAppButton } from "@/components/pwa/InstallAppButton";
+import { WorkspaceDropdown } from "@/components/workspace/WorkspaceDropdown";
+import { Separator } from "@/components/ui/separator";
 
 export function MenuBar() {
   const authStatus = useAuthStore((s) => s.status);
@@ -26,6 +28,8 @@ export function MenuBar() {
       className="flex h-8 shrink-0 items-center gap-0.5 border-b bg-background px-1 select-none"
     >
       <div className="np-scrollbar flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto overflow-y-hidden">
+        <WorkspaceDropdown />
+        <Separator orientation="vertical" className="mx-1 h-4" />
         <FileMenu />
         <EditMenu />
         <SearchMenu />
