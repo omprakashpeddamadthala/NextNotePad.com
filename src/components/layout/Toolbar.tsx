@@ -19,6 +19,7 @@ import {
   Eye,
   CalendarDays,
   FileDiff,
+  ImagePlus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ToolbarButton } from "./ToolbarButton";
@@ -154,6 +155,20 @@ export function Toolbar() {
               return;
             }
             toggleMarkdownPreview();
+          }}
+        />
+        <ToolbarButton
+          icon={ImagePlus}
+          label="Insert Image (markdown only)"
+          active={false}
+          onClick={() => {
+            if (!isMarkdownActive) {
+              toast.error("Open a markdown (.md) file first to insert an image.");
+              return;
+            }
+            document.dispatchEvent(
+              new CustomEvent("md-insert-image", { detail: activeFileId }),
+            );
           }}
         />
         <Separator orientation="vertical" className="mx-1 h-5" />

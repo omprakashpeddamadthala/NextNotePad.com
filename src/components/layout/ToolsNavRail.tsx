@@ -22,10 +22,15 @@ import {
   SquareSlash,
   FileDiff,
   Command as CommandIcon,
+  Columns2,
   type LucideIcon,
 } from "lucide-react";
 import { runAction } from "@/services/shortcuts/actionRegistry";
 import { useDialogStore } from "@/store/dialogStore";
+import { useUIStore } from "@/store/uiStore";
+import { useTabsStore } from "@/store/tabsStore";
+import { useWorkspaceStore } from "@/store/workspaceStore";
+import { toast } from "sonner";
 import { HASH_ALGORITHMS, type CaseConverterId } from "@/services/textTools/textTools";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -59,10 +64,12 @@ const CASE_OPTIONS: { id: CaseConverterId; label: string }[] = [
 function ActionIconButton({
   icon: Icon,
   label,
+  active,
   onClick,
 }: {
   icon: LucideIcon;
   label: string;
+  active?: boolean;
   onClick: () => void;
 }) {
   return (
@@ -71,11 +78,15 @@ function ActionIconButton({
         <button
           type="button"
           aria-label={label}
+          aria-pressed={active}
           onClick={onClick}
           className={cn(
-            "flex size-9 items-center justify-center rounded-md transition-all duration-150 shrink-0 text-muted-foreground",
+            "flex size-9 items-center justify-center rounded-md transition-all duration-150 shrink-0",
             "hover:bg-accent hover:text-accent-foreground",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            active
+              ? "bg-accent text-accent-foreground"
+              : "text-muted-foreground",
           )}
         >
           <Icon className="size-4" />
@@ -129,6 +140,20 @@ function DropdownIconButton({
 export function ToolsNavRail() {
   const openDialog = useDialogStore((s) => s.openDialog);
 
+  // Markdown preview toggle — mirrors Toolbar logic
+  const markdownPreviewVisible = useUIStore((s) => s.markdownPreviewVisible);
+  const toggleMarkdownPreview = useUIStore((s) => s.toggleMarkdownPreview);
+  const activeTabId = useTabsStore((s) => s.activeTabId);
+  const activeFileId = useTabsStore(
+    (s) => s.tabs.find((t) => t.id === activeTabId)?.fileId,
+  );
+  const activeNode = useWorkspaceStore((s) =>
+    activeFileId ? s.nodes[activeFileId] : undefined,
+  );
+  const isMarkdownActive =
+    activeNode?.type === "file" && activeNode.language === "markdown";
+  const previewOn = markdownPreviewVisible && isMarkdownActive;
+
   return (
     <TooltipProvider>
       <nav
@@ -136,6 +161,20 @@ export function ToolsNavRail() {
         className="np-scrollbar flex w-11 shrink-0 flex-col items-center gap-0.5 border-l bg-[var(--np-toolbar-bg)] py-2 overflow-y-auto overflow-x-hidden"
         style={{ borderLeftColor: "var(--np-tab-border)" }}
       >
+        {/* ── Markdown Preview ─────────────────────────────────────────────── */}
+        <ActionIconButton
+          icon={Columns2}
+          label="Toggle MD Preview (side-by-side)"
+          active={previewOn}
+          onClick={() => {
+            if (!isMarkdownActive) {
+              toast.error("Open a markdown (.md) file first to preview it.");
+              return;
+            }
+            toggleMarkdownPreview();
+          }}
+        />
+        <Separator className="my-1 w-5 opacity-40" />
         {/* ── AI Tools ────────────────────────────────────────────────────── */}
         <DropdownIconButton icon={Sparkles} label="Fix Grammar & Spelling (AI)">
           <DropdownMenuItem onSelect={() => runAction("tools.ai.fixGrammar.gemini")}>
