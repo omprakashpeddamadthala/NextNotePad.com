@@ -172,6 +172,23 @@
  * (side-by-side or full-page) is currently rendered — isolate that one element so the printed
  * page is just the rendered document, not the app chrome (menus, tabs, explorer) around it. */
 @media print {
+  /* Remove the browser's default page header (date/time, site name) and URL footer
+   * by zeroing the top/side margins — those boxes live in the margin area.
+   * Keep a bottom margin so the @bottom-center page-number counter has room. */
+  @page {
+    margin: 0 0 1.2cm 0;
+
+    /* Centered "Page X / Y" at the bottom of every page.
+     * Supported natively in Chrome 117+, Edge 117+. */
+    @bottom-center {
+      content: "Page " counter(page) " / " counter(pages);
+      font-family: system-ui, ui-sans-serif, sans-serif;
+      font-size: 9pt;
+      color: #666;
+      padding-top: 0.25cm;
+    }
+  }
+
   body * {
     visibility: hidden;
   }
@@ -184,5 +201,10 @@
     top: 0;
     left: 0;
     width: 100%;
+    /* Compensate for the removed @page top/side margins.
+     * Bottom padding is kept small — the @page bottom margin already
+     * provides clearance for the page-number footer. */
+    padding: 1.5cm 2cm 0.5cm 2cm;
+    box-sizing: border-box;
   }
 }
