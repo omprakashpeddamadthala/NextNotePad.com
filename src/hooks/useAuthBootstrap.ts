@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useAuthStore, type AuthUser } from "@/store/authStore";
+import { useMultiWorkspaceStore } from "@/store/multiWorkspaceStore";
 import { fetchJson, ApiError, fetchOk } from "@/lib/api/fetchJson";
 import { migrateOrLoadCloudWorkspace } from "@/services/auth/migrateGuestWorkspace";
 import { syncSettingsOnLogin } from "@/services/settingsSync";
@@ -74,6 +75,7 @@ export function useAuthBootstrap(): void {
 
         useAuthStore.getState().setAuthenticated(user);
         await migrateOrLoadCloudWorkspace();
+        await useMultiWorkspaceStore.getState().loadWorkspaces();
         await syncSettingsOnLogin();
         useAuthStore.getState().setWorkspaceReady();
         // Fire-and-forget: catches up with anything sitting in Drive (added from another
