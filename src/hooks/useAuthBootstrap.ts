@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useAuthStore, type AuthUser } from "@/store/authStore";
-import { fetchJson, ApiError } from "@/lib/api/fetchJson";
+import { fetchJson, ApiError, fetchOk } from "@/lib/api/fetchJson";
 import { migrateOrLoadCloudWorkspace } from "@/services/auth/migrateGuestWorkspace";
 import { syncSettingsOnLogin } from "@/services/settingsSync";
 import { autoSyncFromDriveOnLogin } from "@/services/driveImport";
@@ -39,6 +39,39 @@ export function useAuthBootstrap(): void {
         // progress indicator as every other API call. A 401 here just means "not signed in",
         // which the catch below turns into guest mode rather than an error.
         const user = await fetchJson<AuthUser>("/api/auth/me", { action: "Check session" });
+
+        // -----------------------------------------------------------------
+        // Daily session reset: on the first load of each new calendar day,
+        // force a full re-login so the user always gets fresh server data.
+        // Dynamic imports keep these two modules out of the initial bundle
+        // (they are only needed once per day at most).
+        // -----------------------------------------------------------------
+        const { isDailyResetNeeded, markDailyStamp } = await import("@/lib/dailySession");
+        const { clearAllClientCaches } = await import("@/lib/clearAllClientCaches");
+
+        if (isDailyResetNeeded()) {
+          // 1. Invalidate the server session cookie.
+          try {
+            await fetchOk("/api/auth/logout", { method: "POST", action: "Daily session reset" });
+          } catch {
+            // If logout fails (network, etc.) still proceed — worst case the cookie
+            // expires naturally; the important thing is the client cache is wiped.
+          }
+
+          // 2. Wipe all cached workspace / tabs / file data (settings are preserved).
+          await clearAllClientCaches();
+
+          // 3. Write today's stamp AFTER clearing so next load starts clean.
+          markDailyStamp();
+
+          // 4. Hard redirect — triggers a fresh /api/auth/me → 401 → guest mode → sign-in UI.
+          window.location.replace("/");
+          return; // stop — the page is being replaced
+        }
+
+        // Same day: stamp today so the check is skipped on subsequent page loads.
+        markDailyStamp();
+
         useAuthStore.getState().setAuthenticated(user);
         await migrateOrLoadCloudWorkspace();
         await syncSettingsOnLogin();
