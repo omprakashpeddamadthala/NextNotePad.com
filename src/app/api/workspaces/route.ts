@@ -5,11 +5,20 @@ import { unauthorized, badRequest, serverError } from "@/lib/api/respond";
 import { createWorkspaceSchema } from "@/lib/validation/workspaceSchemas";
 import { getDriveClientForUser } from "@/lib/drive/driveClient";
 import { ensureWorkspaceFolder } from "@/lib/drive/workspaceFolder";
+import { syncWorkspacesFromDrive } from "@/lib/drive/syncWorkspacesFromDrive";
 
 /** GET /api/workspaces — list all workspaces for the authenticated user. */
 export async function GET() {
   const user = await getSessionUser();
   if (!user) return unauthorized();
+
+  if (user.googleAccessToken || user.googleRefreshToken) {
+    try {
+      await syncWorkspacesFromDrive(user.id);
+    } catch (err) {
+      console.error("Failed to sync workspaces from Drive on GET /api/workspaces:", err);
+    }
+  }
 
   const workspaces = await prisma.workspace.findMany({
     where: { userId: user.id },
