@@ -10,6 +10,7 @@ import { useRecentFilesStore } from "@/store/recentFilesStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useDialogStore } from "@/store/dialogStore";
 import { openFileForUser } from "@/services/openFile";
+import { AppLogo } from "@/components/ui/AppLogo";
 
 /** Shortcuts worth surfacing on an empty editor — the ones that get someone productive fastest,
  *  pulled from the same SHORTCUTS table the settings dialog and command palette use so the keys
@@ -29,7 +30,7 @@ function Kbd({ combo }: { combo: string }) {
       {combo.split("+").map((key) => (
         <kbd
           key={key}
-          className="min-w-5 rounded border border-b-2 bg-muted/60 px-1.5 py-0.5 text-center font-mono text-[11px] leading-4 text-muted-foreground"
+          className="min-w-5 rounded-md border border-border/80 bg-muted/70 px-2 py-0.5 text-center font-mono text-[11px] font-medium leading-4 text-muted-foreground shadow-2xs"
         >
           {key}
         </kbd>
@@ -53,18 +54,18 @@ function QuickAction({
     <button
       type="button"
       onClick={onClick}
-      className="group flex items-center gap-3 rounded-md border bg-background/60 px-3 py-2.5 text-left text-xs transition-all hover:border-primary/40 hover:bg-accent hover:shadow-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+      className="group relative flex items-center gap-3.5 rounded-xl border border-border/60 bg-card/40 p-3.5 text-left text-xs transition-all duration-200 hover:border-primary/40 hover:bg-accent/40 hover:shadow-xs hover:scale-[1.01] active:scale-[0.99] focus-visible:ring-1.5 focus-visible:ring-ring focus-visible:outline-none"
     >
-      <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted/60 text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
-        <Icon className="size-3.5" />
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/20 transition-all duration-200 group-hover:bg-primary group-hover:text-primary-foreground group-hover:scale-105">
+        <Icon className="size-4" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate font-medium text-foreground">{label}</span>
+        <span className="block truncate font-medium text-foreground group-hover:text-primary transition-colors">{label}</span>
         {description && (
-          <span className="block truncate text-[11px] text-muted-foreground">{description}</span>
+          <span className="block truncate text-[11px] text-muted-foreground/80 mt-0.5">{description}</span>
         )}
       </span>
-      <ChevronRight className="size-3.5 shrink-0 text-muted-foreground/40 opacity-0 transition-opacity group-hover:opacity-100" />
+      <ChevronRight className="size-3.5 shrink-0 text-muted-foreground/40 opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-0.5" />
     </button>
   );
 }
@@ -88,37 +89,44 @@ export function EditorWelcome() {
     .slice(0, 5);
 
   return (
-    <div className="np-scrollbar h-full overflow-auto px-8 py-10">
+    <div className="np-scrollbar h-full overflow-auto px-6 py-12 select-none">
       <div className="animate-in fade-in mx-auto max-w-xl duration-200">
         {/* Header */}
-        <div className="mb-8">
-          <div className="mb-3 flex size-9 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
-            <span className="text-sm font-bold text-primary">N</span>
+        <div className="mb-8 flex flex-col items-start">
+          <div className="mb-3.5 flex items-center gap-3">
+            <AppLogo size="lg" className="hover:scale-105 transition-transform shadow-md rounded-xl" />
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="font-heading text-lg font-semibold tracking-tight text-foreground">NextNotePad</h1>
+                <span className="rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                  Fast & Local
+                </span>
+              </div>
+              <p className="text-[12px] text-muted-foreground/80">
+                Modern developer notepad inspired by Notepad++. Offline-ready, zero install.
+              </p>
+            </div>
           </div>
-          <h1 className="font-heading text-base font-semibold tracking-tight">NextNotePad</h1>
-          <p className="mt-0.5 text-[13px] text-muted-foreground">
-            A Notepad++-style editor in your browser. Nothing to install.
-          </p>
         </div>
 
         {/* Quick actions */}
-        <div className="mb-8 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+        <div className="mb-8 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
           <QuickAction
             icon={FilePlus}
             label="New File"
-            description="Ctrl+N"
+            description="Create an empty file (Ctrl+N)"
             onClick={() => runAction("file.new")}
           />
           <QuickAction
             icon={FolderOpen}
             label="Open / Import…"
-            description="Ctrl+O"
+            description="Open local files or folders (Ctrl+O)"
             onClick={() => runAction("file.open")}
           />
           <QuickAction
             icon={CalendarDays}
             label="Today's Daily Note"
-            description="Open or create today's note"
+            description="Open or create today's daily log"
             onClick={() =>
               void openTodayDailyNote().catch(() => toast.error("Couldn't open today's daily note."))
             }
@@ -126,7 +134,7 @@ export function EditorWelcome() {
           <QuickAction
             icon={CommandIcon}
             label="Command Palette"
-            description="Ctrl+Shift+P"
+            description="Find commands and tools (Ctrl+Shift+P)"
             onClick={() => openDialog("commandPalette")}
           />
         </div>
@@ -134,26 +142,26 @@ export function EditorWelcome() {
         {/* Recent files */}
         {recentFiles.length > 0 && (
           <section className="mb-8">
-            <h2 className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60">
-              <Clock className="size-3" />
-              Recent
+            <h2 className="mb-2.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+              <Clock className="size-3.5 text-primary" />
+              Recent Files
             </h2>
-            <ul className="overflow-hidden rounded-md border">
+            <ul className="overflow-hidden rounded-xl border border-border/60 bg-card/40 divide-y divide-border/40 shadow-2xs">
               {recentFiles.map((node) => {
                 const Icon = getFileIcon(node.name);
                 return (
-                  <li key={node.id} className="border-b last:border-b-0">
+                  <li key={node.id}>
                     <button
                       type="button"
                       onClick={() => openFileForUser(node.id)}
-                      className="group flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs transition-colors hover:bg-accent focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+                      className="group flex w-full items-center gap-3 px-3.5 py-2.5 text-left text-xs transition-colors hover:bg-accent/60 focus-visible:ring-1.5 focus-visible:ring-ring focus-visible:outline-none"
                     >
-                    <Icon className="size-3.5 shrink-0 text-muted-foreground/60" />
-                      <span className="truncate font-medium">{node.name}</span>
-                      <span className="ml-auto hidden truncate text-[11px] text-muted-foreground/50 sm:block">
+                      <Icon className="size-3.5 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity" />
+                      <span className="truncate font-medium text-foreground group-hover:text-primary transition-colors">{node.name}</span>
+                      <span className="ml-auto hidden truncate text-[11px] text-muted-foreground/60 sm:block">
                         {node.path}
                       </span>
-                      <ChevronRight className="size-3 shrink-0 text-muted-foreground/30 opacity-0 transition-opacity group-hover:opacity-100" />
+                      <ChevronRight className="size-3.5 shrink-0 text-muted-foreground/40 opacity-0 transition-opacity group-hover:opacity-100" />
                     </button>
                   </li>
                 );
@@ -164,16 +172,16 @@ export function EditorWelcome() {
 
         {/* Shortcuts */}
         <section>
-          <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60">
-            Shortcuts
+          <h2 className="mb-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+            Keyboard Shortcuts
           </h2>
-          <ul className="overflow-hidden rounded-md border divide-y">
+          <ul className="overflow-hidden rounded-xl border border-border/60 bg-card/40 divide-y divide-border/40 shadow-2xs">
             {shortcuts.map((s) => (
               <li
                 key={s.action}
-                className="flex items-center justify-between gap-4 px-3 py-2 text-xs transition-colors hover:bg-accent/50"
+                className="flex items-center justify-between gap-4 px-3.5 py-2 text-xs transition-colors hover:bg-accent/40"
               >
-                <span className="truncate text-muted-foreground">{s.label}</span>
+                <span className="truncate text-muted-foreground/90">{s.label}</span>
                 <Kbd combo={s.keys} />
               </li>
             ))}

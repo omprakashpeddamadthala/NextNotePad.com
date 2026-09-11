@@ -4,14 +4,25 @@
  * Light-mode defaults aligned to the new slate-indigo professional palette.
  */
 :root {
-  --np-toolbar-bg: #f4f4f6;
-  --np-statusbar-bg: #6366f1;
-  --np-statusbar-fg: #ffffff;
+  --np-toolbar-bg: #f8f8fa;
+  --np-statusbar-bg: #1e1e24;
+  --np-statusbar-fg: #f4f4f5;
   --np-tab-active-bg: #ffffff;
-  --np-tab-inactive-bg: #eeeef2;
-  --np-tab-border: #dddde6;
-  --np-scrollbar: #c4c4d0;
-  --np-menu-hover: #ebebf5;
+  --np-tab-inactive-bg: #f0f0f3;
+  --np-tab-border: #e4e4e9;
+  --np-scrollbar: #cbd5e1;
+  --np-menu-hover: #eef0f5;
+}
+
+.dark {
+  --np-toolbar-bg: #141518;
+  --np-statusbar-bg: #101114;
+  --np-statusbar-fg: #e2e8f0;
+  --np-tab-active-bg: #1a1b20;
+  --np-tab-inactive-bg: #121316;
+  --np-tab-border: rgba(255, 255, 255, 0.08);
+  --np-scrollbar: #334155;
+  --np-menu-hover: #23252b;
 }
 
 .np-scrollbar {
@@ -20,13 +31,21 @@
 }
 
 .np-scrollbar::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 6px;
+  height: 6px;
+}
+
+.np-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .np-scrollbar::-webkit-scrollbar-thumb {
   background-color: var(--np-scrollbar);
   border-radius: 9999px;
+}
+
+.np-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--np-scrollbar) 80%, black);
 }
 
 /* Indeterminate sweep for the top-of-app API progress bar (ApiLoadingBar). Uses transform only,

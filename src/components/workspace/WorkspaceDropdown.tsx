@@ -74,18 +74,18 @@ export function WorkspaceDropdown({ variant = "default", className }: WorkspaceD
       <DropdownMenu>
         <DropdownMenuTrigger
           className={cn(
-            "flex items-center gap-1.5 rounded-sm px-2 py-1 text-xs font-medium outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring",
+            "flex items-center gap-1.5 rounded-md border border-border/60 bg-background/40 px-2 py-0.5 text-xs font-medium outline-none transition-all duration-150 hover:bg-accent/80 hover:border-border focus-visible:ring-2 focus-visible:ring-ring",
             variant === "toolbar" && "h-7 border border-input bg-background/80 px-2 shadow-xs hover:bg-accent hover:text-accent-foreground",
             variant === "sidebar" && "px-1 py-0.5 font-semibold text-muted-foreground uppercase tracking-wider",
             className,
           )}
           aria-label="Workspace: Guest Mode"
         >
-          <Layers className="size-3.5 shrink-0 text-muted-foreground" />
+          <Layers className="size-3.5 shrink-0 text-primary/80" />
           <span className="max-w-[130px] truncate">
             {variant === "sidebar" ? "Guest Workspace" : "Workspace"}
           </span>
-          <ChevronDown className="size-3 text-muted-foreground shrink-0" />
+          <ChevronDown className="size-3 text-muted-foreground shrink-0 opacity-70" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-64">
           <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -113,7 +113,7 @@ export function WorkspaceDropdown({ variant = "default", className }: WorkspaceD
   const displayName = activeWorkspace?.name ?? (loadingWorkspaces ? "Loading…" : "My Workspace");
 
   const triggerClasses = cn(
-    "flex items-center gap-1.5 rounded-sm px-2 py-1 text-xs font-medium outline-none transition-colors hover:bg-[var(--np-menu-hover)] focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+    "flex items-center gap-1.5 rounded-md border border-border/60 bg-background/40 px-2 py-0.5 text-xs font-medium outline-none transition-all duration-150 hover:bg-accent/80 hover:border-border focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
     variant === "toolbar" && "h-7 border border-input bg-background/80 px-2.5 shadow-xs hover:bg-accent hover:text-accent-foreground",
     variant === "sidebar" && "min-w-0 max-w-full px-1 py-0.5 font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground",
     className,

@@ -549,7 +549,6 @@ export function MonacoEditorWrapper({
       document.removeEventListener("paste", onDocumentPaste, { capture: true });
       document.removeEventListener("md-insert-image", onInsertImage);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -608,6 +607,13 @@ export function MonacoEditorWrapper({
           lineNumbers: settings.showLineNumbers ? "on" : "off",
           renderWhitespace: settings.renderWhitespace ? "all" : "none",
           cursorStyle: settings.cursorStyle,
+          cursorBlinking: "smooth",
+          cursorSmoothCaretAnimation: "on",
+          roundedSelection: true,
+          renderLineHighlight: "all",
+          padding: { top: 10, bottom: 12 },
+          bracketPairColorization: { enabled: true },
+          guides: { indentation: true, bracketPairs: true },
           autoClosingBrackets: settings.autoClosingBrackets
             ? "always"
             : "never",
@@ -616,9 +622,6 @@ export function MonacoEditorWrapper({
           scrollBeyondLastLine: false,
           smoothScrolling: true,
           glyphMargin: true,
-          // Monaco defaults reserve room for 5-digit line numbers plus wide decoration/glyph
-          // padding — reads as a bulky VS Code gutter. Notepad++'s margin is a tight fit to
-          // the actual digit count, so trim these to match (see feedback-notepad-authentic-look).
           lineNumbersMinChars: 3,
           lineDecorationsWidth: 6,
         }}

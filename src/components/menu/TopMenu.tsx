@@ -18,15 +18,15 @@ export function TopMenu({ label, children }: TopMenuProps) {
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          "rounded-sm px-2.5 py-1 text-sm text-foreground/90 outline-none transition-colors duration-100",
-          "hover:bg-[var(--np-menu-hover)] focus-visible:ring-2 focus-visible:ring-ring",
-          "data-[state=open]:bg-[var(--np-menu-hover)]",
+          "rounded-md px-2 py-0.5 text-xs font-medium text-foreground/80 outline-none transition-all duration-150",
+          "hover:bg-accent/80 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring",
+          "data-[state=open]:bg-accent data-[state=open]:text-foreground",
         )}
         aria-label={`${label} menu`}
       >
         {label}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-72" onCloseAutoFocus={(e) => e.preventDefault()}>
+      <DropdownMenuContent align="start" className="w-64 shadow-xl backdrop-blur-md" onCloseAutoFocus={(e) => e.preventDefault()}>
         {children}
       </DropdownMenuContent>
     </DropdownMenu>

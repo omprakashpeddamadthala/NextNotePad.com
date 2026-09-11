@@ -35,25 +35,17 @@ function ResizableHandle({
     <ResizablePrimitive.Separator
       data-slot="resizable-handle"
       className={cn(
-        "relative flex items-center justify-center bg-border ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1",
-        // Vertical handle (horizontal group)
-        "aria-[orientation=vertical]:w-2 aria-[orientation=vertical]:-mx-1 aria-[orientation=vertical]:h-full aria-[orientation=vertical]:cursor-col-resize aria-[orientation=vertical]:bg-transparent aria-[orientation=vertical]:hover:bg-accent/60 aria-[orientation=vertical]:active:bg-primary/20",
-        // Horizontal handle (vertical group)
-        "aria-[orientation=horizontal]:h-2 aria-[orientation=horizontal]:-my-1 aria-[orientation=horizontal]:w-full aria-[orientation=horizontal]:cursor-row-resize aria-[orientation=horizontal]:bg-transparent aria-[orientation=horizontal]:hover:bg-accent/60 aria-[orientation=horizontal]:active:bg-primary/20",
+        "relative flex items-center justify-center bg-border/60 transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+        // Vertical handle (horizontal layout)
+        "aria-[orientation=vertical]:w-1 aria-[orientation=vertical]:h-full aria-[orientation=vertical]:cursor-col-resize aria-[orientation=vertical]:hover:bg-primary/40 aria-[orientation=vertical]:active:bg-primary",
+        // Horizontal handle (vertical layout)
+        "aria-[orientation=horizontal]:h-1 aria-[orientation=horizontal]:w-full aria-[orientation=horizontal]:cursor-row-resize aria-[orientation=horizontal]:hover:bg-primary/40 aria-[orientation=horizontal]:active:bg-primary",
         className
       )}
       {...props}
     >
-      {/* Center line visual */}
-      <div
-        className={cn(
-          "pointer-events-none bg-border transition-colors group-hover:bg-primary/50",
-          "aria-[orientation=vertical]:h-full aria-[orientation=vertical]:w-px",
-          "aria-[orientation=horizontal]:h-px aria-[orientation=horizontal]:w-full"
-        )}
-      />
       {withHandle && (
-        <div className="z-10 flex h-6 w-1 shrink-0 rounded-lg bg-muted-foreground/40 transition-colors group-hover:bg-primary aria-[orientation=horizontal]:h-1 aria-[orientation=horizontal]:w-6" />
+        <div className="z-10 flex h-5 w-1 shrink-0 rounded-full bg-muted-foreground/40 transition-colors hover:bg-primary aria-[orientation=horizontal]:h-1 aria-[orientation=horizontal]:w-5" />
       )}
     </ResizablePrimitive.Separator>
   )

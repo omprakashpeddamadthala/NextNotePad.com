@@ -36,7 +36,7 @@ async function request(url: string, { action, timeoutMs = DEFAULT_TIMEOUT_MS, ..
   // Every internal API call passes through here, so this is also where the shared progress
   // indicator is driven from — no call site has to remember to report itself.
   const activity = useApiActivityStore.getState();
-  activity.begin();
+  activity.begin(action);
 
   let res: Response;
   try {
@@ -49,7 +49,7 @@ async function request(url: string, { action, timeoutMs = DEFAULT_TIMEOUT_MS, ..
     }
     throw new ApiError(`${action} failed — can't reach the server. Check your connection.`, 0);
   } finally {
-    activity.end();
+    activity.end(action);
   }
 
   if (!res.ok) {

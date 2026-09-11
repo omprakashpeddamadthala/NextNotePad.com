@@ -17,6 +17,7 @@ import { SyncStatusBadge } from "@/components/auth/SyncStatusBadge";
 import { InstallAppButton } from "@/components/pwa/InstallAppButton";
 import { WorkspaceDropdown } from "@/components/workspace/WorkspaceDropdown";
 import { Separator } from "@/components/ui/separator";
+import { AppLogo } from "@/components/ui/AppLogo";
 
 export function MenuBar() {
   const authStatus = useAuthStore((s) => s.status);
@@ -25,15 +26,16 @@ export function MenuBar() {
     <nav
       role="menubar"
       aria-label="Application menu"
-      className="flex h-9 shrink-0 items-center gap-0 border-b bg-[var(--np-toolbar-bg)] px-1.5 select-none"
+      className="flex h-9 shrink-0 items-center gap-0 border-b bg-[var(--np-toolbar-bg)]/95 px-2 select-none backdrop-blur-xs transition-colors"
       style={{ borderBottomColor: "var(--np-tab-border)" }}
     >
-      {/* Workspace selector — visually prominent, left-anchored */}
+      {/* Brand logo & workspace selector */}
+      <AppLogo size="sm" className="mr-1.5 hover:scale-105 transition-transform" />
       <WorkspaceDropdown />
-      <Separator orientation="vertical" className="mx-1.5 h-4 opacity-50" />
+      <Separator orientation="vertical" className="mx-1.5 h-3.5 opacity-40" />
 
       {/* Application menus */}
-      <div className="np-scrollbar flex min-w-0 flex-1 items-center gap-0 overflow-x-auto overflow-y-hidden">
+      <div className="np-scrollbar flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto overflow-y-hidden text-[12px]">
         <FileMenu />
         <EditMenu />
         <SearchMenu />
@@ -50,9 +52,10 @@ export function MenuBar() {
       <div className="ml-auto flex shrink-0 items-center gap-2 pl-2">
         <InstallAppButton />
         {authStatus === "guest" && (
-          <span className="flex items-center gap-1.5 rounded-sm bg-muted/60 px-2 py-0.5 text-[11px] text-muted-foreground">
-            <HardDriveDownload className="size-3" />
-            Guest Mode
+          <span className="flex items-center gap-1.5 rounded-full border border-border/70 bg-muted/50 px-2 py-0.5 text-[11px] font-medium text-muted-foreground shadow-2xs">
+            <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <HardDriveDownload className="size-3 opacity-80" />
+            Guest
           </span>
         )}
         <SyncStatusBadge />

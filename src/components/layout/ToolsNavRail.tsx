@@ -73,7 +73,7 @@ function ActionIconButton({
   onClick: () => void;
 }) {
   return (
-    <Tooltip delayDuration={300}>
+    <Tooltip delayDuration={200}>
       <TooltipTrigger asChild>
         <button
           type="button"
@@ -81,18 +81,18 @@ function ActionIconButton({
           aria-pressed={active}
           onClick={onClick}
           className={cn(
-            "flex size-9 items-center justify-center rounded-md transition-all duration-150 shrink-0",
-            "hover:bg-accent hover:text-accent-foreground",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "relative flex size-8 items-center justify-center rounded-md transition-all duration-150 shrink-0 outline-none",
+            "hover:bg-accent/80 hover:text-foreground hover:scale-105 active:scale-95",
+            "focus-visible:outline-none focus-visible:ring-1.5 focus-visible:ring-ring",
             active
-              ? "bg-accent text-accent-foreground"
-              : "text-muted-foreground",
+              ? "text-primary bg-primary/15 shadow-2xs ring-1 ring-primary/25"
+              : "text-muted-foreground/80",
           )}
         >
-          <Icon className="size-4" />
+          <Icon className="size-4 transition-transform duration-150" />
         </button>
       </TooltipTrigger>
-      <TooltipContent side="left" className="text-xs">{label}</TooltipContent>
+      <TooltipContent side="left" className="text-xs font-medium">{label}</TooltipContent>
     </Tooltip>
   );
 }
@@ -108,23 +108,23 @@ function DropdownIconButton({
 }) {
   return (
     <DropdownMenu>
-      <Tooltip delayDuration={300}>
+      <Tooltip delayDuration={200}>
         <TooltipTrigger asChild>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
               aria-label={label}
               className={cn(
-                "flex size-9 items-center justify-center rounded-md transition-all duration-150 shrink-0 text-muted-foreground",
-                "hover:bg-accent hover:text-accent-foreground outline-none",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                "flex size-8 items-center justify-center rounded-md transition-all duration-150 shrink-0 text-muted-foreground/80 outline-none",
+                "hover:bg-accent/80 hover:text-foreground hover:scale-105 active:scale-95",
+                "focus-visible:outline-none focus-visible:ring-1.5 focus-visible:ring-ring",
               )}
             >
-              <Icon className="size-4" />
+              <Icon className="size-4 transition-transform duration-150" />
             </button>
           </DropdownMenuTrigger>
         </TooltipTrigger>
-        <TooltipContent side="left" className="text-xs">{label}</TooltipContent>
+        <TooltipContent side="left" className="text-xs font-medium">{label}</TooltipContent>
       </Tooltip>
       <DropdownMenuContent side="left" align="start" className="w-52">
         <DropdownMenuLabel className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
@@ -158,7 +158,7 @@ export function ToolsNavRail() {
     <TooltipProvider>
       <nav
         aria-label="Tools vertical right rail"
-        className="np-scrollbar flex w-11 shrink-0 flex-col items-center gap-0.5 border-l bg-[var(--np-toolbar-bg)] py-2 overflow-y-auto overflow-x-hidden"
+        className="np-scrollbar flex w-10 shrink-0 flex-col items-center gap-1 border-l bg-[var(--np-toolbar-bg)]/80 py-2.5 overflow-y-auto overflow-x-hidden backdrop-blur-xs select-none"
         style={{ borderLeftColor: "var(--np-tab-border)" }}
       >
         {/* ── Markdown Preview ─────────────────────────────────────────────── */}
@@ -174,7 +174,7 @@ export function ToolsNavRail() {
             toggleMarkdownPreview();
           }}
         />
-        <Separator className="my-1 w-5 opacity-40" />
+        <Separator className="my-1.5 w-4 opacity-30" />
         {/* ── AI Tools ────────────────────────────────────────────────────── */}
         <DropdownIconButton icon={Sparkles} label="Fix Grammar & Spelling (AI)">
           <DropdownMenuItem onSelect={() => runAction("tools.ai.fixGrammar.gemini")}>

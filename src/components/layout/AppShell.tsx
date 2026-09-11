@@ -24,6 +24,7 @@ import { useAppBootstrap } from "@/hooks/useAppBootstrap";
 import { useAuthBootstrap } from "@/hooks/useAuthBootstrap";
 import { GlobalActionsRegistrar } from "./GlobalActionsRegistrar";
 import { ApiLoadingBar } from "./ApiLoadingBar";
+import { CenterApiLoader } from "./CenterApiLoader";
 
 // Lazy-loaded dialogs — none of these render anything visible until opened
 const SettingsDialog = dynamic(() => import("@/components/settings/SettingsDialog").then((m) => m.SettingsDialog), {
@@ -90,6 +91,7 @@ export function AppShell() {
       </a>
       <GlobalActionsRegistrar />
       <ApiLoadingBar />
+      <CenterApiLoader />
 
       {isMobile ? (
         <>
@@ -133,13 +135,18 @@ export function AppShell() {
             <ResizablePanelGroup orientation="horizontal">
               {sidebarVisible && (
                 <>
-                  <ResizablePanel defaultSize="22%" minSize="14%" maxSize="45%">
+                  <ResizablePanel
+                    defaultSize="260px"
+                    minSize="180px"
+                    maxSize="450px"
+                    groupResizeBehavior="preserve-pixel-size"
+                  >
                     <CollectionsSidebar />
                   </ResizablePanel>
                   <ResizableHandle withHandle />
                 </>
               )}
-              <ResizablePanel defaultSize={sidebarVisible ? "78%" : "100%"}>
+              <ResizablePanel>
                 <ResizablePanelGroup orientation="vertical">
                   <ResizablePanel defaultSize={bottomPanelVisible ? "70%" : "100%"} minSize="30%">
                     <EditorArea />
