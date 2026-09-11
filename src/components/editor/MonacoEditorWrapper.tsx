@@ -1,5 +1,45 @@
 "use client";
 
+// ---------------------------------------------------------------------------
+// Image helpers (used below in drag-drop / paste / toolbar-button handlers)
+// ---------------------------------------------------------------------------
+
+/** Reads a File as a base64 data-URL (the full `data:<mime>;base64,...` string). */
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/** Inserts `![altText](dataUrl)` at the current cursor in the editor. */
+function insertImageMarkdown(
+  editor: import("monaco-editor").editor.IStandaloneCodeEditor,
+  altText: string,
+  dataUrl: string,
+): void {
+  const position = editor.getPosition();
+  if (!position) return;
+  const snippet = `![${altText}](${dataUrl})`;
+  editor.executeEdits("", [
+    {
+      range: {
+        startLineNumber: position.lineNumber,
+        startColumn: position.column,
+        endLineNumber: position.lineNumber,
+        endColumn: position.column,
+      },
+      text: snippet,
+    },
+  ]);
+  // Move cursor to end of inserted text
+  const newColumn = position.column + snippet.length;
+  editor.setPosition({ lineNumber: position.lineNumber, column: newColumn });
+  editor.focus();
+}
+
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
@@ -434,8 +474,105 @@ export function MonacoEditorWrapper({
 
   const themeModule = THEME_MODULES[theme];
 
+  // -------------------------------------------------------------------------
+  // Image insertion — drag-drop, paste, and toolbar-button (custom DOM event)
+  // -------------------------------------------------------------------------
+
+  /** True when the active file is a markdown document. */
+  const isMarkdown = file?.type === "file" && file.language === "markdown";
+
+  async function handleImageFile(imgFile: File) {
+    const editor = editorRef.current;
+    if (!editor) return;
+    if (!imgFile.type.startsWith("image/")) return;
+    try {
+      const dataUrl = await fileToDataUrl(imgFile);
+      const altText = imgFile.name.replace(/\.[^.]+$/, ""); // strip extension
+      insertImageMarkdown(editor, altText, dataUrl);
+    } catch {
+      toast.error("Couldn't read the image file.");
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Document-level capture paste \u2014 the ONLY reliable interception point.
+  //
+  // Monaco's internal <textarea> processes paste via its own capture-phase
+  // listener. Attaching to getDomNode() puts us in the same capture phase
+  // but at a child node, so ordering is undefined. At `document` level with
+  // capture:true we are unconditionally first in the entire propagation chain.
+  // We gate on hasTextFocus() so only the focused editor instance responds.
+  // -------------------------------------------------------------------------
+  useEffect(() => {
+    function onDocumentPaste(e: ClipboardEvent) {
+      // Only act when this editor instance is focused.
+      if (!editorRef.current?.hasTextFocus()) return;
+
+      // Only handle markdown files.
+      const node = useWorkspaceStore.getState().nodes[currentFileIdRef.current ?? ""];
+      if (node?.type !== "file" || node.language !== "markdown") return;
+
+      // Only handle clipboard items that contain an image file.
+      const imgItem = Array.from(e.clipboardData?.items ?? []).find(
+        (item) => item.kind === "file" && item.type.startsWith("image/"),
+      );
+      if (!imgItem) return;
+
+      const imgFile = imgItem.getAsFile();
+      if (!imgFile) return;
+
+      // We own this paste \u2014 stop Monaco from consuming it.
+      e.stopImmediatePropagation();
+      e.preventDefault();
+
+      void handleImageFile(imgFile);
+    }
+
+    // Toolbar "Insert Image" button fires this custom event.
+    function onInsertImage(e: Event) {
+      const evtFileId = (e as CustomEvent<string>).detail;
+      if (evtFileId !== currentFileIdRef.current) return;
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+      input.onchange = () => {
+        const picked = input.files?.[0];
+        if (picked) void handleImageFile(picked);
+      };
+      input.click();
+    }
+
+    // capture:true \u2014 fires at the very top of the event propagation chain.
+    document.addEventListener("paste", onDocumentPaste, { capture: true });
+    document.addEventListener("md-insert-image", onInsertImage);
+    return () => {
+      document.removeEventListener("paste", onDocumentPaste, { capture: true });
+      document.removeEventListener("md-insert-image", onInsertImage);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
-    <div className="relative h-full">
+    <div
+      className="relative h-full"
+      // Drag-drop handler: accept image files dropped directly onto the editor area.
+      onDragOver={(e) => {
+        if (!isMarkdown) return;
+        const hasImage = Array.from(e.dataTransfer.items).some(
+          (item) => item.kind === "file" && item.type.startsWith("image/"),
+        );
+        if (hasImage) e.preventDefault();
+      }}
+      onDrop={(e) => {
+        if (!isMarkdown) return;
+        const imgFile = Array.from(e.dataTransfer.files).find((f) =>
+          f.type.startsWith("image/"),
+        );
+        if (!imgFile) return;
+        e.preventDefault();
+        void handleImageFile(imgFile);
+      }}
+    >
       {isLocked && <LockedFileOverlay key={fileId} fileId={fileId} />}
       {loadError !== null && !isLocked && (
         <div className="bg-background absolute inset-0 z-10">
