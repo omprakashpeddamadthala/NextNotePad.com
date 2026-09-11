@@ -136,29 +136,29 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
           <button
             type="button"
             onClick={handleClick}
-            style={{ paddingLeft: `${depth * 14 + 6}px` }}
+            style={{ paddingLeft: `${depth * 13 + 8}px` }}
             className={cn(
-              // Roomier rows on touch screens (24px is hard to hit with a thumb), Notepad++'s
-              // tight 24px on desktop.
-              "flex h-7 w-full items-center gap-1 pr-2 text-left text-xs outline-none sm:h-6",
-              "transition-colors duration-100 hover:bg-[var(--np-menu-hover)] focus-visible:ring-1 focus-visible:ring-ring",
-              isSelected && "bg-accent text-accent-foreground",
-              isDropHighlighted && "outline outline-1 outline-primary",
+              "group/item relative mx-1 my-[1px] flex h-7 w-[calc(100%-8px)] items-center gap-1.5 rounded-md pr-2 text-left text-xs outline-none sm:h-6 transition-all duration-100",
+              "hover:bg-accent/70 hover:text-foreground focus-visible:ring-1.5 focus-visible:ring-ring",
+              isSelected
+                ? "bg-primary/12 font-medium text-primary shadow-2xs before:absolute before:left-0.5 before:top-1 before:bottom-1 before:w-0.5 before:rounded-full before:bg-primary"
+                : "text-foreground/90",
+              isDropHighlighted && "ring-1.5 ring-primary ring-offset-1 ring-offset-background",
               node.hidden && "opacity-50 italic",
             )}
           >
             {isFolder ? (
               node.collapsed ? (
-                <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
+                <ChevronRight className="size-3 shrink-0 text-muted-foreground/70 transition-transform" />
               ) : (
-                <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
+                <ChevronDown className="size-3 shrink-0 text-muted-foreground/70 transition-transform" />
               )
             ) : (
-              <span className="size-3.5 shrink-0" />
+              <span className="size-3 shrink-0" />
             )}
             {/* Icon is chosen from a fixed set of stable icon components, not created during render. */}
             {/* eslint-disable-next-line react-hooks/static-components */}
-            <Icon className="size-3.5 shrink-0" />
+            <Icon className="size-3.5 shrink-0 opacity-80 group-hover/item:opacity-100 transition-opacity" />
             {isRenaming ? (
               <input
                 ref={inputRef}
@@ -174,16 +174,16 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
                     setRenamingNodeId(null);
                   }
                 }}
-                className="h-5 flex-1 rounded-sm border border-ring bg-background px-1 text-xs outline-none"
+                className="h-5 flex-1 rounded-sm border border-ring bg-background px-1 text-xs outline-none shadow-2xs"
               />
             ) : (
               <span className="flex-1 truncate">{node.name}</span>
             )}
-            {isFavorite && !isRenaming && <Star className="size-3 shrink-0 fill-current text-amber-500" />}
+            {isFavorite && !isRenaming && <Star className="size-3 shrink-0 fill-current text-amber-500/90" />}
             {node.type === "file" && node.locked && !isRenaming && (
-              <Lock className="size-3 shrink-0 text-muted-foreground" />
+              <Lock className="size-3 shrink-0 text-muted-foreground/70" />
             )}
-            {node.hidden && !isRenaming && <EyeOff className="size-3 shrink-0 text-muted-foreground" />}
+            {node.hidden && !isRenaming && <EyeOff className="size-3 shrink-0 text-muted-foreground/70" />}
           </button>
         </ContextMenuTrigger>
         <ContextMenuContent className="w-56" onCloseAutoFocus={(e) => e.preventDefault()}>

@@ -62,25 +62,25 @@ function NavRailIconButton({
   active?: boolean;
 }) {
   return (
-    <Tooltip delayDuration={300}>
+    <Tooltip delayDuration={200}>
       <TooltipTrigger asChild>
         <button
           type="button"
           aria-label={label}
           onClick={onClick}
           className={cn(
-            "relative flex size-9 items-center justify-center rounded-md transition-all duration-150 shrink-0 outline-none",
-            "hover:bg-accent hover:text-accent-foreground",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "relative flex size-8 items-center justify-center rounded-md transition-all duration-150 shrink-0 outline-none",
+            "hover:bg-accent/80 hover:text-foreground hover:scale-105 active:scale-95",
+            "focus-visible:outline-none focus-visible:ring-1.5 focus-visible:ring-ring",
             active
-              ? "text-primary bg-primary/10 before:absolute before:left-0 before:top-1/2 before:h-5 before:-translate-y-1/2 before:w-0.5 before:rounded-r-full before:bg-primary"
-              : "text-muted-foreground",
+              ? "text-primary bg-primary/15 shadow-2xs ring-1 ring-primary/25 before:absolute before:-left-1 before:top-1/2 before:h-4 before:-translate-y-1/2 before:w-0.5 before:rounded-r-full before:bg-primary"
+              : "text-muted-foreground/80",
           )}
         >
-          <Icon className="size-4" />
+          <Icon className="size-4 transition-transform duration-150" />
         </button>
       </TooltipTrigger>
-      <TooltipContent side="right" className="text-xs">{label}</TooltipContent>
+      <TooltipContent side="right" className="text-xs font-medium">{label}</TooltipContent>
     </Tooltip>
   );
 }
@@ -101,7 +101,7 @@ export function IconNavRail() {
     <TooltipProvider>
       <nav
         aria-label="Left navigation rail"
-        className="np-scrollbar flex w-11 shrink-0 flex-col items-center gap-0.5 border-r bg-[var(--np-toolbar-bg)] py-2 overflow-y-auto overflow-x-hidden"
+        className="np-scrollbar flex w-10 shrink-0 flex-col items-center gap-1 border-r bg-[var(--np-toolbar-bg)]/80 py-2.5 overflow-y-auto overflow-x-hidden backdrop-blur-xs select-none"
         style={{ borderRightColor: "var(--np-tab-border)" }}
       >
         <NavRailIconButton
@@ -111,7 +111,7 @@ export function IconNavRail() {
           onClick={() => toggleSidebar()}
         />
 
-        <Separator className="my-1 w-5 opacity-40" />
+        <Separator className="my-1.5 w-4 opacity-30" />
 
         <NavRailIconButton
           icon={FilePlus}
@@ -209,21 +209,22 @@ export function IconNavRail() {
 function EmptyWorkspace() {
   const { createFileAndRename, createFolderAndRename } = useCreateAndRename();
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-4 px-5 text-center">
-      <div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/20">
+    <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center animate-in fade-in duration-200">
+      <div className="relative flex size-12 items-center justify-center rounded-2xl bg-primary/10 shadow-xs ring-1 ring-primary/20">
         <Layers className="size-5 text-primary" />
+        <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-emerald-500 ring-2 ring-background" />
       </div>
       <div>
-        <p className="text-xs font-semibold text-foreground">No files yet</p>
-        <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-          Create a collection or import an existing file to get started.
+        <p className="text-xs font-semibold tracking-tight text-foreground">No files in workspace</p>
+        <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground/80">
+          Create a collection folder or add a new file to get started.
         </p>
       </div>
-      <div className="flex flex-col gap-1.5 w-full">
+      <div className="flex flex-col gap-2 w-full max-w-[200px]">
         <button
           type="button"
           onClick={() => createFolderAndRename(null)}
-          className="flex items-center justify-center gap-2 rounded-md border bg-background/60 px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex items-center justify-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-medium text-foreground transition-all duration-150 hover:bg-primary/10 hover:border-primary/40 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <FolderPlus className="size-3.5 text-primary" />
           New Collection
@@ -231,9 +232,9 @@ function EmptyWorkspace() {
         <button
           type="button"
           onClick={() => createFileAndRename(null)}
-          className="flex items-center justify-center gap-2 rounded-md border bg-background/60 px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex items-center justify-center gap-2 rounded-lg border border-border/80 bg-background/60 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all duration-150 hover:bg-accent hover:text-foreground hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <FilePlus className="size-3.5 text-muted-foreground" />
+          <FilePlus className="size-3.5" />
           New File
         </button>
       </div>
@@ -272,7 +273,7 @@ export function CollectionsSidebar() {
     <div
       role="complementary"
       aria-label="File Explorer"
-      className="flex h-full flex-col bg-background"
+      className="flex h-full flex-col bg-sidebar/50 backdrop-blur-xs select-none"
       onDragOver={(e) => {
         if (e.dataTransfer.types.includes("Files")) e.preventDefault();
       }}
@@ -285,14 +286,14 @@ export function CollectionsSidebar() {
     >
       {/* ── Header: section title + action buttons ────────────────────── */}
       <div
-        className="flex h-9 shrink-0 items-center justify-between border-b px-2.5"
+        className="flex h-9 shrink-0 items-center justify-between border-b px-2.5 bg-muted/10"
         style={{ borderBottomColor: "var(--np-tab-border)" }}
       >
-        <span className="min-w-0 flex-1 truncate text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70 select-none">
+        <span className="min-w-0 flex-1 truncate text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 select-none">
           {showTrash ? "Recycle Bin" : "Files"}
         </span>
 
-        <div className="flex items-center gap-0">
+        <div className="flex items-center gap-0.5">
           {!showTrash && (
             <>
               <ToolbarButton
@@ -339,40 +340,42 @@ export function CollectionsSidebar() {
       {/* ── Search / filter ───────────────────────────────────────────── */}
       {!showTrash && (
         <div
-          className="relative flex h-8 shrink-0 items-center border-b px-2"
+          className="relative flex h-8 shrink-0 items-center border-b px-2 py-1"
           style={{ borderBottomColor: "var(--np-tab-border)" }}
         >
-          <Search className="pointer-events-none absolute left-4 size-3 text-muted-foreground/40" />
-          <Input
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setFilterQuery(e.target.value);
-            }}
-            placeholder="Filter files…"
-            className="h-6 pl-6 text-[11px] bg-transparent border-none shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/40"
-            aria-label="Search collections"
-          />
-          {filterQuery && (
-            <button
-              type="button"
-              aria-label="Clear search"
-              className="absolute right-3 text-muted-foreground hover:text-foreground transition-colors"
-              onClick={() => {
-                setSearch("");
-                setFilterQuery("");
+          <div className="relative flex w-full items-center rounded-md border border-border/50 bg-background/50 px-2 transition-all focus-within:border-primary/40 focus-within:bg-background focus-within:ring-1 focus-within:ring-primary/20">
+            <Search className="pointer-events-none size-3 text-muted-foreground/50 shrink-0" />
+            <Input
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setFilterQuery(e.target.value);
               }}
-            >
-              <X className="size-3" />
-            </button>
-          )}
+              placeholder="Filter files…"
+              className="h-6 flex-1 pl-1.5 pr-4 text-[11px] bg-transparent border-none shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/40"
+              aria-label="Search collections"
+            />
+            {filterQuery && (
+              <button
+                type="button"
+                aria-label="Clear search"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => {
+                  setSearch("");
+                  setFilterQuery("");
+                }}
+              >
+                <X className="size-3" />
+              </button>
+            )}
+          </div>
         </div>
       )}
 
       {/* ── Section label ─────────────────────────────────────────────── */}
       {!showTrash && (
         <div className="flex shrink-0 items-center justify-between px-2.5 pt-2 pb-0.5">
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 select-none">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 select-none">
             Collections
           </span>
         </div>

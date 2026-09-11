@@ -56,7 +56,7 @@ export function AccountMenu() {
       <Button
         size="sm"
         variant="outline"
-        className="h-6 gap-1.5 px-2 text-xs"
+        className="h-7 gap-1.5 rounded-md border border-primary/25 bg-primary/10 px-2.5 text-xs font-medium text-primary shadow-xs transition-all duration-150 hover:bg-primary hover:text-primary-foreground"
         onClick={() => {
           // A real full-page navigation is required here — this hits an API route that 302s
           // to Google's consent screen, not an internal Next.js page.
@@ -73,12 +73,12 @@ export function AccountMenu() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="flex shrink-0 items-center gap-1.5 rounded-sm px-1 py-0.5 text-xs outline-none transition-colors hover:bg-[var(--np-menu-hover)]">
+      <DropdownMenuTrigger className="flex shrink-0 items-center gap-2 rounded-md px-1.5 py-1 text-xs font-medium outline-none transition-colors hover:bg-accent focus-visible:ring-1 focus-visible:ring-ring">
         {user.avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={user.avatarUrl} alt="" className="size-5 shrink-0 rounded-full" referrerPolicy="no-referrer" />
+          <img src={user.avatarUrl} alt="" className="size-5 shrink-0 rounded-full ring-1 ring-primary/20" referrerPolicy="no-referrer" />
         ) : (
-          <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+          <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground shadow-xs">
             {initialsFor(user.name, user.email)}
           </span>
         )}
