@@ -1,10 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { RotateCcw, Plus } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import { TabItem } from "./TabItem";
 import { ToolbarButton } from "@/components/layout/ToolbarButton";
-import { runAction } from "@/services/shortcuts/actionRegistry";
 import { useTabsStore } from "@/store/tabsStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useRecentFilesStore } from "@/store/recentFilesStore";
@@ -60,16 +59,6 @@ export function EditorTabs() {
           }}
         />
       ))}
-      <div className="flex shrink-0 items-center px-1.5">
-        <button
-          type="button"
-          onClick={() => runAction("file.new")}
-          title="New File (Ctrl+N)"
-          className="text-muted-foreground/60 hover:bg-accent hover:text-foreground flex size-7 items-center justify-center rounded-lg transition-[color,background-color,transform] duration-150 active:scale-[0.94]"
-        >
-          <Plus className="size-3.5" />
-        </button>
-      </div>
       {closedStackLength > 0 && (
         <div className="flex shrink-0 items-center border-l px-1">
           <ToolbarButton

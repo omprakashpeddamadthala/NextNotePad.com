@@ -17,8 +17,6 @@ import {
   FolderPlus,
   ChevronsDownUp,
   Trash2,
-  EyeOff,
-  Eye,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -261,10 +259,7 @@ export function CollectionsSidebar() {
   const setFilterQuery = useWorkspaceStore((s) => s.setFilterQuery);
   const nodes = useWorkspaceStore((s) => s.nodes);
 
-  const showHiddenFiles = useUIStore((s) => s.showHiddenFiles);
-  const toggleShowHiddenFiles = useUIStore((s) => s.toggleShowHiddenFiles);
   const trashCount = useTrashStore((s) => s.entries.length);
-  const { createFileAndRename, createFolderAndRename } = useCreateAndRename();
 
   const authStatus = useAuthStore((s) => s.status);
   const activeWorkspace = useMultiWorkspaceStore((s) =>
@@ -313,18 +308,6 @@ export function CollectionsSidebar() {
           {!showTrash && (
             <>
               <ToolbarButton
-                icon={FilePlus}
-                label="New File"
-                onClick={() => createFileAndRename(null)}
-                size="compact"
-              />
-              <ToolbarButton
-                icon={FolderPlus}
-                label="New Folder"
-                onClick={() => createFolderAndRename(null)}
-                size="compact"
-              />
-              <ToolbarButton
                 icon={ChevronsDownUp}
                 label="Collapse All"
                 size="compact"
@@ -334,15 +317,6 @@ export function CollectionsSidebar() {
                       setFolderCollapsed(node.id, true);
                   }
                 }}
-              />
-              <ToolbarButton
-                icon={showHiddenFiles ? EyeOff : Eye}
-                label={
-                  showHiddenFiles ? "Hide Hidden Items" : "Show Hidden Items"
-                }
-                active={showHiddenFiles}
-                size="compact"
-                onClick={toggleShowHiddenFiles}
               />
             </>
           )}

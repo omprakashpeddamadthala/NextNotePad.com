@@ -37,6 +37,7 @@ import {
   HASH_ALGORITHMS,
   type CaseConverterId,
 } from "@/services/textTools/textTools";
+import { VoiceDictationButton } from "@/components/editor/VoiceDictationButton";
 
 const CASE_OPTIONS: { id: CaseConverterId; label: string }[] = [
   { id: "upper", label: "UPPERCASE" },
@@ -110,6 +111,7 @@ export function ToolsMenu() {
           </DropdownMenuItem>
         </DropdownMenuSubContent>
       </DropdownMenuSub>
+      <VoiceDictationButton variant="menu" />
       <DropdownMenuSeparator />
       <DropdownMenuItem onSelect={() => runAction("tools.base64Encode")}>
         <Binary /> Base64 Encode

@@ -20,11 +20,7 @@ import {
 import { useUIStore } from "@/store/uiStore";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useIsMobile } from "@/hooks/useMediaQuery";
-import {
-  IconNavRail,
-  CollectionsSidebar,
-} from "@/components/layout/PostmanSidebar";
-import { ToolsNavRail } from "@/components/layout/ToolsNavRail";
+import { CollectionsSidebar } from "@/components/layout/PostmanSidebar";
 import { FileExplorer } from "@/components/explorer/FileExplorer";
 import { EditorArea } from "@/components/editor/EditorArea";
 import { BottomPanel } from "@/components/panels/BottomPanel";
@@ -175,11 +171,8 @@ export function AppShell() {
           </Sheet>
         </div>
       ) : (
-        /* ── Desktop: icon rail (fixed 40px) + resizable panels ───────────── */
+        /* ── Desktop: file panel + editor. Commands live in the top menus. ─ */
         <div className="bg-background flex min-h-0 flex-1 overflow-hidden">
-          {/* Narrow icon nav rail — containing the main Collections icon */}
-          <IconNavRail />
-
           {/* min-h-0 flex-1 gives react-resizable-panels a properly-sized parent */}
           <div className="bg-background min-h-0 flex-1 overflow-hidden">
             <ResizablePanelGroup orientation="horizontal">
@@ -220,9 +213,6 @@ export function AppShell() {
               </ResizablePanel>
             </ResizablePanelGroup>
           </div>
-
-          {/* Narrow right icon nav rail — Tools Menu Icons */}
-          <ToolsNavRail />
         </div>
       )}
 
