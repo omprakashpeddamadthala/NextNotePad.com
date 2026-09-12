@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import * as ResizablePrimitive from "react-resizable-panels"
+import * as ResizablePrimitive from "react-resizable-panels";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 function ResizablePanelGroup({
   className,
@@ -13,15 +13,15 @@ function ResizablePanelGroup({
       data-slot="resizable-panel-group"
       className={cn(
         "flex h-full w-full aria-[orientation=vertical]:flex-col",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 function ResizablePanel({ ...props }: ResizablePrimitive.PanelProps) {
-  return <ResizablePrimitive.Panel data-slot="resizable-panel" {...props} />
+  return <ResizablePrimitive.Panel data-slot="resizable-panel" {...props} />;
 }
 
 function ResizableHandle({
@@ -29,26 +29,26 @@ function ResizableHandle({
   className,
   ...props
 }: ResizablePrimitive.SeparatorProps & {
-  withHandle?: boolean
+  withHandle?: boolean;
 }) {
   return (
     <ResizablePrimitive.Separator
       data-slot="resizable-handle"
       className={cn(
-        "relative flex items-center justify-center bg-border/60 transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+        "bg-border/60 focus-visible:ring-ring/30 group relative z-10 flex items-center justify-center transition-colors focus-visible:ring-2 focus-visible:outline-none",
         // Vertical handle (horizontal layout)
-        "aria-[orientation=vertical]:w-1 aria-[orientation=vertical]:h-full aria-[orientation=vertical]:cursor-col-resize aria-[orientation=vertical]:hover:bg-primary/40 aria-[orientation=vertical]:active:bg-primary",
+        "aria-[orientation=vertical]:hover:bg-primary/50 aria-[orientation=vertical]:active:bg-primary aria-[orientation=vertical]:h-full aria-[orientation=vertical]:w-px aria-[orientation=vertical]:cursor-col-resize",
         // Horizontal handle (vertical layout)
-        "aria-[orientation=horizontal]:h-1 aria-[orientation=horizontal]:w-full aria-[orientation=horizontal]:cursor-row-resize aria-[orientation=horizontal]:hover:bg-primary/40 aria-[orientation=horizontal]:active:bg-primary",
-        className
+        "aria-[orientation=horizontal]:hover:bg-primary/50 aria-[orientation=horizontal]:active:bg-primary aria-[orientation=horizontal]:h-px aria-[orientation=horizontal]:w-full aria-[orientation=horizontal]:cursor-row-resize",
+        className,
       )}
       {...props}
     >
       {withHandle && (
-        <div className="z-10 flex h-5 w-1 shrink-0 rounded-full bg-muted-foreground/40 transition-colors hover:bg-primary aria-[orientation=horizontal]:h-1 aria-[orientation=horizontal]:w-5" />
+        <div className="bg-muted-foreground/30 hover:bg-primary z-10 flex h-6 w-1 shrink-0 rounded-full opacity-0 shadow-sm transition-[color,opacity] group-hover:opacity-100 aria-[orientation=horizontal]:h-1 aria-[orientation=horizontal]:w-6" />
       )}
     </ResizablePrimitive.Separator>
-  )
+  );
 }
 
-export { ResizableHandle, ResizablePanel, ResizablePanelGroup }
+export { ResizableHandle, ResizablePanel, ResizablePanelGroup };

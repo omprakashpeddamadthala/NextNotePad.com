@@ -67,6 +67,7 @@ import { useMonacoGlobalActions } from "@/hooks/useMonacoGlobalActions";
 import { useMonacoTextToolActions } from "@/hooks/useMonacoTextToolActions";
 import { useMonacoAiActions } from "@/hooks/useMonacoAiActions";
 import { useVoiceDictationTarget } from "@/hooks/useVoiceDictationTarget";
+import { useIsMobile } from "@/hooks/useMediaQuery";
 
 const Editor = dynamic(
   () => import("@monaco-editor/react").then((m) => m.default),
@@ -99,6 +100,7 @@ export function MonacoEditorWrapper({
   const [loadError, setLoadError] = useState<unknown>(null);
   /** Bumped by the retry button to re-run the load effect after a failure. */
   const [reloadNonce, setReloadNonce] = useState(0);
+  const isMobile = useIsMobile();
 
   const theme = useSettingsStore((s) => s.theme);
   const settings = useSettingsStore((s) => s.settings);
@@ -509,7 +511,8 @@ export function MonacoEditorWrapper({
       if (!editorRef.current?.hasTextFocus()) return;
 
       // Only handle markdown files.
-      const node = useWorkspaceStore.getState().nodes[currentFileIdRef.current ?? ""];
+      const node =
+        useWorkspaceStore.getState().nodes[currentFileIdRef.current ?? ""];
       if (node?.type !== "file" || node.language !== "markdown") return;
 
       // Only handle clipboard items that contain an image file.
@@ -600,10 +603,14 @@ export function MonacoEditorWrapper({
         options={{
           fontFamily: settings.fontFamily,
           fontSize: settings.fontSize + settings.zoomLevel,
+          lineHeight: Math.max(21, settings.fontSize + settings.zoomLevel + 7),
+          letterSpacing: 0.1,
+          fontLigatures: true,
           tabSize: settings.tabWidth,
           insertSpaces: settings.insertSpaces,
-          wordWrap: settings.wordWrap ? "on" : "off",
-          minimap: { enabled: settings.showMinimap },
+          wordWrap: settings.wordWrap || isMobile ? "on" : "off",
+          wrappingIndent: "same",
+          minimap: { enabled: settings.showMinimap && !isMobile },
           lineNumbers: settings.showLineNumbers ? "on" : "off",
           renderWhitespace: settings.renderWhitespace ? "all" : "none",
           cursorStyle: settings.cursorStyle,
@@ -611,7 +618,7 @@ export function MonacoEditorWrapper({
           cursorSmoothCaretAnimation: "on",
           roundedSelection: true,
           renderLineHighlight: "all",
-          padding: { top: 10, bottom: 12 },
+          padding: { top: 14, bottom: 18 },
           bracketPairColorization: { enabled: true },
           guides: { indentation: true, bracketPairs: true },
           autoClosingBrackets: settings.autoClosingBrackets
@@ -621,9 +628,9 @@ export function MonacoEditorWrapper({
           automaticLayout: true,
           scrollBeyondLastLine: false,
           smoothScrolling: true,
-          glyphMargin: true,
+          glyphMargin: !isMobile,
           lineNumbersMinChars: 3,
-          lineDecorationsWidth: 6,
+          lineDecorationsWidth: 8,
         }}
       />
     </div>
