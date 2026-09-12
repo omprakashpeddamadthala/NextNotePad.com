@@ -13,10 +13,10 @@ import { useAuthStore } from "@/store/authStore";
 import { useIsMobile } from "@/hooks/useMediaQuery";
 import { moveNode, setFolderCollapsed } from "@/services/fileOperations";
 
-/** Must stay in sync with TreeNode's row height (h-6 / sm:h-7) — the virtualizer positions rows
+/** Must stay in sync with TreeNode's row height — the virtualizer positions rows
  *  absolutely at this pitch, so a mismatch clips or overlaps them. */
-const ROW_HEIGHT_DESKTOP = 24;
-const ROW_HEIGHT_TOUCH = 28;
+const ROW_HEIGHT_DESKTOP = 30;
+const ROW_HEIGHT_TOUCH = 36;
 
 /** Placeholder rows shown while the cloud workspace tree is still being fetched — without this
  *  the explorer renders as an empty tree ("No files yet"), which reads as "your files are gone"
@@ -24,11 +24,22 @@ const ROW_HEIGHT_TOUCH = 28;
 function TreeSkeleton() {
   const indents = [0, 0, 14, 14, 28, 0, 14, 0];
   return (
-    <div className="animate-in fade-in space-y-1.5 p-2 duration-150" aria-label="Loading files" role="status">
+    <div
+      className="animate-in fade-in space-y-1.5 p-2 duration-150"
+      aria-label="Loading files"
+      role="status"
+    >
       {indents.map((indent, i) => (
-        <div key={i} className="flex items-center gap-1.5" style={{ paddingLeft: indent }}>
+        <div
+          key={i}
+          className="flex items-center gap-1.5"
+          style={{ paddingLeft: indent }}
+        >
           <Skeleton className="size-3.5 shrink-0" />
-          <Skeleton className="h-3" style={{ width: `${45 + ((i * 17) % 40)}%` }} />
+          <Skeleton
+            className="h-3"
+            style={{ width: `${45 + ((i * 17) % 40)}%` }}
+          />
         </div>
       ))}
     </div>
@@ -40,7 +51,9 @@ export function FileTree() {
   const filterQuery = useWorkspaceStore((s) => s.filterQuery);
   const showHiddenFiles = useUIStore((s) => s.showHiddenFiles);
   const selectedNodeId = useExplorerSelectionStore((s) => s.selectedNodeId);
-  const setSelectedNodeId = useExplorerSelectionStore((s) => s.setSelectedNodeId);
+  const setSelectedNodeId = useExplorerSelectionStore(
+    (s) => s.setSelectedNodeId,
+  );
   const draggedNodeId = useExplorerSelectionStore((s) => s.draggedNodeId);
   const setDraggedNodeId = useExplorerSelectionStore((s) => s.setDraggedNodeId);
   const dropTargetId = useExplorerSelectionStore((s) => s.dropTargetId);
@@ -49,7 +62,9 @@ export function FileTree() {
   const isMobile = useIsMobile();
   const authStatus = useAuthStore((s) => s.status);
   const workspaceReady = useAuthStore((s) => s.workspaceReady);
-  const workspaceLoading = authStatus === "loading" || (authStatus === "authenticated" && !workspaceReady);
+  const workspaceLoading =
+    authStatus === "loading" ||
+    (authStatus === "authenticated" && !workspaceReady);
 
   const rows = flattenVisibleTree(nodes, filterQuery, showHiddenFiles);
 
@@ -78,7 +93,8 @@ export function FileTree() {
       if (prev) setSelectedNodeId(prev.node.id);
     } else if (e.key === "ArrowRight") {
       e.preventDefault();
-      if (row.node.type === "folder" && row.node.collapsed) setFolderCollapsed(row.node.id, false);
+      if (row.node.type === "folder" && row.node.collapsed)
+        setFolderCollapsed(row.node.id, false);
     } else if (e.key === "ArrowLeft") {
       e.preventDefault();
       if (row.node.type === "folder" && !row.node.collapsed) {
@@ -88,7 +104,8 @@ export function FileTree() {
       }
     } else if (e.key === "Enter") {
       e.preventDefault();
-      if (row.node.type === "folder") setFolderCollapsed(row.node.id, !row.node.collapsed);
+      if (row.node.type === "folder")
+        setFolderCollapsed(row.node.id, !row.node.collapsed);
       else openTab(row.node.id);
     }
   }
@@ -100,7 +117,7 @@ export function FileTree() {
       aria-label="File explorer"
       tabIndex={0}
       onKeyDown={handleKeyDown}
-      className="np-scrollbar h-full flex-1 overflow-y-auto outline-none"
+      className="np-scrollbar focus-visible:ring-ring/20 h-full flex-1 overflow-y-auto px-1 pb-2 outline-none focus-visible:ring-2 focus-visible:ring-inset"
       onDragOver={(e) => {
         if (rows.length === 0) {
           e.preventDefault();
@@ -140,11 +157,13 @@ export function FileTree() {
           <TreeSkeleton />
         ) : (
           <div
-            className={`flex h-24 items-center justify-center rounded-sm border-2 border-dashed text-xs text-muted-foreground ${
+            className={`text-muted-foreground flex h-24 items-center justify-center rounded-sm border-2 border-dashed text-xs ${
               dropTargetId === "root" ? "border-primary" : "border-transparent"
             }`}
           >
-            {filterQuery ? "No files match this filter." : "No files yet — right-click to create one."}
+            {filterQuery
+              ? "No files match this filter."
+              : "No files yet — right-click to create one."}
           </div>
         ))}
     </div>

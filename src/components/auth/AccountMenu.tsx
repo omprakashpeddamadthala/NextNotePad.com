@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { LogIn, LogOut, User as UserIcon, CloudDownload, Loader2, ShieldCheck } from "lucide-react";
+import {
+  LogIn,
+  LogOut,
+  User as UserIcon,
+  CloudDownload,
+  Loader2,
+  ShieldCheck,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -48,7 +55,9 @@ export function AccountMenu() {
   }
 
   if (status === "loading") {
-    return <div className="size-6 shrink-0 rounded-full bg-muted" aria-hidden />;
+    return (
+      <div className="bg-muted size-6 shrink-0 rounded-full" aria-hidden />
+    );
   }
 
   if (status === "guest") {
@@ -56,7 +65,7 @@ export function AccountMenu() {
       <Button
         size="sm"
         variant="outline"
-        className="h-7 gap-1.5 rounded-md border border-primary/25 bg-primary/10 px-2.5 text-xs font-medium text-primary shadow-xs transition-all duration-150 hover:bg-primary hover:text-primary-foreground"
+        className="border-primary/25 bg-primary/10 text-primary hover:border-primary hover:bg-primary hover:text-primary-foreground h-8 gap-1.5 rounded-lg px-3 text-xs font-semibold shadow-xs"
         onClick={() => {
           // A real full-page navigation is required here — this hits an API route that 302s
           // to Google's consent screen, not an internal Next.js page.
@@ -73,12 +82,17 @@ export function AccountMenu() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="flex shrink-0 items-center gap-2 rounded-md px-1.5 py-1 text-xs font-medium outline-none transition-colors hover:bg-accent focus-visible:ring-1 focus-visible:ring-ring">
+      <DropdownMenuTrigger className="hover:border-border/70 hover:bg-accent focus-visible:ring-ring/30 flex h-8 shrink-0 items-center gap-2 rounded-lg border border-transparent px-2 text-xs font-semibold transition-[color,background-color,border-color] outline-none focus-visible:ring-2">
         {user.avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={user.avatarUrl} alt="" className="size-5 shrink-0 rounded-full ring-1 ring-primary/20" referrerPolicy="no-referrer" />
+          <img
+            src={user.avatarUrl}
+            alt=""
+            className="ring-primary/20 size-5 shrink-0 rounded-full ring-1"
+            referrerPolicy="no-referrer"
+          />
         ) : (
-          <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground shadow-xs">
+          <span className="bg-primary text-primary-foreground flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold shadow-xs">
             {initialsFor(user.name, user.email)}
           </span>
         )}
@@ -89,8 +103,12 @@ export function AccountMenu() {
           <div className="flex items-center gap-2">
             <UserIcon className="size-3.5" />
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium">{user.name ?? "Signed in"}</p>
-              <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+              <p className="truncate text-sm font-medium">
+                {user.name ?? "Signed in"}
+              </p>
+              <p className="text-muted-foreground truncate text-xs">
+                {user.email}
+              </p>
             </div>
           </div>
         </DropdownMenuLabel>
@@ -106,7 +124,9 @@ export function AccountMenu() {
           {syncing ? "Syncing…" : "Sync from Drive"}
         </DropdownMenuItem>
         {user.isAdmin && (
-          <DropdownMenuItem onSelect={() => useAdminViewStore.getState().open()}>
+          <DropdownMenuItem
+            onSelect={() => useAdminViewStore.getState().open()}
+          >
             <ShieldCheck /> Admin Panel
           </DropdownMenuItem>
         )}

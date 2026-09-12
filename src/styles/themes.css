@@ -4,14 +4,14 @@
  * Light-mode defaults aligned to the new slate-indigo professional palette.
  */
 :root {
-  --np-toolbar-bg: #f8f8fa;
-  --np-statusbar-bg: #1e1e24;
-  --np-statusbar-fg: #f4f4f5;
+  --np-toolbar-bg: #f7f7fb;
+  --np-statusbar-bg: #29265f;
+  --np-statusbar-fg: #f8f7ff;
   --np-tab-active-bg: #ffffff;
-  --np-tab-inactive-bg: #f0f0f3;
-  --np-tab-border: #e4e4e9;
-  --np-scrollbar: #cbd5e1;
-  --np-menu-hover: #eef0f5;
+  --np-tab-inactive-bg: #f3f3f8;
+  --np-tab-border: #e3e3eb;
+  --np-scrollbar: #c5c7d2;
+  --np-menu-hover: #ececf7;
 }
 
 .dark {
@@ -31,8 +31,8 @@
 }
 
 .np-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
 }
 
 .np-scrollbar::-webkit-scrollbar-track {
@@ -42,6 +42,8 @@
 .np-scrollbar::-webkit-scrollbar-thumb {
   background-color: var(--np-scrollbar);
   border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 
 .np-scrollbar::-webkit-scrollbar-thumb:hover {

@@ -11,11 +11,19 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from "@/components/ui/resizable";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { useUIStore } from "@/store/uiStore";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useIsMobile } from "@/hooks/useMediaQuery";
-import { IconNavRail, CollectionsSidebar } from "@/components/layout/PostmanSidebar";
+import {
+  IconNavRail,
+  CollectionsSidebar,
+} from "@/components/layout/PostmanSidebar";
 import { ToolsNavRail } from "@/components/layout/ToolsNavRail";
 import { FileExplorer } from "@/components/explorer/FileExplorer";
 import { EditorArea } from "@/components/editor/EditorArea";
@@ -27,44 +35,84 @@ import { ApiLoadingBar } from "./ApiLoadingBar";
 import { CenterApiLoader } from "./CenterApiLoader";
 
 // Lazy-loaded dialogs — none of these render anything visible until opened
-const SettingsDialog = dynamic(() => import("@/components/settings/SettingsDialog").then((m) => m.SettingsDialog), {
-  ssr: false,
-});
-const QuickOpenDialog = dynamic(() => import("@/components/search/QuickOpenDialog").then((m) => m.QuickOpenDialog), {
-  ssr: false,
-});
-const CommandPalette = dynamic(() => import("@/components/search/CommandPalette").then((m) => m.CommandPalette), {
-  ssr: false,
-});
-const AboutDialog = dynamic(() => import("@/components/dialogs/AboutDialog").then((m) => m.AboutDialog), {
-  ssr: false,
-});
+const SettingsDialog = dynamic(
+  () =>
+    import("@/components/settings/SettingsDialog").then(
+      (m) => m.SettingsDialog,
+    ),
+  {
+    ssr: false,
+  },
+);
+const QuickOpenDialog = dynamic(
+  () =>
+    import("@/components/search/QuickOpenDialog").then(
+      (m) => m.QuickOpenDialog,
+    ),
+  {
+    ssr: false,
+  },
+);
+const CommandPalette = dynamic(
+  () =>
+    import("@/components/search/CommandPalette").then((m) => m.CommandPalette),
+  {
+    ssr: false,
+  },
+);
+const AboutDialog = dynamic(
+  () => import("@/components/dialogs/AboutDialog").then((m) => m.AboutDialog),
+  {
+    ssr: false,
+  },
+);
 const ExportImportDialog = dynamic(
-  () => import("@/components/dialogs/ExportImportDialog").then((m) => m.ExportImportDialog),
+  () =>
+    import("@/components/dialogs/ExportImportDialog").then(
+      (m) => m.ExportImportDialog,
+    ),
   { ssr: false },
 );
 const WorkspaceStatsDialog = dynamic(
-  () => import("@/components/dialogs/WorkspaceStatsDialog").then((m) => m.WorkspaceStatsDialog),
+  () =>
+    import("@/components/dialogs/WorkspaceStatsDialog").then(
+      (m) => m.WorkspaceStatsDialog,
+    ),
   { ssr: false },
 );
 const LockUnlockDialog = dynamic(
-  () => import("@/components/dialogs/LockUnlockDialog").then((m) => m.LockUnlockDialog),
+  () =>
+    import("@/components/dialogs/LockUnlockDialog").then(
+      (m) => m.LockUnlockDialog,
+    ),
   { ssr: false },
 );
 const SyncOfflineFilesDialog = dynamic(
-  () => import("@/components/auth/SyncOfflineFilesDialog").then((m) => m.SyncOfflineFilesDialog),
+  () =>
+    import("@/components/auth/SyncOfflineFilesDialog").then(
+      (m) => m.SyncOfflineFilesDialog,
+    ),
   { ssr: false },
 );
 const CreateWorkspaceModal = dynamic(
-  () => import("@/components/workspace/CreateWorkspaceModal").then((m) => m.CreateWorkspaceModal),
+  () =>
+    import("@/components/workspace/CreateWorkspaceModal").then(
+      (m) => m.CreateWorkspaceModal,
+    ),
   { ssr: false },
 );
 const RenameWorkspaceModal = dynamic(
-  () => import("@/components/workspace/RenameWorkspaceModal").then((m) => m.RenameWorkspaceModal),
+  () =>
+    import("@/components/workspace/RenameWorkspaceModal").then(
+      (m) => m.RenameWorkspaceModal,
+    ),
   { ssr: false },
 );
 const DeleteWorkspaceModal = dynamic(
-  () => import("@/components/workspace/DeleteWorkspaceModal").then((m) => m.DeleteWorkspaceModal),
+  () =>
+    import("@/components/workspace/DeleteWorkspaceModal").then(
+      (m) => m.DeleteWorkspaceModal,
+    ),
   { ssr: false },
 );
 
@@ -73,7 +121,6 @@ export function AppShell() {
   useAuthBootstrap();
   useAppBootstrap();
 
-
   const sidebarVisible = useUIStore((s) => s.sidebarVisible);
   const bottomPanelVisible = useUIStore((s) => s.bottomPanelVisible);
   const mobileSidebarOpen = useUIStore((s) => s.mobileSidebarOpen);
@@ -81,11 +128,11 @@ export function AppShell() {
   const isMobile = useIsMobile();
 
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col bg-background text-foreground">
+    <div className="np-app-shell bg-background text-foreground flex h-full min-h-0 flex-1 flex-col">
       {/* Skip-to-editor link for keyboard users */}
       <a
         href="#editor-main"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-sm focus:bg-background focus:px-3 focus:py-1.5 focus:text-sm focus:font-medium focus:text-foreground focus:ring-2 focus:ring-ring"
+        className="focus:bg-background focus:text-foreground focus:ring-ring sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-sm focus:px-3 focus:py-1.5 focus:text-sm focus:font-medium focus:ring-2"
       >
         Skip to editor
       </a>
@@ -116,7 +163,10 @@ export function AppShell() {
             )}
           </div>
           <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
-            <SheetContent side="left" className="w-4/5 p-0 sm:max-w-xs">
+            <SheetContent
+              side="left"
+              className="w-[min(88vw,22rem)] gap-0 p-0 sm:max-w-sm"
+            >
               <SheetHeader className="sr-only">
                 <SheetTitle>File Explorer</SheetTitle>
               </SheetHeader>
@@ -126,12 +176,12 @@ export function AppShell() {
         </div>
       ) : (
         /* ── Desktop: icon rail (fixed 40px) + resizable panels ───────────── */
-        <div className="flex min-h-0 flex-1">
+        <div className="bg-background flex min-h-0 flex-1 overflow-hidden">
           {/* Narrow icon nav rail — containing the main Collections icon */}
           <IconNavRail />
 
           {/* min-h-0 flex-1 gives react-resizable-panels a properly-sized parent */}
-          <div className="min-h-0 flex-1 overflow-hidden">
+          <div className="bg-background min-h-0 flex-1 overflow-hidden">
             <ResizablePanelGroup orientation="horizontal">
               {sidebarVisible && (
                 <>
@@ -148,13 +198,20 @@ export function AppShell() {
               )}
               <ResizablePanel>
                 <ResizablePanelGroup orientation="vertical">
-                  <ResizablePanel defaultSize={bottomPanelVisible ? "70%" : "100%"} minSize="30%">
+                  <ResizablePanel
+                    defaultSize={bottomPanelVisible ? "70%" : "100%"}
+                    minSize="30%"
+                  >
                     <EditorArea />
                   </ResizablePanel>
                   {bottomPanelVisible && (
                     <>
                       <ResizableHandle withHandle />
-                      <ResizablePanel defaultSize="30%" minSize="10%" maxSize="70%">
+                      <ResizablePanel
+                        defaultSize="30%"
+                        minSize="10%"
+                        maxSize="70%"
+                      >
                         <BottomPanel />
                       </ResizablePanel>
                     </>

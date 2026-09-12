@@ -58,13 +58,14 @@ import { useAuthStore } from "@/store/authStore";
 import { useTabsStore } from "@/store/tabsStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { cn } from "@/lib/utils";
+import { AppLogo } from "@/components/ui/AppLogo";
 
 /** Menu triggers (FileMenu, EditMenu, ...) render their own compact desktop-style button —
  *  wrapping each in a bordered cell gives them a mobile-appropriate touch target without
  *  touching the shared component that the desktop menu bar also renders. */
 function MenuGridCell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-muted/40 active:bg-accent rounded-md border text-center transition-colors [&>button]:flex [&>button]:h-full [&>button]:w-full [&>button]:items-center [&>button]:justify-center [&>button]:py-2.5">
+    <div className="border-border/70 bg-background/70 active:bg-accent rounded-xl border text-center shadow-xs transition-colors [&>button]:flex [&>button]:h-11 [&>button]:w-full [&>button]:items-center [&>button]:justify-center [&>button]:px-2 [&>button]:py-2.5">
       {children}
     </div>
   );
@@ -87,10 +88,10 @@ function ActionGridButton({
         type="button"
         onClick={onClick}
         className={cn(
-          "flex flex-col items-center gap-1 rounded-md border p-2.5 text-center text-xs leading-tight transition-colors",
+          "flex min-h-20 flex-col items-center justify-center gap-2 rounded-xl border p-3 text-center text-xs leading-tight font-medium shadow-xs transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97]",
           active
-            ? "border-primary bg-accent text-accent-foreground"
-            : "bg-muted/40 active:bg-accent active:text-accent-foreground",
+            ? "border-primary/35 bg-primary/10 text-primary"
+            : "border-border/70 bg-background/70 active:bg-accent active:text-accent-foreground",
         )}
       >
         <Icon className="size-5" />
@@ -120,7 +121,7 @@ function ActionGridMenuButton({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="bg-muted/40 active:bg-accent active:text-accent-foreground flex flex-col items-center gap-1 rounded-md border p-2.5 text-center text-xs leading-tight transition-colors"
+          className="border-border/70 bg-background/70 active:bg-accent active:text-accent-foreground flex min-h-20 flex-col items-center justify-center gap-2 rounded-xl border p-3 text-center text-xs leading-tight font-medium shadow-xs transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97]"
         >
           <Icon className="size-5" />
           <span>{label}</span>
@@ -170,13 +171,19 @@ export function MobileMenuSheet() {
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent
         side="bottom"
-        className="max-h-[85vh] overflow-y-auto rounded-t-lg"
+        className="np-scrollbar bg-popover/98 max-h-[92dvh] gap-0 overflow-y-auto rounded-t-3xl border-x p-0"
       >
-        <SheetHeader>
-          <SheetTitle>Menu</SheetTitle>
+        <SheetHeader className="bg-popover/95 sticky top-0 z-10 flex-row items-center gap-3 border-b p-4 backdrop-blur-xl">
+          <AppLogo size="md" />
+          <div>
+            <SheetTitle>NextNotePad</SheetTitle>
+            <p className="text-muted-foreground text-xs">
+              Workspace menu and editor tools
+            </p>
+          </div>
         </SheetHeader>
 
-        <div className="flex items-center justify-between gap-2 border-b px-4 pb-4">
+        <div className="bg-muted/20 flex items-center justify-between gap-2 border-b p-4">
           <AccountMenu />
           <div className="flex shrink-0 items-center gap-2">
             <SyncStatusBadge />
@@ -184,14 +191,14 @@ export function MobileMenuSheet() {
           </div>
         </div>
         {authStatus === "guest" && (
-          <p className="text-muted-foreground -mt-2 flex items-center gap-1.5 px-4 pb-2 text-xs">
+          <p className="bg-muted/20 text-muted-foreground flex items-center gap-1.5 border-b px-4 pb-3 text-xs">
             <HardDriveDownload className="size-3.5" />
             Guest Mode — stored locally
           </p>
         )}
 
-        <div className="px-4">
-          <p className="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase">
+        <div className="p-4">
+          <p className="text-muted-foreground mb-2.5 text-[11px] font-semibold tracking-[0.1em] uppercase">
             Menus
           </p>
           <div className="grid grid-cols-3 gap-2">
@@ -228,11 +235,11 @@ export function MobileMenuSheet() {
           </div>
         </div>
 
-        <div className="px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-          <p className="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase">
+        <div className="border-t p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+          <p className="text-muted-foreground mb-2.5 text-[11px] font-semibold tracking-[0.1em] uppercase">
             Actions
           </p>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2.5">
             <ActionGridButton
               icon={FilePlus}
               label="New File"
@@ -368,7 +375,7 @@ export function MobileMenuSheet() {
               active={bottomPanelVisible}
               onClick={() => setBottomPanelVisible(!bottomPanelVisible)}
             />
-            <div className="bg-muted/40 flex flex-col items-center gap-1 rounded-md border p-2.5 text-center text-xs leading-tight">
+            <div className="border-border/70 bg-background/70 flex min-h-20 flex-col items-center justify-center gap-2 rounded-xl border p-3 text-center text-xs leading-tight font-medium shadow-xs">
               <VoiceDictationButton />
               <span>Voice Typing</span>
             </div>

@@ -3,7 +3,13 @@
 import { X, Pin, FileDiff } from "lucide-react";
 import { getFileIcon } from "@/lib/fileIcons";
 import { cn } from "@/lib/utils";
-import { ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem, ContextMenuSeparator } from "@/components/ui/context-menu";
+import {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+} from "@/components/ui/context-menu";
 import type { Tab, WorkspaceNode } from "@/types/file";
 import { useTabsStore } from "@/store/tabsStore";
 import { useDiffViewStore } from "@/store/diffViewStore";
@@ -20,7 +26,17 @@ interface TabItemProps {
   onDrop: () => void;
 }
 
-export function TabItem({ tab, node, isActive, isDirty, index, onActivate, onDragStart, onDragOver, onDrop }: TabItemProps) {
+export function TabItem({
+  tab,
+  node,
+  isActive,
+  isDirty,
+  index,
+  onActivate,
+  onDragStart,
+  onDragOver,
+  onDrop,
+}: TabItemProps) {
   const closeTab = useTabsStore((s) => s.closeTab);
   const closeOthers = useTabsStore((s) => s.closeOthers);
   const closeLeft = useTabsStore((s) => s.closeLeft);
@@ -57,25 +73,27 @@ export function TabItem({ tab, node, isActive, isDirty, index, onActivate, onDra
           tabIndex={0}
           aria-selected={isActive}
           className={cn(
-            "focus-visible:ring-1.5 focus-visible:ring-ring focus-visible:outline-none",
-            "group relative flex h-9 shrink-0 cursor-default items-center gap-2 border-r px-3 text-xs transition-all duration-150 select-none",
+            "focus-visible:ring-ring/30 focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset",
+            "group relative flex h-10 min-w-0 shrink-0 cursor-default items-center gap-2 border-r px-3.5 text-[13px] transition-[color,background-color,box-shadow] duration-150 select-none",
             // Modern bottom accent on active tab
             isActive
-              ? "bg-[var(--np-tab-active-bg)] text-foreground font-medium shadow-2xs after:absolute after:inset-x-0 after:bottom-0 after:h-[2px] after:bg-primary"
-              : "bg-transparent text-muted-foreground/80 hover:bg-[var(--np-menu-hover)]/70 hover:text-foreground",
+              ? "text-foreground after:bg-primary bg-[var(--np-tab-active-bg)] font-semibold shadow-[0_-1px_0_var(--np-tab-border),0_4px_12px_-10px_rgba(15,23,42,0.45)] after:absolute after:inset-x-0 after:bottom-0 after:h-[2px]"
+              : "text-muted-foreground/75 hover:text-foreground bg-transparent hover:bg-[var(--np-menu-hover)]",
           )}
           style={{ borderColor: "var(--np-tab-border)" }}
           title={node?.path}
         >
-          {tab.pinned && <Pin className="size-3 shrink-0 fill-current opacity-70 text-primary" />}
+          {tab.pinned && (
+            <Pin className="text-primary size-3 shrink-0 fill-current opacity-70" />
+          )}
           {/* Icon is chosen from a fixed set of stable icon components, not created during render. */}
           {/* eslint-disable-next-line react-hooks/static-components */}
-          <Icon className="size-3.5 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity" />
-          <span className="max-w-36 truncate">{node?.name ?? "Untitled"}</span>
+          <Icon className="size-4 shrink-0 opacity-80 transition-opacity group-hover:opacity-100" />
+          <span className="max-w-40 truncate">{node?.name ?? "Untitled"}</span>
           <span className="relative ml-0.5 flex size-4 shrink-0 items-center justify-center">
             {isDirty && (
               <span
-                className="size-1.5 rounded-full bg-primary ring-2 ring-primary/20 group-hover:hidden"
+                className="bg-primary ring-primary/15 size-2 rounded-full ring-2 group-hover:hidden"
                 aria-label="Unsaved changes"
               />
             )}
@@ -87,8 +105,10 @@ export function TabItem({ tab, node, isActive, isDirty, index, onActivate, onDra
                 closeTab(tab.id);
               }}
               className={cn(
-                "absolute inset-0 flex items-center justify-center rounded-sm transition-all duration-150 hover:bg-muted-foreground/20 hover:scale-110 active:scale-95 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-                isDirty ? "hidden group-hover:flex focus-visible:flex [@media(hover:none)]:flex" : "opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100",
+                "hover:bg-muted-foreground/20 focus-visible:ring-ring absolute inset-0 flex items-center justify-center rounded-sm transition-all duration-150 hover:scale-110 focus-visible:opacity-100 focus-visible:ring-1 focus-visible:outline-none active:scale-95",
+                isDirty
+                  ? "hidden group-hover:flex focus-visible:flex [@media(hover:none)]:flex"
+                  : "opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100",
               )}
             >
               <X className="size-3" />
@@ -101,17 +121,26 @@ export function TabItem({ tab, node, isActive, isDirty, index, onActivate, onDra
           {tab.pinned ? "Unpin Tab" : "Pin Tab"}
         </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem onSelect={() => closeTab(tab.id)}>Close</ContextMenuItem>
-        <ContextMenuItem onSelect={() => closeOthers(tab.id)}>Close Others</ContextMenuItem>
-        <ContextMenuItem onSelect={() => closeLeft(tab.id)}>Close to the Left</ContextMenuItem>
-        <ContextMenuItem onSelect={() => closeRight(tab.id)}>Close to the Right</ContextMenuItem>
+        <ContextMenuItem onSelect={() => closeTab(tab.id)}>
+          Close
+        </ContextMenuItem>
+        <ContextMenuItem onSelect={() => closeOthers(tab.id)}>
+          Close Others
+        </ContextMenuItem>
+        <ContextMenuItem onSelect={() => closeLeft(tab.id)}>
+          Close to the Left
+        </ContextMenuItem>
+        <ContextMenuItem onSelect={() => closeRight(tab.id)}>
+          Close to the Right
+        </ContextMenuItem>
         {!isActive && (
           <>
             <ContextMenuSeparator />
             <ContextMenuItem
               onSelect={() => {
                 const activeTabId = useTabsStore.getState().activeTabId;
-                if (activeTabId) useDiffViewStore.getState().openDiff(activeTabId, tab.id);
+                if (activeTabId)
+                  useDiffViewStore.getState().openDiff(activeTabId, tab.id);
               }}
             >
               <FileDiff /> Compare with Active Tab

@@ -31,7 +31,7 @@ export function EditorTabs() {
     <div
       role="tablist"
       aria-label="Open editor tabs"
-      className="flex h-9 shrink-0 items-stretch overflow-x-auto overflow-y-hidden border-b bg-[var(--np-tab-inactive-bg)]/40 np-scrollbar select-none backdrop-blur-2xs"
+      className="np-scrollbar flex h-10 shrink-0 items-stretch overflow-x-auto overflow-y-hidden border-b bg-[var(--np-tab-inactive-bg)]/75 select-none"
       style={{ borderBottomColor: "var(--np-tab-border)" }}
     >
       {tabs.map((tab, index) => (
@@ -60,12 +60,12 @@ export function EditorTabs() {
           }}
         />
       ))}
-      <div className="flex shrink-0 items-center px-1">
+      <div className="flex shrink-0 items-center px-1.5">
         <button
           type="button"
           onClick={() => runAction("file.new")}
           title="New File (Ctrl+N)"
-          className="flex size-6 items-center justify-center rounded-md text-muted-foreground/60 transition-all hover:bg-accent/80 hover:text-foreground active:scale-95"
+          className="text-muted-foreground/60 hover:bg-accent hover:text-foreground flex size-7 items-center justify-center rounded-lg transition-[color,background-color,transform] duration-150 active:scale-[0.94]"
         >
           <Plus className="size-3.5" />
         </button>

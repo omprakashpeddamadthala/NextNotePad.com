@@ -31,7 +31,10 @@ import { useUIStore } from "@/store/uiStore";
 import { useTabsStore } from "@/store/tabsStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { toast } from "sonner";
-import { HASH_ALGORITHMS, type CaseConverterId } from "@/services/textTools/textTools";
+import {
+  HASH_ALGORITHMS,
+  type CaseConverterId,
+} from "@/services/textTools/textTools";
 import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
@@ -81,18 +84,20 @@ function ActionIconButton({
           aria-pressed={active}
           onClick={onClick}
           className={cn(
-            "relative flex size-8 items-center justify-center rounded-md transition-all duration-150 shrink-0 outline-none",
-            "hover:bg-accent/80 hover:text-foreground hover:scale-105 active:scale-95",
-            "focus-visible:outline-none focus-visible:ring-1.5 focus-visible:ring-ring",
+            "relative flex size-8 shrink-0 items-center justify-center rounded-lg transition-[color,background-color,box-shadow,transform] duration-150 ease-out outline-none",
+            "hover:bg-accent hover:text-foreground active:scale-[0.94]",
+            "focus-visible:ring-ring/30 focus-visible:ring-2 focus-visible:outline-none",
             active
-              ? "text-primary bg-primary/15 shadow-2xs ring-1 ring-primary/25"
+              ? "text-primary bg-primary/12 ring-primary/20 shadow-xs ring-1"
               : "text-muted-foreground/80",
           )}
         >
           <Icon className="size-4 transition-transform duration-150" />
         </button>
       </TooltipTrigger>
-      <TooltipContent side="left" className="text-xs font-medium">{label}</TooltipContent>
+      <TooltipContent side="left" className="text-xs font-medium">
+        {label}
+      </TooltipContent>
     </Tooltip>
   );
 }
@@ -115,19 +120,21 @@ function DropdownIconButton({
               type="button"
               aria-label={label}
               className={cn(
-                "flex size-8 items-center justify-center rounded-md transition-all duration-150 shrink-0 text-muted-foreground/80 outline-none",
-                "hover:bg-accent/80 hover:text-foreground hover:scale-105 active:scale-95",
-                "focus-visible:outline-none focus-visible:ring-1.5 focus-visible:ring-ring",
+                "text-muted-foreground/80 flex size-8 shrink-0 items-center justify-center rounded-lg transition-[color,background-color,box-shadow,transform] duration-150 ease-out outline-none",
+                "hover:bg-accent hover:text-foreground active:scale-[0.94]",
+                "focus-visible:ring-ring/30 focus-visible:ring-2 focus-visible:outline-none",
               )}
             >
               <Icon className="size-4 transition-transform duration-150" />
             </button>
           </DropdownMenuTrigger>
         </TooltipTrigger>
-        <TooltipContent side="left" className="text-xs font-medium">{label}</TooltipContent>
+        <TooltipContent side="left" className="text-xs font-medium">
+          {label}
+        </TooltipContent>
       </Tooltip>
       <DropdownMenuContent side="left" align="start" className="w-52">
-        <DropdownMenuLabel className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+        <DropdownMenuLabel className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
           {label}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -158,7 +165,7 @@ export function ToolsNavRail() {
     <TooltipProvider>
       <nav
         aria-label="Tools vertical right rail"
-        className="np-scrollbar flex w-10 shrink-0 flex-col items-center gap-1 border-l bg-[var(--np-toolbar-bg)]/80 py-2.5 overflow-y-auto overflow-x-hidden backdrop-blur-xs select-none"
+        className="np-scrollbar np-panel-surface flex w-11 shrink-0 flex-col items-center gap-1.5 overflow-x-hidden overflow-y-auto border-l py-3 select-none"
         style={{ borderLeftColor: "var(--np-tab-border)" }}
       >
         {/* ── Markdown Preview ─────────────────────────────────────────────── */}
@@ -177,28 +184,40 @@ export function ToolsNavRail() {
         <Separator className="my-1.5 w-4 opacity-30" />
         {/* ── AI Tools ────────────────────────────────────────────────────── */}
         <DropdownIconButton icon={Sparkles} label="Fix Grammar & Spelling (AI)">
-          <DropdownMenuItem onSelect={() => runAction("tools.ai.fixGrammar.gemini")}>
+          <DropdownMenuItem
+            onSelect={() => runAction("tools.ai.fixGrammar.gemini")}
+          >
             Gemini
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runAction("tools.ai.fixGrammar.claude")}>
+          <DropdownMenuItem
+            onSelect={() => runAction("tools.ai.fixGrammar.claude")}
+          >
             Claude (via AgentRouter)
           </DropdownMenuItem>
         </DropdownIconButton>
 
         <DropdownIconButton icon={FileCode} label="Generate MD Syntax (AI)">
-          <DropdownMenuItem onSelect={() => runAction("tools.ai.generateMdSyntax.gemini")}>
+          <DropdownMenuItem
+            onSelect={() => runAction("tools.ai.generateMdSyntax.gemini")}
+          >
             Gemini
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runAction("tools.ai.generateMdSyntax.claude")}>
+          <DropdownMenuItem
+            onSelect={() => runAction("tools.ai.generateMdSyntax.claude")}
+          >
             Claude (via AgentRouter)
           </DropdownMenuItem>
         </DropdownIconButton>
 
         <DropdownIconButton icon={Wand2} label="Generate Prompt (AI)">
-          <DropdownMenuItem onSelect={() => runAction("tools.ai.generatePrompt.gemini")}>
+          <DropdownMenuItem
+            onSelect={() => runAction("tools.ai.generatePrompt.gemini")}
+          >
             Gemini
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runAction("tools.ai.generatePrompt.claude")}>
+          <DropdownMenuItem
+            onSelect={() => runAction("tools.ai.generatePrompt.claude")}
+          >
             Claude (via AgentRouter)
           </DropdownMenuItem>
         </DropdownIconButton>
@@ -226,7 +245,10 @@ export function ToolsNavRail() {
 
         <DropdownIconButton icon={CaseSensitive} label="Case Converter">
           {CASE_OPTIONS.map(({ id, label }) => (
-            <DropdownMenuItem key={id} onSelect={() => runAction(`tools.case.${id}`)}>
+            <DropdownMenuItem
+              key={id}
+              onSelect={() => runAction(`tools.case.${id}`)}
+            >
               {label}
             </DropdownMenuItem>
           ))}
@@ -234,7 +256,10 @@ export function ToolsNavRail() {
 
         <DropdownIconButton icon={Hash} label="Hash Generator">
           {HASH_ALGORITHMS.map((algo) => (
-            <DropdownMenuItem key={algo} onSelect={() => runAction(`tools.hash.${algo}`)}>
+            <DropdownMenuItem
+              key={algo}
+              onSelect={() => runAction(`tools.hash.${algo}`)}
+            >
               {algo}
             </DropdownMenuItem>
           ))}
@@ -262,25 +287,37 @@ export function ToolsNavRail() {
         </DropdownIconButton>
 
         <DropdownIconButton icon={Eraser} label="Whitespace Cleanup">
-          <DropdownMenuItem onSelect={() => runAction("tools.whitespace.trimTrailing")}>
+          <DropdownMenuItem
+            onSelect={() => runAction("tools.whitespace.trimTrailing")}
+          >
             Trim Trailing Whitespace
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runAction("tools.whitespace.collapseBlankLines")}>
+          <DropdownMenuItem
+            onSelect={() => runAction("tools.whitespace.collapseBlankLines")}
+          >
             Collapse Blank Lines
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runAction("tools.whitespace.tabsToSpaces")}>
+          <DropdownMenuItem
+            onSelect={() => runAction("tools.whitespace.tabsToSpaces")}
+          >
             Tabs to Spaces
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runAction("tools.whitespace.spacesToTabs")}>
+          <DropdownMenuItem
+            onSelect={() => runAction("tools.whitespace.spacesToTabs")}
+          >
             Spaces to Tabs
           </DropdownMenuItem>
         </DropdownIconButton>
 
         <DropdownIconButton icon={Clock} label="Timestamp Converter">
-          <DropdownMenuItem onSelect={() => runAction("tools.timestamp.unixToIso")}>
+          <DropdownMenuItem
+            onSelect={() => runAction("tools.timestamp.unixToIso")}
+          >
             Unix Timestamp to ISO Date
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runAction("tools.timestamp.isoToUnix")}>
+          <DropdownMenuItem
+            onSelect={() => runAction("tools.timestamp.isoToUnix")}
+          >
             ISO Date to Unix Timestamp
           </DropdownMenuItem>
         </DropdownIconButton>
@@ -315,10 +352,14 @@ export function ToolsNavRail() {
         </DropdownIconButton>
 
         <DropdownIconButton icon={Quote} label="Escape String">
-          <DropdownMenuItem onSelect={() => runAction("tools.escapeString.escape")}>
+          <DropdownMenuItem
+            onSelect={() => runAction("tools.escapeString.escape")}
+          >
             Escape (for JSON)
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runAction("tools.escapeString.unescape")}>
+          <DropdownMenuItem
+            onSelect={() => runAction("tools.escapeString.unescape")}
+          >
             Unescape (from JSON)
           </DropdownMenuItem>
         </DropdownIconButton>
