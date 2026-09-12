@@ -1,17 +1,23 @@
 "use client";
 
-import { PanelLeft, PanelBottom, ZoomIn, ZoomOut, RotateCcw, Palette, SplitSquareHorizontal, Maximize, Lock, EyeOff } from "lucide-react";
+import {
+  PanelLeft,
+  PanelBottom,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  SplitSquareHorizontal,
+  Maximize,
+  Lock,
+  EyeOff,
+  Columns2,
+} from "lucide-react";
 import { TopMenu } from "./TopMenu";
 import {
   DropdownMenuItem,
   DropdownMenuCheckboxItem,
   DropdownMenuSeparator,
   DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
 import { SHORTCUT_BY_ACTION } from "@/lib/constants/shortcuts";
 import { runAction } from "@/services/shortcuts/actionRegistry";
@@ -19,8 +25,6 @@ import { useUIStore } from "@/store/uiStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { useTabsStore } from "@/store/tabsStore";
 import { useActiveFile } from "@/hooks/useActiveFile";
-import { THEME_ORDER } from "@/lib/constants/themes";
-import { THEME_MODULES } from "@/lib/monaco/themes";
 
 export function ViewMenu() {
   const {
@@ -32,19 +36,25 @@ export function ViewMenu() {
     setSplitView,
     showHiddenFiles,
     toggleShowHiddenFiles,
+    markdownPreviewVisible,
+    toggleMarkdownPreview,
   } = useUIStore();
   const settings = useSettingsStore((s) => s.settings);
   const updateSettings = useSettingsStore((s) => s.updateSettings);
-  const theme = useSettingsStore((s) => s.theme);
-  const setTheme = useSettingsStore((s) => s.setTheme);
-  const { tab } = useActiveFile();
+  const { tab, file } = useActiveFile();
   const setReadOnly = useTabsStore((s) => s.setReadOnly);
+  const canPreviewMarkdown = file?.language === "markdown" && !file.locked;
 
   return (
     <TopMenu label="View">
-      <DropdownMenuCheckboxItem checked={sidebarVisible} onCheckedChange={() => toggleSidebar()}>
+      <DropdownMenuCheckboxItem
+        checked={sidebarVisible}
+        onCheckedChange={() => toggleSidebar()}
+      >
         <PanelLeft /> File Explorer
-        <DropdownMenuShortcut>{SHORTCUT_BY_ACTION["view.toggleSidebar"].keys}</DropdownMenuShortcut>
+        <DropdownMenuShortcut>
+          {SHORTCUT_BY_ACTION["view.toggleSidebar"].keys}
+        </DropdownMenuShortcut>
       </DropdownMenuCheckboxItem>
       <DropdownMenuCheckboxItem
         checked={bottomPanelVisible}
@@ -52,7 +62,10 @@ export function ViewMenu() {
       >
         <PanelBottom /> Bottom Panel
       </DropdownMenuCheckboxItem>
-      <DropdownMenuCheckboxItem checked={showHiddenFiles} onCheckedChange={() => toggleShowHiddenFiles()}>
+      <DropdownMenuCheckboxItem
+        checked={showHiddenFiles}
+        onCheckedChange={() => toggleShowHiddenFiles()}
+      >
         <EyeOff /> Show Hidden Items
       </DropdownMenuCheckboxItem>
       <DropdownMenuCheckboxItem
@@ -60,14 +73,18 @@ export function ViewMenu() {
         onCheckedChange={(v) => updateSettings({ showMinimap: Boolean(v) })}
       >
         Minimap
-        <DropdownMenuShortcut>{SHORTCUT_BY_ACTION["view.toggleMinimap"].keys}</DropdownMenuShortcut>
+        <DropdownMenuShortcut>
+          {SHORTCUT_BY_ACTION["view.toggleMinimap"].keys}
+        </DropdownMenuShortcut>
       </DropdownMenuCheckboxItem>
       <DropdownMenuCheckboxItem
         checked={settings.wordWrap}
         onCheckedChange={(v) => updateSettings({ wordWrap: Boolean(v) })}
       >
         Word Wrap
-        <DropdownMenuShortcut>{SHORTCUT_BY_ACTION["view.toggleWordWrap"].keys}</DropdownMenuShortcut>
+        <DropdownMenuShortcut>
+          {SHORTCUT_BY_ACTION["view.toggleWordWrap"].keys}
+        </DropdownMenuShortcut>
       </DropdownMenuCheckboxItem>
       <DropdownMenuCheckboxItem
         checked={settings.showLineNumbers}
@@ -77,12 +94,24 @@ export function ViewMenu() {
       </DropdownMenuCheckboxItem>
       <DropdownMenuCheckboxItem
         checked={settings.renderWhitespace}
-        onCheckedChange={(v) => updateSettings({ renderWhitespace: Boolean(v) })}
+        onCheckedChange={(v) =>
+          updateSettings({ renderWhitespace: Boolean(v) })
+        }
       >
         Show Whitespace Characters
       </DropdownMenuCheckboxItem>
-      <DropdownMenuCheckboxItem checked={isSplitView} onCheckedChange={(v) => setSplitView(Boolean(v))}>
+      <DropdownMenuCheckboxItem
+        checked={isSplitView}
+        onCheckedChange={(v) => setSplitView(Boolean(v))}
+      >
         <SplitSquareHorizontal /> Split Editor
+      </DropdownMenuCheckboxItem>
+      <DropdownMenuCheckboxItem
+        checked={markdownPreviewVisible && canPreviewMarkdown}
+        disabled={!canPreviewMarkdown}
+        onCheckedChange={() => toggleMarkdownPreview()}
+      >
+        <Columns2 /> Markdown Preview
       </DropdownMenuCheckboxItem>
       {tab && (
         <DropdownMenuCheckboxItem
@@ -95,31 +124,22 @@ export function ViewMenu() {
       <DropdownMenuSeparator />
       <DropdownMenuItem onSelect={() => runAction("view.zoomIn")}>
         <ZoomIn /> Zoom In
-        <DropdownMenuShortcut>{SHORTCUT_BY_ACTION["view.zoomIn"].keys}</DropdownMenuShortcut>
+        <DropdownMenuShortcut>
+          {SHORTCUT_BY_ACTION["view.zoomIn"].keys}
+        </DropdownMenuShortcut>
       </DropdownMenuItem>
       <DropdownMenuItem onSelect={() => runAction("view.zoomOut")}>
         <ZoomOut /> Zoom Out
-        <DropdownMenuShortcut>{SHORTCUT_BY_ACTION["view.zoomOut"].keys}</DropdownMenuShortcut>
+        <DropdownMenuShortcut>
+          {SHORTCUT_BY_ACTION["view.zoomOut"].keys}
+        </DropdownMenuShortcut>
       </DropdownMenuItem>
       <DropdownMenuItem onSelect={() => runAction("view.resetZoom")}>
         <RotateCcw /> Reset Zoom
-        <DropdownMenuShortcut>{SHORTCUT_BY_ACTION["view.resetZoom"].keys}</DropdownMenuShortcut>
+        <DropdownMenuShortcut>
+          {SHORTCUT_BY_ACTION["view.resetZoom"].keys}
+        </DropdownMenuShortcut>
       </DropdownMenuItem>
-      <DropdownMenuSeparator />
-      <DropdownMenuSub>
-        <DropdownMenuSubTrigger>
-          <Palette /> Theme
-        </DropdownMenuSubTrigger>
-        <DropdownMenuSubContent className="w-48">
-          <DropdownMenuRadioGroup value={theme} onValueChange={(v) => setTheme(v as typeof theme)}>
-            {THEME_ORDER.map((id) => (
-              <DropdownMenuRadioItem key={id} value={id}>
-                {THEME_MODULES[id].label}
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-        </DropdownMenuSubContent>
-      </DropdownMenuSub>
       <DropdownMenuItem
         onSelect={() => {
           if (document.fullscreenElement) void document.exitFullscreen();
