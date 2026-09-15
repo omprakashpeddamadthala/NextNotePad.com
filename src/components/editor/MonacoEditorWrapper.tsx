@@ -194,7 +194,12 @@ export function MonacoEditorWrapper({
   ) {
     if (!registerGlobalActions) return;
     const node = useWorkspaceStore.getState().nodes[id];
-    if (node?.type === "file" && node.language === "markdown") {
+    if (
+      node?.type === "file" &&
+      (node.language === "markdown" ||
+        node.name.toLowerCase().endsWith(".md") ||
+        node.name.toLowerCase().endsWith(".markdown"))
+    ) {
       useMarkdownPreviewContentStore
         .getState()
         .setContent(id, model.getValue());
@@ -481,7 +486,11 @@ export function MonacoEditorWrapper({
   // -------------------------------------------------------------------------
 
   /** True when the active file is a markdown document. */
-  const isMarkdown = file?.type === "file" && file.language === "markdown";
+  const isMarkdown =
+    file?.type === "file" &&
+    (file.language === "markdown" ||
+      file.name.toLowerCase().endsWith(".md") ||
+      file.name.toLowerCase().endsWith(".markdown"));
 
   async function handleImageFile(imgFile: File) {
     const editor = editorRef.current;

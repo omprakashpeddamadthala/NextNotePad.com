@@ -43,7 +43,12 @@ export function ViewMenu() {
   const updateSettings = useSettingsStore((s) => s.updateSettings);
   const { tab, file } = useActiveFile();
   const setReadOnly = useTabsStore((s) => s.setReadOnly);
-  const canPreviewMarkdown = file?.language === "markdown" && !file.locked;
+  const canPreviewMarkdown =
+    file?.type === "file" &&
+    (file.language === "markdown" ||
+      file.name.toLowerCase().endsWith(".md") ||
+      file.name.toLowerCase().endsWith(".markdown")) &&
+    !file.locked;
 
   return (
     <TopMenu label="View">

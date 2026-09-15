@@ -52,7 +52,10 @@ export function Toolbar() {
     activeFileId ? s.nodes[activeFileId] : undefined,
   );
   const isMarkdownActive =
-    activeNode?.type === "file" && activeNode.language === "markdown";
+    activeNode?.type === "file" &&
+    (activeNode.language === "markdown" ||
+      activeNode.name.toLowerCase().endsWith(".md") ||
+      activeNode.name.toLowerCase().endsWith(".markdown"));
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);

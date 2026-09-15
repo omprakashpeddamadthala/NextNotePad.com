@@ -17,6 +17,7 @@ import { APP_BRAND } from "@/lib/constants/branding";
 import { SEO_KEYWORDS } from "@/lib/constants/seoKeywords";
 import { AppProviders } from "@/providers/AppProviders";
 import "./globals.css";
+import "@/styles/themes.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://nextnotepad.com"),

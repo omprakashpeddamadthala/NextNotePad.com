@@ -1,7 +1,7 @@
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 
-marked.setOptions({ gfm: true, breaks: false });
+marked.setOptions({ gfm: true, breaks: true });
 
 /** Markdown -> sanitized HTML for the preview pane. Client-only (DOMPurify needs `window`) —
  *  only call this from code already gated behind `dynamic(..., { ssr: false })`. */
