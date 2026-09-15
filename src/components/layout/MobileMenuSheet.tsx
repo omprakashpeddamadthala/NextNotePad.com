@@ -21,6 +21,7 @@ import { SyncStatusBadge } from "@/components/auth/SyncStatusBadge";
 import { useUIStore } from "@/store/uiStore";
 import { useAuthStore } from "@/store/authStore";
 import { AppLogo } from "@/components/ui/AppLogo";
+import { APP_BRAND } from "@/lib/constants/branding";
 
 /** Gives every command category one touch-friendly home on mobile. */
 function MenuGridCell({ children }: { children: React.ReactNode }) {
@@ -47,7 +48,7 @@ export function MobileMenuSheet() {
         <SheetHeader className="bg-popover/95 sticky top-0 z-10 flex-row items-center gap-3 border-b p-4 backdrop-blur-xl">
           <AppLogo size="md" />
           <div>
-            <SheetTitle>NextNotePad</SheetTitle>
+            <SheetTitle>{APP_BRAND.name}</SheetTitle>
             <p className="text-muted-foreground text-xs">
               Choose a menu to find its commands
             </p>

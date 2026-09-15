@@ -18,13 +18,7 @@ export function openFileForUser(fileId: string): void {
 
   useRecentFilesStore.getState().addRecent(fileId);
 
-  if (node.language === "markdown" && !node.locked) {
-    openMarkdownFullPage(fileId);
-    return;
-  }
-  // Markdown Full Page View (and diff view) render in place of the tab content and are checked
-  // before the active tab in EditorArea, so without this the stale special view would keep
-  // showing even after the new tab opens underneath it.
+  // Close full-page special views so the editor tab is immediately active and editable
   closeAllSpecialViews();
   useTabsStore.getState().openTab(fileId);
 }

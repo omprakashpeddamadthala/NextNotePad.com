@@ -90,29 +90,70 @@ export async function syncWorkspacesFromDrive(userId: string): Promise<SyncWorks
     return { created: 0, updated: 0, totalDriveFolders: 0 };
   }
 
-  if (driveSubfolders.length === 0) {
-    return { created: 0, updated: 0, totalDriveFolders: 0 };
-  }
-
   // 3. Compare with DB workspaces
   const userWorkspaces = await prisma.workspace.findMany({
     where: { userId },
   });
 
+  const liveDriveFolderIds = new Set(driveSubfolders.map((sf) => sf.id));
+
+  // Sync deletions from Google Drive: if a workspace was linked to a Drive folder
+  // that was deleted or trashed directly in Drive, delete it here too (preserving at least one workspace).
+  for (const w of userWorkspaces) {
+    if (w.driveWorkspaceFolderId && !liveDriveFolderIds.has(w.driveWorkspaceFolderId)) {
+      const remainingCount = await prisma.workspace.count({ where: { userId } });
+      if (remainingCount > 1) {
+        if (user.activeWorkspaceId === w.id) {
+          const another = await prisma.workspace.findFirst({
+            where: { userId, id: { not: w.id } },
+            orderBy: { createdAt: "asc" },
+          });
+          await prisma.user.update({
+            where: { id: userId },
+            data: { activeWorkspaceId: another?.id ?? null },
+          });
+        }
+        await prisma.workspace.delete({ where: { id: w.id } });
+      }
+    }
+  }
+
+  const currentWorkspaces = await prisma.workspace.findMany({
+    where: { userId },
+  });
+
   const knownDriveFolderIds = new Set(
-    userWorkspaces.map((w) => w.driveWorkspaceFolderId).filter((id): id is string => Boolean(id))
+    currentWorkspaces.map((w) => w.driveWorkspaceFolderId).filter((id): id is string => Boolean(id))
   );
 
   let created = 0;
   let updated = 0;
 
   for (const sf of driveSubfolders) {
+    const existingByDriveId = currentWorkspaces.find((w) => w.driveWorkspaceFolderId === sf.id);
+    if (existingByDriveId) {
+      if (existingByDriveId.name.trim() !== sf.name.trim()) {
+        const collision = currentWorkspaces.some(
+          (w) => w.id !== existingByDriveId.id && w.name.trim().toLowerCase() === sf.name.trim().toLowerCase()
+        );
+        if (!collision) {
+          await prisma.workspace.update({
+            where: { id: existingByDriveId.id },
+            data: { name: sf.name },
+          });
+          existingByDriveId.name = sf.name;
+          updated++;
+        }
+      }
+      continue;
+    }
+
     if (knownDriveFolderIds.has(sf.id)) {
       continue;
     }
 
     // Check if there is an unlinked workspace with matching name (case-insensitive)
-    const matchByName = userWorkspaces.find(
+    const matchByName = currentWorkspaces.find(
       (w) =>
         !w.driveWorkspaceFolderId &&
         w.name.trim().toLowerCase() === sf.name.trim().toLowerCase()

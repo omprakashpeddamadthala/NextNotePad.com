@@ -70,7 +70,7 @@ function NavRailIconButton({
           aria-label={label}
           onClick={onClick}
           className={cn(
-            "relative flex size-8 shrink-0 items-center justify-center rounded-lg transition-[color,background-color,box-shadow,transform] duration-150 ease-out outline-none",
+            "relative flex size-8 shrink-0 items-center justify-center rounded-lg transition-all duration-150 ease-out outline-none cursor-pointer",
             "hover:bg-accent hover:text-foreground active:scale-[0.94]",
             "focus-visible:ring-ring/30 focus-visible:ring-2 focus-visible:outline-none",
             active
@@ -104,7 +104,7 @@ export function IconNavRail() {
     <TooltipProvider>
       <nav
         aria-label="Left navigation rail"
-        className="np-scrollbar np-panel-surface flex w-11 shrink-0 flex-col items-center gap-1.5 overflow-x-hidden overflow-y-auto border-r py-3 select-none"
+        className="np-scrollbar flex w-11 shrink-0 flex-col items-center gap-1.5 overflow-x-hidden overflow-y-auto border-r py-3 select-none bg-white/70 dark:bg-[#0a0a0f]/80 backdrop-blur-xs border-slate-200/80 dark:border-white/10 shadow-2xs"
         style={{ borderRightColor: "var(--np-tab-border)" }}
       >
         <NavRailIconButton

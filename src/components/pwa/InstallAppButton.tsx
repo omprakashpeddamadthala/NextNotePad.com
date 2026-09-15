@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import { cn } from "@/lib/utils";
+import { APP_BRAND } from "@/lib/constants/branding";
 
 function isIOS(): boolean {
   if (typeof window === "undefined") return false;
@@ -30,13 +31,11 @@ export function InstallAppButton({ iconOnly = false }: { iconOnly?: boolean }) {
       return;
     }
     if (isIOS()) {
-      toast.info(
-        'Tap the Share icon, then "Add to Home Screen" to install this app.',
-      );
+      toast.info(`Tap the Share icon, then "Add to Home Screen" to install ${APP_BRAND.name}.`);
       return;
     }
     toast.info(
-      'Look for an install icon in your browser\'s address bar, or check its menu for "Install App" / "Add to Home Screen".',
+      `Look for an install icon in your address bar, or browser menu for "Install ${APP_BRAND.name}".`,
     );
   }
 
@@ -51,8 +50,8 @@ export function InstallAppButton({ iconOnly = false }: { iconOnly?: boolean }) {
           : "h-8 gap-1.5 rounded-lg px-2.5 text-xs",
       )}
       onClick={() => void handleClick()}
-      aria-label={iconOnly ? "Install NextNotePad app" : undefined}
-      title={iconOnly ? "Install NextNotePad app" : undefined}
+      aria-label={iconOnly ? `Install ${APP_BRAND.name} app` : undefined}
+      title={iconOnly ? `Install ${APP_BRAND.name} app` : undefined}
     >
       <Download className="size-3.5" />
       {!iconOnly && "Install App"}

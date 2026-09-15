@@ -56,11 +56,15 @@ export function EditorArea() {
 
   const activeTab = tabs.find((t) => t.id === activeTabId);
   const activeNode = useWorkspaceStore((s) => (activeTab ? s.nodes[activeTab.fileId] : undefined));
+  const isMarkdown =
+    activeNode?.type === "file" &&
+    (activeNode.language === "markdown" ||
+      activeNode.name.toLowerCase().endsWith(".md") ||
+      activeNode.name.toLowerCase().endsWith(".markdown"));
   const showMarkdownPreview =
     markdownPreviewVisible &&
     !isSplitView &&
-    activeNode?.type === "file" &&
-    activeNode.language === "markdown" &&
+    isMarkdown &&
     !activeNode.locked;
   // Until this resolves, `tabs` may still be a frozen pre-login snapshot (guest mode's
   // localStorage write-freeze while authenticated) that doesn't match which repo reads will

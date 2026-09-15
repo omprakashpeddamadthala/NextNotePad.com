@@ -9,6 +9,8 @@ import { useMarkdownPreviewContentStore } from "@/store/markdownPreviewContentSt
 import { renderMarkdown } from "@/lib/markdown/renderMarkdown";
 import { openMarkdownFullPage } from "@/services/markdownFullPageView";
 
+import * as modelRegistry from "@/lib/monaco/modelRegistry";
+
 interface MarkdownPreviewProps {
   fileId: string;
 }
@@ -19,7 +21,10 @@ interface MarkdownPreviewProps {
  *  Callers must render this with `key={fileId}` so switching files remounts it fresh instead
  *  of needing an effect to reset state (which the React Compiler flags as cascading renders). */
 export function MarkdownPreview({ fileId }: MarkdownPreviewProps) {
-  const [initialContent, setInitialContent] = useState<string | null>(null);
+  const [initialContent, setInitialContent] = useState<string | null>(() => {
+    const existing = modelRegistry.getModel(fileId);
+    return existing ? existing.getValue() : null;
+  });
   const [error, setError] = useState<unknown>(null);
   const [reloadNonce, setReloadNonce] = useState(0);
   const liveFileId = useMarkdownPreviewContentStore((s) => s.fileId);
@@ -27,6 +32,11 @@ export function MarkdownPreview({ fileId }: MarkdownPreviewProps) {
 
   useEffect(() => {
     let cancelled = false;
+    const existing = modelRegistry.getModel(fileId);
+    if (existing) {
+      setInitialContent(existing.getValue());
+      return;
+    }
     void getActiveRepository()
       .readFileContent(fileId)
       .then((content) => {

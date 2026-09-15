@@ -32,11 +32,19 @@ export function MenuBar() {
       style={{ borderBottomColor: "var(--np-tab-border)" }}
     >
       {/* Brand logo & workspace selector */}
-      <AppLogo
-        size="md"
-        showText
-        className="mr-2 [&>span]:hidden xl:[&>span]:flex"
-      />
+      <button
+        type="button"
+        onClick={() => openDialog("about")}
+        title="About NextNotePad.com"
+        aria-label="About NextNotePad"
+        className="focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring rounded-md cursor-pointer mr-2"
+      >
+        <AppLogo
+          size="md"
+          showText
+          className="[&>span]:hidden xl:[&>span]:flex hover:scale-105 transition-transform"
+        />
+      </button>
       <WorkspaceDropdown />
       <Separator orientation="vertical" className="mx-2 h-5 opacity-60" />
 

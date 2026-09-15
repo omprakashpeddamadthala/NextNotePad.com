@@ -84,7 +84,7 @@ export function TabItem({
           title={node?.path}
         >
           {tab.pinned && (
-            <Pin className="text-primary size-3 shrink-0 fill-current opacity-70" />
+            <Pin className="text-primary size-3 shrink-0 fill-current opacity-80" />
           )}
           {/* Icon is chosen from a fixed set of stable icon components, not created during render. */}
           {/* eslint-disable-next-line react-hooks/static-components */}
@@ -105,7 +105,7 @@ export function TabItem({
                 closeTab(tab.id);
               }}
               className={cn(
-                "hover:bg-muted-foreground/20 focus-visible:ring-ring absolute inset-0 flex items-center justify-center rounded-sm transition-all duration-150 hover:scale-110 focus-visible:opacity-100 focus-visible:ring-1 focus-visible:outline-none active:scale-95",
+                "hover:bg-destructive/15 hover:text-destructive focus-visible:ring-ring absolute inset-0 flex items-center justify-center rounded-sm transition-all duration-150 hover:scale-110 focus-visible:opacity-100 focus-visible:ring-1 focus-visible:outline-none active:scale-95",
                 isDirty
                   ? "hidden group-hover:flex focus-visible:flex [@media(hover:none)]:flex"
                   : "opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100",

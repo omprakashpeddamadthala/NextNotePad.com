@@ -7,6 +7,7 @@ import { InstallAppButton } from "@/components/pwa/InstallAppButton";
 import { useUIStore } from "@/store/uiStore";
 import { useDialogStore } from "@/store/dialogStore";
 import { useActiveFile } from "@/hooks/useActiveFile";
+import { APP_BRAND } from "@/lib/constants/branding";
 
 /**
  * Mobile's stand-in for the desktop MenuBar + Toolbar: one compact row instead of two dense,
@@ -45,7 +46,7 @@ export function MobileAppBar() {
         <AppLogo size="xs" className="shrink-0" />
         <div className="min-w-0 text-center leading-tight">
           <span className="text-foreground block truncate text-[13px] font-semibold">
-            {file ? file.name : "NextNotePad"}
+            {file ? file.name : APP_BRAND.name}
           </span>
           <span className="text-muted-foreground block truncate text-[10px]">
             {file ? "Editing locally" : "Ready to write"}

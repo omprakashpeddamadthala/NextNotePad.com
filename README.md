@@ -1,6 +1,6 @@
 # NextNotePad.com
 
-A browser-based text editor inspired by **Notepad++**, built with Next.js. It runs entirely client-side out of the box (offline-first "Guest Mode"), with an optional Google account sign-in that backs your workspace with a real database and one-way sync to Google Drive.
+A fast, modern browser-based text editor built with Next.js. It runs entirely client-side out of the box (offline-first "Guest Mode"), with an optional Google account sign-in that backs your workspace with a real database and one-way sync to Google Drive.
 
 The UI deliberately avoids the "modern SaaS code editor" look — square corners, flat instant menus, a classic segmented status bar, and Notepad++'s color themes — instead of the rounded/animated defaults you'd get from shadcn/VS Code out of the box.
 

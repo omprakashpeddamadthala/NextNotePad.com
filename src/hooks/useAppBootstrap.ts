@@ -8,7 +8,7 @@ import { createFile } from "@/services/fileOperations";
 const WELCOME_CONTENT = `Welcome to NextNotePad.com
 ===========================
 
-This is a browser-based text editor inspired by Notepad++. Everything you do
+This is a modern browser-based text editor. Everything you do
 here is stored locally in this browser (Guest Mode) — no account required.
 
 Try it out:
