@@ -173,9 +173,8 @@ export function EditorWelcome() {
             <AppLogo size="lg" className="hover:scale-105 transition-transform shrink-0 shadow-xs" />
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="font-heading text-lg sm:text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
                   {APP_BRAND.name}
-                  <span className="text-[#007492] dark:text-[#00e5cc] font-medium text-xs">.com</span>
                 </h1>
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/90 dark:border-amber-500/30 bg-amber-50/90 dark:bg-amber-950/40 px-2.5 py-0.5 text-[9.5px] font-medium text-amber-900 dark:text-amber-200 shadow-2xs">
                   <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />

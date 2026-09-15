@@ -4,10 +4,14 @@ import { Download } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
+import { cn } from "@/lib/utils";
+import { APP_BRAND } from "@/lib/constants/branding";
 
 function isIOS(): boolean {
   if (typeof window === "undefined") return false;
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !("MSStream" in window);
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) && !("MSStream" in window)
+  );
 }
 
 /**
@@ -16,9 +20,7 @@ function isIOS(): boolean {
  * install UI — `beforeinstallprompt` firing at all is gated by undocumented Chrome engagement
  * heuristics, so waiting for it before showing anything can mean the button never appears at all.
  */
-import { APP_BRAND } from "@/lib/constants/branding";
-
-export function InstallAppButton() {
+export function InstallAppButton({ iconOnly = false }: { iconOnly?: boolean }) {
   const { installed, hasNativePrompt, promptInstall } = useInstallPrompt();
 
   if (installed) return null;
@@ -38,8 +40,21 @@ export function InstallAppButton() {
   }
 
   return (
-    <Button size="sm" variant="outline" className="h-6 gap-1.5 px-2 text-xs" onClick={() => void handleClick()}>
-      <Download className="size-3.5" /> Install App
+    <Button
+      size={iconOnly ? "icon-lg" : "sm"}
+      variant="outline"
+      className={cn(
+        "border-primary/20 bg-background/80 text-primary hover:border-primary/35 hover:bg-primary/8 shadow-xs",
+        iconOnly
+          ? "size-11 rounded-lg"
+          : "h-8 gap-1.5 rounded-lg px-2.5 text-xs",
+      )}
+      onClick={() => void handleClick()}
+      aria-label={iconOnly ? `Install ${APP_BRAND.name} app` : undefined}
+      title={iconOnly ? `Install ${APP_BRAND.name} app` : undefined}
+    >
+      <Download className="size-3.5" />
+      {!iconOnly && "Install App"}
     </Button>
   );
 }

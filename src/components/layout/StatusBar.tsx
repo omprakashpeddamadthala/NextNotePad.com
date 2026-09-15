@@ -10,10 +10,16 @@ import { useApiActivityStore } from "@/store/apiActivityStore";
 import { useIsMobile } from "@/hooks/useMediaQuery";
 import { countNodes } from "@/lib/utils/treeUtils";
 
-function Segment({ children, className }: { children: React.ReactNode; className?: string }) {
+function Segment({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
     <span
-      className={`flex h-full items-center border-l px-2.5 font-mono text-[11px] tabular-nums transition-colors hover:bg-white/10 ${className ?? ""}`}
+      className={`flex h-full items-center border-l px-3 font-mono text-[11px] font-medium tabular-nums transition-colors hover:bg-white/10 ${className ?? ""}`}
       style={{ borderColor: "rgba(255,255,255,0.12)" }}
     >
       {children}
@@ -28,9 +34,9 @@ function ApiActivitySegment() {
   const visible = useApiActivityStore((s) => s.visible);
   if (!visible) return null;
   return (
-    <Segment className="bg-primary/20 text-white font-medium">
+    <Segment className="bg-primary/20 font-medium text-white">
       <span className="flex items-center gap-1.5">
-        <Loader2 className="size-3 animate-spin text-primary-foreground" />
+        <Loader2 className="text-primary-foreground size-3 animate-spin" />
         Syncing…
       </span>
     </Segment>
@@ -54,12 +60,12 @@ export function StatusBar() {
       <div
         role="status"
         aria-label="Status bar"
-        className="flex h-[24px] shrink-0 items-center justify-between border-t border-border/40 bg-[var(--np-statusbar-bg)] text-[11px] text-[var(--np-statusbar-fg)] select-none backdrop-blur-xs"
+        className="flex min-h-7 shrink-0 items-center justify-between border-t border-white/10 bg-[var(--np-statusbar-bg)] pb-[env(safe-area-inset-bottom)] text-[11px] text-[var(--np-statusbar-fg)] select-none"
       >
         <button
           type="button"
           onClick={() => openDialog("workspaceStats")}
-          className="focus-visible:ring-ring truncate px-2.5 text-[11px] font-medium transition-colors focus-visible:ring-1 focus-visible:outline-none focus-visible:ring-inset active:bg-white/15 hover:bg-white/10"
+          className="focus-visible:ring-ring truncate px-2.5 text-[11px] font-medium transition-colors hover:bg-white/10 focus-visible:ring-1 focus-visible:outline-none focus-visible:ring-inset active:bg-white/15"
           title="Workspace statistics"
         >
           {stats.files} file{stats.files === 1 ? "" : "s"}, {stats.folders}{" "}
@@ -78,12 +84,12 @@ export function StatusBar() {
     <div
       role="status"
       aria-label="Status bar"
-      className="flex h-[24px] shrink-0 items-center border-t border-border/40 bg-[var(--np-statusbar-bg)] text-[11px] text-[var(--np-statusbar-fg)] select-none backdrop-blur-xs shadow-2xs"
+      className="flex h-7 shrink-0 items-center border-t border-white/10 bg-[var(--np-statusbar-bg)] text-[11px] text-[var(--np-statusbar-fg)] shadow-[0_-8px_20px_-18px_rgba(15,23,42,0.8)] select-none"
     >
       <button
         type="button"
         onClick={() => openDialog("workspaceStats")}
-        className="focus-visible:ring-ring px-2.5 h-full flex items-center text-[11px] font-medium transition-colors hover:bg-white/10 focus-visible:ring-1 focus-visible:outline-none focus-visible:ring-inset tabular-nums [font-feature-settings:'tnum']"
+        className="focus-visible:ring-ring flex h-full items-center px-3 [font-feature-settings:'tnum'] text-[11px] font-semibold tabular-nums opacity-90 transition-colors hover:bg-white/10 focus-visible:ring-1 focus-visible:outline-none focus-visible:ring-inset"
         title="Workspace statistics"
       >
         {stats.files} file{stats.files === 1 ? "" : "s"}, {stats.folders} folder
@@ -98,9 +104,7 @@ export function StatusBar() {
               {selectionLength > 0 ? ` (${selectionLength} selected)` : ""}
             </Segment>
             <Segment>{totalLines} lines</Segment>
-            <Segment>
-              {eol === "CRLF" ? "CRLF" : "LF"}
-            </Segment>
+            <Segment>{eol === "CRLF" ? "CRLF" : "LF"}</Segment>
             <Segment>{file.encoding}</Segment>
             <Segment>
               <span className="capitalize">{file.language}</span>

@@ -31,8 +31,8 @@
 }
 
 .np-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
 }
 
 .np-scrollbar::-webkit-scrollbar-track {
@@ -42,6 +42,8 @@
 .np-scrollbar::-webkit-scrollbar-thumb {
   background-color: var(--np-scrollbar);
   border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 
 .np-scrollbar::-webkit-scrollbar-thumb:hover {

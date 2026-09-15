@@ -137,18 +137,51 @@
   body {
     @apply bg-background text-foreground selection:bg-primary/20 selection:text-primary;
     font-family: var(--font-inter), Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
   html {
     @apply font-sans;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
 }
 
-/* ── Modern developer glass & visual utilities ────────────────────────────── */
+/* ── Workbench surfaces & visual utilities ───────────────────────────────── */
+.np-app-shell {
+  isolation: isolate;
+  background:
+    radial-gradient(
+      circle at 14% -8%,
+      color-mix(in oklch, var(--primary) 8%, transparent),
+      transparent 28rem
+    ),
+    var(--background);
+}
+
+.np-topbar {
+  background: color-mix(in oklch, var(--np-toolbar-bg) 94%, transparent);
+  box-shadow:
+    0 1px 0 color-mix(in oklch, var(--foreground) 5%, transparent),
+    0 10px 30px -26px color-mix(in oklch, var(--foreground) 30%, transparent);
+}
+
+.np-panel-surface {
+  background: color-mix(in oklch, var(--card) 72%, var(--sidebar));
+}
+
+.np-raised-surface {
+  box-shadow: 0 12px 32px -24px
+    color-mix(in oklch, var(--foreground) 32%, transparent);
+}
+
 .glass-surface {
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
 }
 
 .glass-card {
@@ -169,7 +202,10 @@
 }
 
 .subtle-border-glow {
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
 }
 
 .subtle-border-glow:hover {
@@ -189,4 +225,15 @@
 .dark .socratix-bg {
   background-color: var(--background);
   background-image: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 229, 204, 0.08), transparent 70%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

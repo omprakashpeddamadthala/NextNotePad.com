@@ -2,7 +2,11 @@
 
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 interface ToolbarButtonProps {
@@ -19,7 +23,14 @@ interface ToolbarButtonProps {
   size?: "default" | "touch" | "compact";
 }
 
-export function ToolbarButton({ icon: Icon, label, onClick, active, disabled, size = "default" }: ToolbarButtonProps) {
+export function ToolbarButton({
+  icon: Icon,
+  label,
+  onClick,
+  active,
+  disabled,
+  size = "default",
+}: ToolbarButtonProps) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -31,11 +42,16 @@ export function ToolbarButton({ icon: Icon, label, onClick, active, disabled, si
           disabled={disabled}
           onClick={onClick}
           className={cn(
-            "shrink-0 transition-colors duration-100",
+            "text-muted-foreground hover:text-foreground shrink-0 rounded-lg transition-[color,background-color,box-shadow,transform] duration-150 ease-out active:scale-[0.94]",
             // Touch targets stay finger-sized on phones and tighten to Notepad++ proportions on
             // desktop, where the pointer is precise and the strip should stay compact.
-            size === "touch" ? "size-10" : size === "compact" ? "size-6" : "size-8 sm:size-7",
-            active && "bg-accent text-accent-foreground",
+            size === "touch"
+              ? "size-11"
+              : size === "compact"
+                ? "size-7"
+                : "size-8",
+            active &&
+              "bg-primary/12 text-primary ring-primary/20 shadow-xs ring-1",
           )}
         >
           <Icon className={size === "compact" ? "size-3.5" : "size-4"} />
