@@ -59,15 +59,15 @@ export function TabItem({ tab, node, isActive, isDirty, index, onActivate, onDra
           className={cn(
             "focus-visible:ring-1.5 focus-visible:ring-ring focus-visible:outline-none",
             "group relative flex h-9 shrink-0 cursor-default items-center gap-2 border-r px-3 text-xs transition-all duration-150 select-none",
-            // Modern bottom accent on active tab
+            // Modern bottom accent on active tab with gradient glow
             isActive
-              ? "bg-[var(--np-tab-active-bg)] text-foreground font-medium shadow-2xs after:absolute after:inset-x-0 after:bottom-0 after:h-[2px] after:bg-primary"
-              : "bg-transparent text-muted-foreground/80 hover:bg-[var(--np-menu-hover)]/70 hover:text-foreground",
+              ? "bg-[var(--np-tab-active-bg)] text-foreground font-medium shadow-2xs after:absolute after:inset-x-0 after:bottom-0 after:h-[2.5px] after:bg-gradient-to-r after:from-primary/70 after:via-primary after:to-primary/70"
+              : "bg-transparent text-muted-foreground/80 hover:bg-[var(--np-menu-hover)]/60 hover:text-foreground",
           )}
           style={{ borderColor: "var(--np-tab-border)" }}
           title={node?.path}
         >
-          {tab.pinned && <Pin className="size-3 shrink-0 fill-current opacity-70 text-primary" />}
+          {tab.pinned && <Pin className="size-3 shrink-0 fill-current opacity-80 text-primary" />}
           {/* Icon is chosen from a fixed set of stable icon components, not created during render. */}
           {/* eslint-disable-next-line react-hooks/static-components */}
           <Icon className="size-3.5 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity" />
@@ -87,7 +87,7 @@ export function TabItem({ tab, node, isActive, isDirty, index, onActivate, onDra
                 closeTab(tab.id);
               }}
               className={cn(
-                "absolute inset-0 flex items-center justify-center rounded-sm transition-all duration-150 hover:bg-muted-foreground/20 hover:scale-110 active:scale-95 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                "absolute inset-0 flex items-center justify-center rounded-sm transition-all duration-150 hover:bg-destructive/15 hover:text-destructive hover:scale-110 active:scale-95 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
                 isDirty ? "hidden group-hover:flex focus-visible:flex [@media(hover:none)]:flex" : "opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100",
               )}
             >

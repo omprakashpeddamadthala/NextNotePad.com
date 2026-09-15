@@ -4,25 +4,25 @@
  * Light-mode defaults aligned to the new slate-indigo professional palette.
  */
 :root {
-  --np-toolbar-bg: #f8f8fa;
-  --np-statusbar-bg: #1e1e24;
-  --np-statusbar-fg: #f4f4f5;
+  --np-toolbar-bg: rgba(248, 250, 252, 0.92);
+  --np-statusbar-bg: #181d26;
+  --np-statusbar-fg: #f8fafc;
   --np-tab-active-bg: #ffffff;
-  --np-tab-inactive-bg: #f0f0f3;
-  --np-tab-border: #e4e4e9;
+  --np-tab-inactive-bg: #f1f5f9;
+  --np-tab-border: #e2e8f0;
   --np-scrollbar: #cbd5e1;
-  --np-menu-hover: #eef0f5;
+  --np-menu-hover: #f1f5f9;
 }
 
 .dark {
-  --np-toolbar-bg: #141518;
-  --np-statusbar-bg: #101114;
-  --np-statusbar-fg: #e2e8f0;
-  --np-tab-active-bg: #1a1b20;
-  --np-tab-inactive-bg: #121316;
+  --np-toolbar-bg: rgba(10, 10, 15, 0.92);
+  --np-statusbar-bg: #0a0a0f;
+  --np-statusbar-fg: #f8fafc;
+  --np-tab-active-bg: #12131a;
+  --np-tab-inactive-bg: #0a0a0f;
   --np-tab-border: rgba(255, 255, 255, 0.08);
   --np-scrollbar: #334155;
-  --np-menu-hover: #23252b;
+  --np-menu-hover: #1a1a24;
 }
 
 .np-scrollbar {

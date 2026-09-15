@@ -19,8 +19,11 @@ import { WorkspaceDropdown } from "@/components/workspace/WorkspaceDropdown";
 import { Separator } from "@/components/ui/separator";
 import { AppLogo } from "@/components/ui/AppLogo";
 
+import { useDialogStore } from "@/store/dialogStore";
+
 export function MenuBar() {
   const authStatus = useAuthStore((s) => s.status);
+  const openDialog = useDialogStore((s) => s.openDialog);
 
   return (
     <nav
@@ -30,7 +33,15 @@ export function MenuBar() {
       style={{ borderBottomColor: "var(--np-tab-border)" }}
     >
       {/* Brand logo & workspace selector */}
-      <AppLogo size="sm" className="mr-1.5 hover:scale-105 transition-transform" />
+      <button
+        type="button"
+        onClick={() => openDialog("about")}
+        title="About NextNotePad.com"
+        aria-label="About NextNotePad"
+        className="focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring rounded-md cursor-pointer mr-1.5"
+      >
+        <AppLogo size="sm" className="hover:scale-105 transition-transform" />
+      </button>
       <WorkspaceDropdown />
       <Separator orientation="vertical" className="mx-1.5 h-3.5 opacity-40" />
 

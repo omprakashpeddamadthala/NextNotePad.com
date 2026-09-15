@@ -113,7 +113,7 @@ export function WorkspaceDropdown({ variant = "default", className }: WorkspaceD
   const displayName = activeWorkspace?.name ?? (loadingWorkspaces ? "Loading…" : "My Workspace");
 
   const triggerClasses = cn(
-    "flex items-center gap-1.5 rounded-md border border-border/60 bg-background/40 px-2 py-0.5 text-xs font-medium outline-none transition-all duration-150 hover:bg-accent/80 hover:border-border focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+    "group flex items-center gap-1.5 rounded-md border border-primary/25 bg-primary/[0.06] px-2.5 py-1 text-xs font-medium text-foreground outline-none transition-all duration-150 hover:bg-primary/[0.12] hover:border-primary/40 hover:shadow-2xs focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
     variant === "toolbar" && "h-7 border border-input bg-background/80 px-2.5 shadow-xs hover:bg-accent hover:text-accent-foreground",
     variant === "sidebar" && "min-w-0 max-w-full px-1 py-0.5 font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground",
     className,
@@ -127,12 +127,14 @@ export function WorkspaceDropdown({ variant = "default", className }: WorkspaceD
         aria-label={`Current workspace: ${displayName}`}
         title={`Active Workspace: ${displayName} (Synced with Google Drive)`}
       >
-        <Layers className="size-3.5 shrink-0 text-primary" />
-        <span className="max-w-[140px] truncate">{displayName}</span>
+        <span className="flex size-3.5 items-center justify-center rounded-xs bg-primary/20 text-primary ring-1 ring-primary/30 transition-transform group-hover:scale-110">
+          <Layers className="size-2.5 shrink-0" />
+        </span>
+        <span className="max-w-[140px] truncate font-medium">{displayName}</span>
         {switchingWorkspace || loadingWorkspaces ? (
           <Loader2 className="size-3 animate-spin text-muted-foreground shrink-0" />
         ) : (
-          <ChevronDown className="size-3 text-muted-foreground shrink-0" />
+          <ChevronDown className="size-3 text-muted-foreground shrink-0 opacity-70 group-hover:opacity-100 transition-opacity" />
         )}
       </DropdownMenuTrigger>
 

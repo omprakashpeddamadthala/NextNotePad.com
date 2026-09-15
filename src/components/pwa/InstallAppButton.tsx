@@ -16,6 +16,8 @@ function isIOS(): boolean {
  * install UI — `beforeinstallprompt` firing at all is gated by undocumented Chrome engagement
  * heuristics, so waiting for it before showing anything can mean the button never appears at all.
  */
+import { APP_BRAND } from "@/lib/constants/branding";
+
 export function InstallAppButton() {
   const { installed, hasNativePrompt, promptInstall } = useInstallPrompt();
 
@@ -27,11 +29,11 @@ export function InstallAppButton() {
       return;
     }
     if (isIOS()) {
-      toast.info('Tap the Share icon, then "Add to Home Screen" to install this app.');
+      toast.info(`Tap the Share icon, then "Add to Home Screen" to install ${APP_BRAND.name}.`);
       return;
     }
     toast.info(
-      "Look for an install icon in your browser's address bar, or check its menu for \"Install App\" / \"Add to Home Screen\".",
+      `Look for an install icon in your address bar, or browser menu for "Install ${APP_BRAND.name}".`,
     );
   }
 

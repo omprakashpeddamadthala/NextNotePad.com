@@ -57,6 +57,7 @@ import { useSettingsStore } from "@/store/settingsStore";
 import { useAuthStore } from "@/store/authStore";
 import { useTabsStore } from "@/store/tabsStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
+import { AppLogo } from "@/components/ui/AppLogo";
 import { cn } from "@/lib/utils";
 
 /** Menu triggers (FileMenu, EditMenu, ...) render their own compact desktop-style button —
@@ -172,8 +173,11 @@ export function MobileMenuSheet() {
         side="bottom"
         className="max-h-[85vh] overflow-y-auto rounded-t-lg"
       >
-        <SheetHeader>
-          <SheetTitle>Menu</SheetTitle>
+        <SheetHeader className="pb-3 border-b px-4 text-left">
+          <div className="flex items-center justify-between">
+            <AppLogo size="sm" showText showDomain showTagline />
+            <SheetTitle className="sr-only">NextNotePad Menu</SheetTitle>
+          </div>
         </SheetHeader>
 
         <div className="flex items-center justify-between gap-2 border-b px-4 pb-4">

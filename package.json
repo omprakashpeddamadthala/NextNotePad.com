@@ -1,11 +1,13 @@
 {
   "name": "nextnotepad",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/bump-version.mjs",
     "build": "next build",
     "start": "next start",
+    "bump-version": "node scripts/bump-version.mjs",
     "lint": "eslint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

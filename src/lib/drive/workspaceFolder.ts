@@ -96,6 +96,111 @@ export async function ensureWorkspaceFolder(drive: drive_v3.Drive, workspaceId: 
   return folderId;
 }
 
+/**
+ * Renames a workspace folder in Google Drive.
+ * If the workspace already has a linked Drive folder, updates its name in Drive.
+ * If the linked folder no longer exists in Drive, creates a new one with the new name.
+ */
+export async function renameWorkspaceFolder(
+  drive: drive_v3.Drive,
+  workspaceId: string,
+  newName: string,
+): Promise<string> {
+  const workspace = await prisma.workspace.findUniqueOrThrow({ where: { id: workspaceId } });
+
+  if (workspace.driveWorkspaceFolderId) {
+    if (await driveFileIsLive(drive, workspace.driveWorkspaceFolderId)) {
+      await drive.files.update({
+        fileId: workspace.driveWorkspaceFolderId,
+        requestBody: { name: newName },
+        fields: "id,name",
+      });
+      return workspace.driveWorkspaceFolderId;
+    }
+    // Stale/deleted folder in Drive — clear it so we recreate under root
+    await prisma.workspace.update({
+      where: { id: workspaceId },
+      data: { driveWorkspaceFolderId: null },
+    });
+  }
+
+  // If no folder existed or previous one was deleted, ensure under root with the new name
+  const rootFolderId = await ensureRootFolder(drive, workspaceId);
+  const folderId = await findOrCreateNamedFolder(drive, rootFolderId, newName);
+
+  await prisma.workspace.update({
+    where: { id: workspaceId },
+    data: { driveWorkspaceFolderId: folderId },
+  });
+
+  return folderId;
+}
+
+/**
+ * Deletes or trashes a workspace folder in Google Drive when a workspace is deleted.
+ * Handles cases where driveWorkspaceFolderId is cached, or locates it by name if missing.
+ */
+export async function deleteWorkspaceFolder(
+  drive: drive_v3.Drive,
+  workspace: { id: string; name: string; driveWorkspaceFolderId: string | null },
+): Promise<void> {
+  let folderId = workspace.driveWorkspaceFolderId;
+
+  // If no folder ID cached on workspace, search by name in the app root folder
+  if (!folderId) {
+    try {
+      const rootFolderId = await ensureRootFolder(drive, workspace.id);
+      const sanitizedName = workspace.name.replace(/'/g, "\\'");
+      const res = await drive.files.list({
+        q: `name='${sanitizedName}' and mimeType='${FOLDER_MIME_TYPE}' and trashed=false and '${rootFolderId}' in parents`,
+        fields: "files(id)",
+        spaces: "drive",
+      });
+      folderId = res.data.files?.[0]?.id ?? null;
+    } catch (err) {
+      console.error(`Failed to find Drive folder by name for workspace ${workspace.id}:`, err);
+    }
+  }
+
+  if (folderId) {
+    try {
+      // First attempt permanent delete so it is completely removed from Google Drive
+      await drive.files.delete({ fileId: folderId });
+    } catch {
+      // If permanent delete fails (e.g. permission or scope), fallback to moving to trash
+      try {
+        await drive.files.update({
+          fileId: folderId,
+          requestBody: { trashed: true },
+        });
+      } catch (trashErr) {
+        console.error(`Failed to delete or trash Drive workspace folder ${folderId}:`, trashErr);
+      }
+    }
+  }
+}
+
+/**
+ * Backwards-compatible alias for deleteWorkspaceFolder.
+ */
+export async function trashWorkspaceFolder(
+  drive: drive_v3.Drive,
+  folderId: string,
+): Promise<void> {
+  try {
+    await drive.files.delete({ fileId: folderId });
+  } catch {
+    try {
+      await drive.files.update({
+        fileId: folderId,
+        requestBody: { trashed: true },
+      });
+    } catch (err) {
+      console.error(`Failed to trash Drive workspace folder ${folderId}:`, err);
+    }
+  }
+}
+
 export interface DriveItem {
   id: string;
   name: string;

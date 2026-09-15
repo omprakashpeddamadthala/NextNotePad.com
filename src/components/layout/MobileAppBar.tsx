@@ -14,6 +14,9 @@ import { runAction } from "@/services/shortcuts/actionRegistry";
  * The sidebar toggle stays directly on the bar (frequent, one-tap); everything else — every
  * menu and every toolbar action, none removed — lives in `MobileMenuSheet` behind the hamburger.
  */
+import { AppLogo } from "@/components/ui/AppLogo";
+import { APP_BRAND } from "@/lib/constants/branding";
+
 export function MobileAppBar() {
   const mobileSidebarOpen = useUIStore((s) => s.mobileSidebarOpen);
   const toggleMobileSidebar = useUIStore((s) => s.toggleMobileSidebar);
@@ -35,9 +38,12 @@ export function MobileAppBar() {
         size="touch"
       />
       <ToolbarButton icon={Menu} label="Menu" onClick={() => setMobileMenuSheetOpen(true)} size="touch" />
-      <span className="min-w-0 flex-1 truncate px-1 text-center text-sm font-medium">
-        {file ? file.name : "NextNotePad.com"}
-      </span>
+      <div className="min-w-0 flex-1 flex items-center justify-center gap-1.5 px-1">
+        {!file && <AppLogo size="xs" />}
+        <span className="truncate text-sm font-medium">
+          {file ? file.name : APP_BRAND.domain}
+        </span>
+      </div>
       <ToolbarButton icon={Search} label="Find (Ctrl+F)" onClick={() => runAction("search.find")} size="touch" />
       <ToolbarButton
         icon={CommandIcon}

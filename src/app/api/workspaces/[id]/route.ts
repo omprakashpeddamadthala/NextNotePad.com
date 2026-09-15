@@ -3,6 +3,8 @@ import { getSessionUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { unauthorized, notFound, badRequest, serverError } from "@/lib/api/respond";
 import { updateWorkspaceSchema } from "@/lib/validation/workspaceSchemas";
+import { getDriveClientForUser } from "@/lib/drive/driveClient";
+import { renameWorkspaceFolder, deleteWorkspaceFolder } from "@/lib/drive/workspaceFolder";
 
 /** GET /api/workspaces/[id] — get a single workspace. */
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -56,11 +58,21 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       },
     });
 
+    let driveWorkspaceFolderId = updated.driveWorkspaceFolderId;
+    if (name && name !== workspace.name && (user.googleAccessToken || user.googleRefreshToken)) {
+      try {
+        const drive = getDriveClientForUser(user);
+        driveWorkspaceFolderId = await renameWorkspaceFolder(drive, workspace.id, name);
+      } catch (driveErr) {
+        console.error(`Failed to sync workspace rename to Drive for workspace ${workspace.id}:`, driveErr);
+      }
+    }
+
     return NextResponse.json({
       id: updated.id,
       name: updated.name,
       description: updated.description,
-      driveWorkspaceFolderId: updated.driveWorkspaceFolderId,
+      driveWorkspaceFolderId,
       createdAt: updated.createdAt,
       updatedAt: updated.updatedAt,
     });
@@ -96,6 +108,16 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
         where: { id: user.id },
         data: { activeWorkspaceId: another?.id ?? null },
       });
+    }
+
+    // Delete or trash the workspace folder in Google Drive if connected
+    if (user.googleAccessToken || user.googleRefreshToken) {
+      try {
+        const drive = getDriveClientForUser(user);
+        await deleteWorkspaceFolder(drive, workspace);
+      } catch (driveErr) {
+        console.error(`Failed to delete Drive folder for workspace ${workspace.id}:`, driveErr);
+      }
     }
 
     await prisma.workspace.delete({ where: { id } });
