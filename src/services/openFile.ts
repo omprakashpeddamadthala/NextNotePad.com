@@ -1,7 +1,6 @@
 import { useTabsStore } from "@/store/tabsStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useRecentFilesStore } from "@/store/recentFilesStore";
-import { openMarkdownFullPage } from "@/services/markdownFullPageView";
 import { closeAllSpecialViews } from "@/services/specialViews";
 
 /**

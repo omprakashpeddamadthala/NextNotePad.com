@@ -34,7 +34,9 @@ export function MarkdownPreview({ fileId }: MarkdownPreviewProps) {
     let cancelled = false;
     const existing = modelRegistry.getModel(fileId);
     if (existing) {
-      setInitialContent(existing.getValue());
+      Promise.resolve().then(() => {
+        if (!cancelled) setInitialContent(existing.getValue());
+      });
       return;
     }
     void getActiveRepository()
@@ -71,7 +73,7 @@ export function MarkdownPreview({ fileId }: MarkdownPreviewProps) {
         state="loading"
         skeletonBodyLines={6}
         onRetry={retry}
-        className="h-full bg-background px-6 py-4"
+        className="bg-background h-full px-6 py-4"
       />
     );
   }
@@ -79,16 +81,26 @@ export function MarkdownPreview({ fileId }: MarkdownPreviewProps) {
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-8 shrink-0 items-center justify-end gap-0.5 border-b bg-[var(--np-toolbar-bg)] px-2 sm:gap-1">
-        <Button size="sm" variant="ghost" onClick={() => window.print()} title="Download PDF">
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => window.print()}
+          title="Download PDF"
+        >
           <Printer className="size-3.5" />
           <span className="hidden sm:inline">Download PDF</span>
         </Button>
-        <Button size="sm" variant="ghost" onClick={() => openMarkdownFullPage(fileId)} title="View Full Page">
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => openMarkdownFullPage(fileId)}
+          title="View Full Page"
+        >
           <Maximize2 className="size-3.5" />
           <span className="hidden sm:inline">View Full Page</span>
         </Button>
       </div>
-      <div className="np-scrollbar min-h-0 flex-1 overflow-auto bg-background px-6 py-4">
+      <div className="np-scrollbar bg-background min-h-0 flex-1 overflow-auto px-6 py-4">
         <MarkdownRenderPane state="ready" html={html} onRetry={retry} />
       </div>
     </div>

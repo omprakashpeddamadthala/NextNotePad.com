@@ -125,6 +125,8 @@ export function WorkspaceDropdown({
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onSelect={() => {
+              // Full-page navigation required for OAuth 302 endpoint
+              // eslint-disable-next-line @next/next/no-location-assign-relative-destination
               window.location.assign("/api/auth/google");
             }}
             className="text-primary cursor-pointer gap-2 text-xs font-medium"
