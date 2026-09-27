@@ -18,9 +18,9 @@ export function TopMenu({ label, children }: TopMenuProps) {
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          "text-foreground/75 flex h-8 items-center rounded-lg px-2.5 text-[13px] font-medium transition-[color,background-color,box-shadow,transform] duration-150 ease-out outline-none",
-          "hover:bg-accent hover:text-foreground focus-visible:ring-ring/30 focus-visible:ring-2",
-          "data-[state=open]:bg-accent data-[state=open]:text-foreground active:scale-[0.97] data-[state=open]:shadow-xs",
+          "text-foreground/65 flex h-7 items-center rounded-md px-2 text-[12.5px] font-medium transition-[color,background-color] duration-100 ease-out outline-none",
+          "hover:bg-accent hover:text-foreground focus-visible:ring-ring/30 focus-visible:ring-1",
+          "data-[state=open]:bg-accent data-[state=open]:text-foreground",
         )}
         aria-label={`${label} menu`}
       >
@@ -28,7 +28,7 @@ export function TopMenu({ label, children }: TopMenuProps) {
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"
-        sideOffset={6}
+        sideOffset={5}
         className="w-64"
         onCloseAutoFocus={(e) => e.preventDefault()}
       >

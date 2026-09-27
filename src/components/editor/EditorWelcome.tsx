@@ -57,22 +57,22 @@ function QuickAction({
     <button
       type="button"
       onClick={onClick}
-      className="group relative flex items-center gap-3 rounded-xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#12131a] p-2.5 text-left text-xs transition-all duration-150 hover:border-slate-300 dark:hover:border-white/20 hover:shadow-xs active:scale-[0.99] focus-visible:ring-1.5 focus-visible:ring-[#007492] dark:focus-visible:ring-[#00e5cc] focus-visible:outline-none cursor-pointer"
+      className="group relative flex items-center gap-3 rounded-xl border border-border/70 bg-card p-2.5 text-left text-xs transition-all duration-150 hover:border-primary/30 hover:shadow-sm active:scale-[0.99] focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none cursor-pointer"
     >
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-white/5 text-slate-800 dark:text-[#00e5cc] ring-1 ring-slate-200/60 dark:ring-white/10 transition-all group-hover:bg-[#181d26] group-hover:text-white dark:group-hover:bg-[#00e5cc] dark:group-hover:text-[#0a0a0f] group-hover:scale-105">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground ring-1 ring-border/60 transition-all group-hover:bg-primary/10 group-hover:text-primary group-hover:ring-primary/25">
         <Icon className="size-4" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate font-semibold text-slate-900 dark:text-white group-hover:text-[#007492] dark:group-hover:text-[#00e5cc] transition-colors text-xs leading-tight">
+        <span className="block truncate font-semibold text-foreground group-hover:text-primary transition-colors text-xs leading-tight">
           {label}
         </span>
         {description && (
-          <span className="block truncate text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-none">
+          <span className="block truncate text-[11px] text-muted-foreground mt-0.5 leading-none">
             {description}
           </span>
         )}
       </span>
-      <ChevronRight className="size-3.5 shrink-0 text-slate-400 dark:text-slate-500 opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-0.5" />
+      <ChevronRight className="size-3.5 shrink-0 text-muted-foreground/40 opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-0.5" />
     </button>
   );
 }
@@ -168,38 +168,43 @@ export function EditorWelcome() {
     <div className="socratix-bg np-scrollbar h-full w-full overflow-y-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col justify-between select-none">
       <div className="animate-in fade-in w-full max-w-7xl mx-auto flex-1 flex flex-col justify-between gap-4">
         {/* Header Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200/90 dark:border-white/10">
-          <div className="flex items-center gap-3.5">
-            <AppLogo size="lg" className="hover:scale-105 transition-transform shrink-0 shadow-xs" />
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-border/60">
+          <div className="flex items-center gap-3">
+            <AppLogo
+              size="lg"
+              priority
+              iconClassName="shadow-[0_4px_16px_rgba(59,130,246,0.2)] hover:shadow-[0_6px_20px_rgba(59,130,246,0.3)] transition-shadow"
+            />
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                <h1 className="text-[18px] font-bold tracking-tight text-foreground leading-none">
                   {APP_BRAND.name}
+                  <span className="text-[#F59E0B] ml-0.5 text-xs font-semibold align-super">.com</span>
                 </h1>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/90 dark:border-amber-500/30 bg-amber-50/90 dark:bg-amber-950/40 px-2.5 py-0.5 text-[9.5px] font-medium text-amber-900 dark:text-amber-200 shadow-2xs">
-                  <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
-                  <span>{APP_BRAND.badge}</span>
+                <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/30 bg-amber-500/10 px-2 py-0.5 text-[9px] font-semibold text-amber-500 uppercase tracking-wide">
+                  <span className="size-1 rounded-full bg-amber-500 animate-pulse" />
+                  {APP_BRAND.badge}
                 </span>
-                <span className="rounded-md bg-slate-100 dark:bg-slate-800/60 px-2 py-0.5 text-[10px] font-mono font-medium text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-mono font-medium text-muted-foreground border border-border/70">
                   v{APP_VERSION.version}
                 </span>
               </div>
-              <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
-                {APP_BRAND.tagline} • <span className="opacity-90">{APP_BRAND.subTagline}</span>
+              <p className="text-[11.5px] text-muted-foreground mt-1 leading-tight">
+                {APP_BRAND.tagline}
               </p>
             </div>
           </div>
 
-          {/* Header Status Badges (Socratix style) */}
+          {/* Status badges */}
           <div className="flex items-center gap-2 text-xs">
-            <div className="flex items-center gap-1.5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-[#12131a]/80 backdrop-blur-xs px-2.5 py-1 text-slate-600 dark:text-slate-300 shadow-2xs">
+            <div className="flex items-center gap-1.5 rounded-md border border-border/70 bg-card px-2.5 py-1 shadow-xs">
               <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="font-medium text-[11px]">
+              <span className="font-medium text-[11px] text-foreground/80">
                 {authStatus === "authenticated" ? "Cloud Sync Active" : "Guest Mode (Local)"}
               </span>
             </div>
-            <div className="hidden sm:flex items-center gap-1.5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-[#12131a]/80 backdrop-blur-xs px-2.5 py-1 text-[11px] text-slate-600 dark:text-slate-300 shadow-2xs">
-              <CheckCircle2 className="size-3 text-[#007492] dark:text-[#00e5cc]" />
+            <div className="hidden sm:flex items-center gap-1.5 rounded-md border border-border/70 bg-card px-2.5 py-1 text-[11px] text-foreground/70 shadow-xs">
+              <CheckCircle2 className="size-3 text-emerald-500" />
               <span>Offline Ready</span>
             </div>
           </div>

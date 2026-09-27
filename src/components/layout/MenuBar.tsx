@@ -28,8 +28,7 @@ export function MenuBar() {
     <nav
       role="menubar"
       aria-label="Application menu"
-      className="np-topbar glass-surface relative z-20 flex h-11 shrink-0 items-center gap-0 border-b px-2.5 transition-colors select-none"
-      style={{ borderBottomColor: "var(--np-tab-border)" }}
+      className="np-topbar glass-surface relative z-20 flex h-10 shrink-0 items-center gap-0 border-b px-2 transition-colors select-none"
     >
       {/* Brand logo & workspace selector */}
       <button
@@ -37,19 +36,20 @@ export function MenuBar() {
         onClick={() => openDialog("about")}
         title="About NextNotePad.com"
         aria-label="About NextNotePad"
-        className="focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring rounded-md cursor-pointer mr-2"
+        className="focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring rounded-md cursor-pointer mr-1.5 flex items-center"
       >
         <AppLogo
-          size="md"
+          size="sm"
           showText
-          className="[&>span]:hidden xl:[&>span]:flex hover:scale-105 transition-transform"
+          showDomain
+          className="[&>div:last-child]:hidden xl:[&>div:last-child]:flex hover:opacity-85 transition-opacity"
         />
       </button>
       <WorkspaceDropdown />
-      <Separator orientation="vertical" className="mx-2 h-5 opacity-60" />
+      <Separator orientation="vertical" className="mx-2 h-4 opacity-40" />
 
       {/* Application menus */}
-      <div className="np-scrollbar flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto overflow-y-hidden">
+      <div className="np-scrollbar flex min-w-0 flex-1 items-center gap-0 overflow-x-auto overflow-y-hidden">
         <FileMenu />
         <EditMenu />
         <SearchMenu />
@@ -62,7 +62,7 @@ export function MenuBar() {
       </div>
 
       {/* Right side: status indicators and account */}
-      <div className="border-border/70 ml-auto flex shrink-0 items-center gap-1.5 border-l pl-2.5">
+      <div className="ml-auto flex shrink-0 items-center gap-1 pl-2 border-l border-border/60">
         <ToolbarButton
           icon={Settings2}
           label="Open Settings"
@@ -71,12 +71,12 @@ export function MenuBar() {
         <InstallAppButton />
         {authStatus === "guest" && (
           <span
-            className="border-border/70 bg-background/70 text-muted-foreground flex h-7 items-center gap-1.5 rounded-lg border px-2 text-[11px] font-medium shadow-xs"
+            className="border-border/60 bg-muted/60 text-muted-foreground flex h-6 items-center gap-1.5 rounded-md border px-2 text-[11px] font-medium"
             title="Guest mode — files are stored in this browser"
           >
-            <span className="size-1.5 rounded-full bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.12)]" />
-            <HardDriveDownload className="size-3 opacity-80" />
-            <span className="hidden xl:inline">Guest mode</span>
+            <span className="size-1.5 rounded-full bg-emerald-500" />
+            <HardDriveDownload className="size-3 opacity-70" />
+            <span className="hidden xl:inline">Guest</span>
           </span>
         )}
         <SyncStatusBadge />

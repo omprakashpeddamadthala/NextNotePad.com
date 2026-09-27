@@ -44,7 +44,7 @@ function DropdownMenuContent({
         sideOffset={sideOffset}
         align={align}
         className={cn(
-          "border-border/80 bg-popover/97 text-popover-foreground ring-foreground/5 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 z-50 max-h-(--radix-dropdown-menu-content-available-height) w-(--radix-dropdown-menu-trigger-width) min-w-36 origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-xl border p-1.5 shadow-[0_18px_45px_-18px_rgba(15,23,42,0.4)] ring-1 backdrop-blur-xl duration-150 data-closed:overflow-hidden",
+          "border-border/70 bg-popover text-popover-foreground ring-foreground/5 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-98 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-98 z-50 max-h-(--radix-dropdown-menu-content-available-height) w-(--radix-dropdown-menu-trigger-width) min-w-36 origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-lg border p-1 shadow-[0_8px_24px_-8px_rgba(15,23,42,0.25)] ring-1 backdrop-blur-md duration-100 data-closed:overflow-hidden",
           className,
         )}
         {...props}

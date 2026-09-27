@@ -82,12 +82,12 @@ export function Toolbar() {
   }, []);
 
   return (
-    <div className="relative shrink-0 border-b bg-[var(--np-toolbar-bg)]">
+    <div className="relative shrink-0 border-b" style={{ borderBottomColor: "var(--np-tab-border)", background: "var(--np-toolbar-bg)" }}>
       <div
         ref={scrollRef}
         role="toolbar"
         aria-label="Editor toolbar"
-        className="np-scrollbar flex h-9 items-center gap-0.5 overflow-x-auto overflow-y-hidden px-1"
+        className="np-scrollbar flex h-8 items-center gap-0 overflow-x-auto overflow-y-hidden px-1"
       >
         <ToolbarButton
           icon={FilePlus}
@@ -113,7 +113,7 @@ export function Toolbar() {
             )
           }
         />
-        <Separator orientation="vertical" className="mx-1 h-5" />
+        <Separator orientation="vertical" className="mx-1 h-4 opacity-40" />
         <ToolbarButton
           icon={Undo2}
           label="Undo (Ctrl+Z)"
@@ -124,7 +124,7 @@ export function Toolbar() {
           label="Redo (Ctrl+Y)"
           onClick={() => runAction("edit.redo")}
         />
-        <Separator orientation="vertical" className="mx-1 h-5" />
+        <Separator orientation="vertical" className="mx-1 h-4 opacity-40" />
         <ToolbarButton
           icon={Search}
           label="Find (Ctrl+F)"
@@ -135,7 +135,7 @@ export function Toolbar() {
           label="Replace (Ctrl+H)"
           onClick={() => runAction("search.replace")}
         />
-        <Separator orientation="vertical" className="mx-1 h-5" />
+        <Separator orientation="vertical" className="mx-1 h-4 opacity-40" />
         <ToolbarButton
           icon={Braces}
           label="Format Document / Selection (Shift+Alt+F)"
@@ -146,7 +146,7 @@ export function Toolbar() {
           label="Diff Checker"
           onClick={() => runAction("tools.diffChecker")}
         />
-        <Separator orientation="vertical" className="mx-1 h-5" />
+        <Separator orientation="vertical" className="mx-1 h-4 opacity-40" />
         <VoiceDictationButton />
         <ToolbarButton
           icon={Eye}
@@ -174,7 +174,7 @@ export function Toolbar() {
             );
           }}
         />
-        <Separator orientation="vertical" className="mx-1 h-5" />
+        <Separator orientation="vertical" className="mx-1 h-4 opacity-40" />
         <ToolbarButton
           icon={ZoomOut}
           label="Zoom Out"
@@ -191,7 +191,7 @@ export function Toolbar() {
           active={settings.wordWrap}
           onClick={() => updateSettings({ wordWrap: !settings.wordWrap })}
         />
-        <Separator orientation="vertical" className="mx-1 h-5" />
+        <Separator orientation="vertical" className="mx-1 h-4 opacity-40" />
         <ToolbarButton
           icon={PanelLeft}
           label="Toggle File Explorer"
@@ -212,12 +212,12 @@ export function Toolbar() {
       </div>
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-[var(--np-toolbar-bg)] to-transparent transition-opacity"
+        className="pointer-events-none absolute inset-y-0 left-0 w-5 bg-gradient-to-r from-[var(--np-toolbar-bg)] to-transparent transition-opacity"
         style={{ opacity: canScrollLeft ? 1 : 0 }}
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-[var(--np-toolbar-bg)] to-transparent transition-opacity"
+        className="pointer-events-none absolute inset-y-0 right-0 w-5 bg-gradient-to-l from-[var(--np-toolbar-bg)] to-transparent transition-opacity"
         style={{ opacity: canScrollRight ? 1 : 0 }}
       />
     </div>

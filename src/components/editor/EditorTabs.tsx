@@ -30,7 +30,7 @@ export function EditorTabs() {
     <div
       role="tablist"
       aria-label="Open editor tabs"
-      className="np-scrollbar flex h-10 shrink-0 items-stretch overflow-x-auto overflow-y-hidden border-b bg-[var(--np-tab-inactive-bg)]/75 select-none"
+      className="np-scrollbar flex h-9 shrink-0 items-stretch overflow-x-auto overflow-y-hidden border-b bg-[var(--np-tab-inactive-bg)] select-none"
       style={{ borderBottomColor: "var(--np-tab-border)" }}
     >
       {tabs.map((tab, index) => (
@@ -60,7 +60,7 @@ export function EditorTabs() {
         />
       ))}
       {closedStackLength > 0 && (
-        <div className="flex shrink-0 items-center border-l px-1">
+        <div className="flex shrink-0 items-center border-l px-0.5" style={{ borderColor: "var(--np-tab-border)" }}>
           <ToolbarButton
             icon={RotateCcw}
             label="Reopen Closed Tab (Ctrl+Shift+T)"

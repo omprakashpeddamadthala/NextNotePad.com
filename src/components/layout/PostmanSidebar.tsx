@@ -63,25 +63,25 @@ function NavRailIconButton({
   active?: boolean;
 }) {
   return (
-    <Tooltip delayDuration={200}>
+    <Tooltip delayDuration={300}>
       <TooltipTrigger asChild>
         <button
           type="button"
           aria-label={label}
           onClick={onClick}
           className={cn(
-            "relative flex size-8 shrink-0 items-center justify-center rounded-lg transition-all duration-150 ease-out outline-none cursor-pointer",
-            "hover:bg-accent hover:text-foreground active:scale-[0.94]",
-            "focus-visible:ring-ring/30 focus-visible:ring-2 focus-visible:outline-none",
+            "relative flex size-8 shrink-0 items-center justify-center rounded-md transition-all duration-100 ease-out outline-none cursor-pointer",
+            "hover:bg-accent hover:text-foreground active:scale-[0.93]",
+            "focus-visible:ring-ring/30 focus-visible:ring-1 focus-visible:outline-none",
             active
-              ? "text-primary bg-primary/12 ring-primary/20 before:bg-primary shadow-xs ring-1 before:absolute before:top-1/2 before:-left-1.5 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-r-full"
-              : "text-muted-foreground/80",
+              ? "text-primary bg-primary/10 before:bg-primary before:absolute before:top-1/2 before:-left-1.5 before:h-4 before:w-[2.5px] before:-translate-y-1/2 before:rounded-r-full"
+              : "text-muted-foreground/70",
           )}
         >
-          <Icon className="size-4 transition-transform duration-150" />
+          <Icon className="size-[15px]" />
         </button>
       </TooltipTrigger>
-      <TooltipContent side="right" className="text-xs font-medium">
+      <TooltipContent side="right" className="text-xs">
         {label}
       </TooltipContent>
     </Tooltip>
@@ -104,8 +104,11 @@ export function IconNavRail() {
     <TooltipProvider>
       <nav
         aria-label="Left navigation rail"
-        className="np-scrollbar flex w-11 shrink-0 flex-col items-center gap-1.5 overflow-x-hidden overflow-y-auto border-r py-3 select-none bg-white/70 dark:bg-[#0a0a0f]/80 backdrop-blur-xs border-slate-200/80 dark:border-white/10 shadow-2xs"
-        style={{ borderRightColor: "var(--np-tab-border)" }}
+        className="np-scrollbar flex w-10 shrink-0 flex-col items-center gap-1 overflow-x-hidden overflow-y-auto border-r py-2.5 select-none"
+        style={{
+          background: "var(--np-rail-bg)",
+          borderRightColor: "var(--np-rail-border)",
+        }}
       >
         <NavRailIconButton
           icon={Layers}
@@ -114,7 +117,7 @@ export function IconNavRail() {
           onClick={() => toggleSidebar()}
         />
 
-        <Separator className="my-1.5 w-4 opacity-30" />
+        <Separator className="my-1 w-4 opacity-30" />
 
         <NavRailIconButton
           icon={FilePlus}
@@ -141,7 +144,7 @@ export function IconNavRail() {
           }
         />
 
-        <Separator className="my-1 w-5 opacity-40" />
+        <Separator className="my-1 w-4 opacity-30" />
 
         <NavRailIconButton
           icon={Undo2}
@@ -154,7 +157,7 @@ export function IconNavRail() {
           onClick={() => runAction("edit.redo")}
         />
 
-        <Separator className="my-1 w-5 opacity-40" />
+        <Separator className="my-1 w-4 opacity-30" />
 
         <NavRailIconButton
           icon={Search}
@@ -167,7 +170,7 @@ export function IconNavRail() {
           onClick={() => runAction("search.replace")}
         />
 
-        <Separator className="my-1 w-5 opacity-40" />
+        <Separator className="my-1 w-4 opacity-30" />
 
         <NavRailIconButton
           icon={ZoomOut}
@@ -186,7 +189,7 @@ export function IconNavRail() {
           onClick={() => updateSettings({ wordWrap: !settings.wordWrap })}
         />
 
-        <Separator className="my-1 w-5 opacity-40" />
+        <Separator className="my-1 w-4 opacity-30" />
 
         <NavRailIconButton
           icon={PanelLeft}
@@ -212,32 +215,32 @@ export function IconNavRail() {
 function EmptyWorkspace() {
   const { createFileAndRename, createFolderAndRename } = useCreateAndRename();
   return (
-    <div className="animate-in fade-in flex h-full flex-col items-center justify-center gap-4 px-6 text-center duration-200">
-      <div className="bg-primary/10 ring-primary/20 relative flex size-12 items-center justify-center rounded-2xl shadow-xs ring-1">
+    <div className="animate-in fade-in flex h-full flex-col items-center justify-center gap-4 px-5 text-center duration-200">
+      <div className="bg-primary/8 ring-primary/15 relative flex size-11 items-center justify-center rounded-xl shadow-xs ring-1">
         <Layers className="text-primary size-5" />
         <span className="ring-background absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full bg-emerald-500 ring-2" />
       </div>
       <div>
         <p className="text-foreground text-xs font-semibold tracking-tight">
-          No files in workspace
+          No files yet
         </p>
-        <p className="text-muted-foreground/80 mt-1 text-[11px] leading-relaxed">
-          Create a collection folder or add a new file to get started.
+        <p className="text-muted-foreground/75 mt-1 text-[11px] leading-relaxed">
+          Create a folder or add a new file to get started.
         </p>
       </div>
-      <div className="flex w-full max-w-[200px] flex-col gap-2">
+      <div className="flex w-full max-w-[180px] flex-col gap-1.5">
         <button
           type="button"
           onClick={() => createFolderAndRename(null)}
-          className="border-primary/20 bg-primary/5 text-foreground hover:bg-primary/10 hover:border-primary/40 focus-visible:ring-ring flex items-center justify-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-150 hover:scale-[1.02] focus-visible:ring-2 focus-visible:outline-none active:scale-[0.98]"
+          className="border-border/80 bg-muted/60 text-foreground hover:bg-accent focus-visible:ring-ring flex items-center justify-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium transition-all duration-100 hover:scale-[1.01] focus-visible:ring-1 focus-visible:outline-none active:scale-[0.98]"
         >
           <FolderPlus className="text-primary size-3.5" />
-          New Collection
+          New Folder
         </button>
         <button
           type="button"
           onClick={() => createFileAndRename(null)}
-          className="border-border/80 bg-background/60 text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring flex items-center justify-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-150 hover:scale-[1.02] focus-visible:ring-2 focus-visible:outline-none active:scale-[0.98]"
+          className="border-border/80 bg-muted/40 text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring flex items-center justify-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium transition-all duration-100 hover:scale-[1.01] focus-visible:ring-1 focus-visible:outline-none active:scale-[0.98]"
         >
           <FilePlus className="size-3.5" />
           New File
@@ -277,7 +280,8 @@ export function CollectionsSidebar() {
     <div
       role="complementary"
       aria-label="File Explorer"
-      className="np-panel-surface flex h-full flex-col select-none"
+      className="flex h-full flex-col select-none"
+      style={{ background: "var(--np-sidebar-bg)" }}
       onDragOver={(e) => {
         if (e.dataTransfer.types.includes("Files")) e.preventDefault();
       }}
@@ -288,17 +292,17 @@ export function CollectionsSidebar() {
         }
       }}
     >
-      {/* ── Header: section title + action buttons ────────────────────── */}
+      {/* ── Header: section title + action buttons ─────────────────────── */}
       <div
-        className="bg-background/45 flex h-11 shrink-0 items-center justify-between border-b px-3"
-        style={{ borderBottomColor: "var(--np-tab-border)" }}
+        className="flex h-9 shrink-0 items-center justify-between border-b px-3"
+        style={{ borderBottomColor: "var(--np-sidebar-border)" }}
       >
         <div className="min-w-0 flex-1 leading-tight">
-          <span className="text-foreground/75 block truncate text-[11px] font-semibold tracking-[0.11em] uppercase">
-            {showTrash ? "Recycle Bin" : "Files"}
+          <span className="text-foreground/55 block truncate text-[10px] font-semibold tracking-[0.12em] uppercase">
+            {showTrash ? "Recycle Bin" : "Explorer"}
           </span>
           {!showTrash && (
-            <span className="text-muted-foreground/70 mt-0.5 block truncate text-[10px]">
+            <span className="text-muted-foreground/60 -mt-0.5 block truncate text-[10px] leading-tight">
               {workspaceName}
             </span>
           )}
@@ -306,19 +310,17 @@ export function CollectionsSidebar() {
 
         <div className="flex items-center gap-0.5">
           {!showTrash && (
-            <>
-              <ToolbarButton
-                icon={ChevronsDownUp}
-                label="Collapse All"
-                size="compact"
-                onClick={() => {
-                  for (const node of Object.values(nodes)) {
-                    if (node.type === "folder")
-                      setFolderCollapsed(node.id, true);
-                  }
-                }}
-              />
-            </>
+            <ToolbarButton
+              icon={ChevronsDownUp}
+              label="Collapse All"
+              size="compact"
+              onClick={() => {
+                for (const node of Object.values(nodes)) {
+                  if (node.type === "folder")
+                    setFolderCollapsed(node.id, true);
+                }
+              }}
+            />
           )}
           <ToolbarButton
             icon={Trash2}
@@ -335,11 +337,11 @@ export function CollectionsSidebar() {
       {/* ── Search / filter ───────────────────────────────────────────── */}
       {!showTrash && (
         <div
-          className="relative flex h-11 shrink-0 items-center border-b px-2.5 py-1.5"
-          style={{ borderBottomColor: "var(--np-tab-border)" }}
+          className="relative flex h-9 shrink-0 items-center border-b px-2 py-1.5"
+          style={{ borderBottomColor: "var(--np-sidebar-border)" }}
         >
-          <div className="border-border/70 bg-background/75 focus-within:border-primary/40 focus-within:bg-background focus-within:ring-primary/15 relative flex w-full items-center rounded-lg border px-2 shadow-xs transition-all focus-within:ring-2">
-            <Search className="text-muted-foreground/50 pointer-events-none size-3 shrink-0" />
+          <div className="border-border/60 bg-background/70 focus-within:border-primary/40 focus-within:ring-primary/10 relative flex w-full items-center rounded-md border px-1.5 transition-all focus-within:ring-1">
+            <Search className="text-muted-foreground/40 pointer-events-none size-3 shrink-0" />
             <Input
               value={search}
               onChange={(e) => {
@@ -347,7 +349,7 @@ export function CollectionsSidebar() {
                 setFilterQuery(e.target.value);
               }}
               placeholder="Filter files…"
-              className="placeholder:text-muted-foreground/55 h-7 flex-1 border-none bg-transparent pr-4 pl-1.5 text-xs shadow-none focus-visible:ring-0"
+              className="placeholder:text-muted-foreground/45 h-6 flex-1 border-none bg-transparent pr-4 pl-1.5 text-[11.5px] shadow-none focus-visible:ring-0"
               aria-label="Search collections"
             />
             {filterQuery && (
@@ -364,15 +366,6 @@ export function CollectionsSidebar() {
               </button>
             )}
           </div>
-        </div>
-      )}
-
-      {/* ── Section label ─────────────────────────────────────────────── */}
-      {!showTrash && (
-        <div className="flex shrink-0 items-center justify-between px-3 pt-3 pb-1">
-          <span className="text-muted-foreground/70 text-[10px] font-semibold tracking-[0.11em] uppercase select-none">
-            Collections
-          </span>
         </div>
       )}
 

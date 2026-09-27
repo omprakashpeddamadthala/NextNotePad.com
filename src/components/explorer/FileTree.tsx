@@ -15,7 +15,7 @@ import { moveNode, setFolderCollapsed } from "@/services/fileOperations";
 
 /** Must stay in sync with TreeNode's row height — the virtualizer positions rows
  *  absolutely at this pitch, so a mismatch clips or overlaps them. */
-const ROW_HEIGHT_DESKTOP = 30;
+const ROW_HEIGHT_DESKTOP = 28;
 const ROW_HEIGHT_TOUCH = 36;
 
 /** Placeholder rows shown while the cloud workspace tree is still being fetched — without this

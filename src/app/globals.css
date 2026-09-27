@@ -51,83 +51,81 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* ── Socratix Light Mode: Slate-50 background, obsidian text, clean borders ── */
+/* ── NextNotePad Light Mode — crisp, editor-grade palette ─────────────────── */
 :root {
-  --background: #f8fafc;
-  --foreground: #181d26;
+  --background: #f5f6f8;
+  --foreground: #1a1d24;
   --card: #ffffff;
-  --card-foreground: #181d26;
+  --card-foreground: #1a1d24;
   --popover: #ffffff;
-  --popover-foreground: #181d26;
-  --primary: #181d26;
+  --popover-foreground: #1a1d24;
+  --primary: #2563eb;
   --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #181d26;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --accent: #f8fafc;
-  --accent-foreground: #181d26;
-  --destructive: #ef4444;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --info: #0284c7;
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #181d26;
-  --chart-1: #181d26;
-  --chart-2: #0284c7;
-  --chart-3: #10b981;
-  --chart-4: #f59e0b;
-  --chart-5: #ef4444;
-  --radius: 0.5rem;
-  --sidebar: #f8fafc;
-  --sidebar-foreground: #181d26;
-  --sidebar-primary: #181d26;
+  --secondary: #eef0f5;
+  --secondary-foreground: #1a1d24;
+  --muted: #eef0f5;
+  --muted-foreground: #6b7280;
+  --accent: #eef0f5;
+  --accent-foreground: #1a1d24;
+  --destructive: #dc2626;
+  --success: #16a34a;
+  --warning: #d97706;
+  --info: #0ea5e9;
+  --border: #dde1e9;
+  --input: #dde1e9;
+  --ring: #2563eb;
+  --chart-1: #2563eb;
+  --chart-2: #0ea5e9;
+  --chart-3: #16a34a;
+  --chart-4: #d97706;
+  --chart-5: #dc2626;
+  --radius: 0.45rem;
+  --sidebar: #f0f2f5;
+  --sidebar-foreground: #1a1d24;
+  --sidebar-primary: #2563eb;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f1f5f9;
-  --sidebar-accent-foreground: #181d26;
-  --sidebar-border: #e2e8f0;
-  --sidebar-ring: #181d26;
-  --socratix-glow: rgba(120, 119, 198, 0.15);
+  --sidebar-accent: #e4e8ef;
+  --sidebar-accent-foreground: #1a1d24;
+  --sidebar-border: #dde1e9;
+  --sidebar-ring: #2563eb;
 }
 
-/* ── Socratix Dark Mode: Deep void (#0a0a0f), teal accents (#00e5cc) ──────── */
+/* ── NextNotePad Dark Mode — deep, professional dark editor palette ─────────── */
 .dark {
-  --background: #0a0a0f;
-  --foreground: #f8fafc;
-  --card: #12131a;
-  --card-foreground: #f8fafc;
-  --popover: #12131a;
-  --popover-foreground: #f8fafc;
-  --primary: #00e5cc;
-  --primary-foreground: #0a0a0f;
-  --secondary: #1a1a24;
-  --secondary-foreground: #f8fafc;
-  --muted: #161720;
-  --muted-foreground: #94a3b8;
-  --accent: #1e1f2b;
-  --accent-foreground: #f8fafc;
-  --destructive: #ff6b6b;
-  --success: #10b981;
+  --background: #0d0f14;
+  --foreground: #e8eaed;
+  --card: #151820;
+  --card-foreground: #e8eaed;
+  --popover: #151820;
+  --popover-foreground: #e8eaed;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --secondary: #1e2130;
+  --secondary-foreground: #e8eaed;
+  --muted: #1a1e2b;
+  --muted-foreground: #8b92a5;
+  --accent: #1e2130;
+  --accent-foreground: #e8eaed;
+  --destructive: #ef4444;
+  --success: #22c55e;
   --warning: #f59e0b;
-  --info: #00e5cc;
-  --border: rgba(255, 255, 255, 0.1);
-  --input: rgba(255, 255, 255, 0.12);
-  --ring: #00e5cc;
-  --chart-1: #00e5cc;
+  --info: #38bdf8;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.1);
+  --ring: #3b82f6;
+  --chart-1: #3b82f6;
   --chart-2: #38bdf8;
-  --chart-3: #4ade80;
-  --chart-4: #fbbf24;
-  --chart-5: #f87171;
-  --sidebar: #0f1017;
-  --sidebar-foreground: #f8fafc;
-  --sidebar-primary: #00e5cc;
-  --sidebar-primary-foreground: #0a0a0f;
-  --sidebar-accent: #1a1a24;
-  --sidebar-accent-foreground: #f8fafc;
-  --sidebar-border: rgba(255, 255, 255, 0.1);
-  --sidebar-ring: #00e5cc;
-  --socratix-glow: rgba(0, 229, 204, 0.08);
+  --chart-3: #22c55e;
+  --chart-4: #f59e0b;
+  --chart-5: #ef4444;
+  --sidebar: #11131a;
+  --sidebar-foreground: #e8eaed;
+  --sidebar-primary: #3b82f6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1e2130;
+  --sidebar-accent-foreground: #e8eaed;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #3b82f6;
 }
 
 @layer base {
@@ -135,7 +133,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground selection:bg-primary/20 selection:text-primary;
+    @apply bg-background text-foreground;
     font-family: var(--font-inter), Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     text-rendering: optimizeLegibility;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
@@ -149,82 +147,88 @@
   [role="button"]:not([aria-disabled="true"]) {
     cursor: pointer;
   }
+  /* Clean selection colors */
+  ::selection {
+    background-color: color-mix(in srgb, var(--primary) 20%, transparent);
+    color: var(--foreground);
+  }
 }
 
-/* ── Workbench surfaces & visual utilities ───────────────────────────────── */
+/* ── App Shell ────────────────────────────────────────────────────────────── */
 .np-app-shell {
   isolation: isolate;
-  background:
-    radial-gradient(
-      circle at 14% -8%,
-      color-mix(in oklch, var(--primary) 8%, transparent),
-      transparent 28rem
-    ),
-    var(--background);
+  background: var(--background);
 }
 
+/* ── Top menu bar ─────────────────────────────────────────────────────────── */
 .np-topbar {
-  background: color-mix(in oklch, var(--np-toolbar-bg) 94%, transparent);
-  box-shadow:
-    0 1px 0 color-mix(in oklch, var(--foreground) 5%, transparent),
-    0 10px 30px -26px color-mix(in oklch, var(--foreground) 30%, transparent);
+  background: color-mix(in oklch, var(--background) 96%, transparent);
+  border-bottom: 1px solid var(--border);
 }
 
+.dark .np-topbar {
+  background: color-mix(in oklch, var(--np-toolbar-bg) 98%, transparent);
+}
+
+/* ── Panel surfaces ───────────────────────────────────────────────────────── */
 .np-panel-surface {
-  background: color-mix(in oklch, var(--card) 72%, var(--sidebar));
+  background: var(--sidebar);
 }
 
-.np-raised-surface {
-  box-shadow: 0 12px 32px -24px
-    color-mix(in oklch, var(--foreground) 32%, transparent);
-}
-
+/* ── Glass surface (backdrop blur for popovers/sheets) ──────────────────── */
 .glass-surface {
-  backdrop-filter: blur(18px) saturate(1.12);
-  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  backdrop-filter: blur(12px) saturate(1.08);
+  -webkit-backdrop-filter: blur(12px) saturate(1.08);
 }
 
+/* ── Subtle card glass for the welcome screen ───────────────────────────── */
 .glass-card {
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  background: color-mix(in srgb, var(--card) 85%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background: color-mix(in srgb, var(--card) 92%, transparent);
   border: 1px solid var(--border);
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 12px -2px rgba(0, 0, 0, 0.06);
 }
 
 .dark .glass-card {
-  background: color-mix(in srgb, var(--card) 75%, transparent);
-  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.35);
+  background: color-mix(in srgb, var(--card) 80%, transparent);
+  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.4);
 }
 
-.ambient-glow {
-  background: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--primary) 12%, transparent) 0%, transparent 70%);
+/* ── Socratix-compat bg helper (used in EditorWelcome) ──────────────────── */
+.socratix-bg {
+  background-color: var(--background);
 }
 
+/* ── Subtle hover/active glow for interactive borders ─────────────────── */
 .subtle-border-glow {
   transition:
-    border-color 0.18s ease,
-    box-shadow 0.18s ease,
-    transform 0.18s ease;
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .subtle-border-glow:hover {
-  border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
-  box-shadow: 0 0 20px -4px color-mix(in srgb, var(--primary) 20%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+  box-shadow: 0 0 12px -4px color-mix(in srgb, var(--primary) 18%, transparent);
 }
 
+/* ── Ambient glow (welcome screen accent) ─────────────────────────────── */
+.ambient-glow {
+  background: radial-gradient(
+    circle at 50% 0%,
+    color-mix(in srgb, var(--primary) 8%, transparent) 0%,
+    transparent 65%
+  );
+}
+
+/* ── Raised surface shadow ──────────────────────────────────────────────── */
+.np-raised-surface {
+  box-shadow: 0 8px 24px -16px color-mix(in oklch, var(--foreground) 28%, transparent);
+}
+
+/* ── Chip glow ──────────────────────────────────────────────────────────── */
 .chip-glow {
-  box-shadow: 0 0 12px -2px color-mix(in srgb, var(--primary) 25%, transparent);
-}
-
-.socratix-bg {
-  background-color: var(--background);
-  background-image: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(120, 119, 198, 0.15), transparent 70%);
-}
-
-.dark .socratix-bg {
-  background-color: var(--background);
-  background-image: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 229, 204, 0.08), transparent 70%);
+  box-shadow: 0 0 10px -2px color-mix(in srgb, var(--primary) 22%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {

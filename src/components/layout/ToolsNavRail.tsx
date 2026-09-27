@@ -76,7 +76,7 @@ function ActionIconButton({
   onClick: () => void;
 }) {
   return (
-    <Tooltip delayDuration={200}>
+    <Tooltip delayDuration={300}>
       <TooltipTrigger asChild>
         <button
           type="button"
@@ -84,18 +84,18 @@ function ActionIconButton({
           aria-pressed={active}
           onClick={onClick}
           className={cn(
-            "relative flex size-8 shrink-0 items-center justify-center rounded-lg transition-all duration-150 ease-out outline-none cursor-pointer",
-            "hover:bg-accent hover:text-foreground active:scale-[0.94]",
-            "focus-visible:ring-ring/30 focus-visible:ring-2 focus-visible:outline-none",
+            "flex size-8 shrink-0 items-center justify-center rounded-md transition-all duration-100 ease-out outline-none cursor-pointer",
+            "hover:bg-accent hover:text-foreground active:scale-[0.93]",
+            "focus-visible:ring-ring/30 focus-visible:ring-1 focus-visible:outline-none",
             active
-              ? "text-primary bg-primary/12 ring-primary/20 shadow-xs ring-1"
-              : "text-muted-foreground/80",
+              ? "text-primary bg-primary/10 ring-primary/20 ring-1"
+              : "text-muted-foreground/70",
           )}
         >
-          <Icon className="size-4 transition-transform duration-150" />
+          <Icon className="size-[15px]" />
         </button>
       </TooltipTrigger>
-      <TooltipContent side="left" className="text-xs font-medium">
+      <TooltipContent side="left" className="text-xs">
         {label}
       </TooltipContent>
     </Tooltip>
@@ -113,28 +113,28 @@ function DropdownIconButton({
 }) {
   return (
     <DropdownMenu>
-      <Tooltip delayDuration={200}>
+      <Tooltip delayDuration={300}>
         <TooltipTrigger asChild>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
               aria-label={label}
               className={cn(
-                "text-muted-foreground/80 flex size-8 shrink-0 items-center justify-center rounded-lg transition-all duration-150 ease-out outline-none cursor-pointer",
-                "hover:bg-accent hover:text-foreground active:scale-[0.94]",
-                "focus-visible:ring-ring/30 focus-visible:ring-2 focus-visible:outline-none",
+                "text-muted-foreground/70 flex size-8 shrink-0 items-center justify-center rounded-md transition-all duration-100 ease-out outline-none cursor-pointer",
+                "hover:bg-accent hover:text-foreground active:scale-[0.93]",
+                "focus-visible:ring-ring/30 focus-visible:ring-1 focus-visible:outline-none",
               )}
             >
-              <Icon className="size-4 transition-transform duration-150" />
+              <Icon className="size-[15px]" />
             </button>
           </DropdownMenuTrigger>
         </TooltipTrigger>
-        <TooltipContent side="left" className="text-xs font-medium">
+        <TooltipContent side="left" className="text-xs">
           {label}
         </TooltipContent>
       </Tooltip>
       <DropdownMenuContent side="left" align="start" className="w-52">
-        <DropdownMenuLabel className="text-muted-foreground text-[11px] font-semibold tracking-wider uppercase">
+        <DropdownMenuLabel className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
           {label}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -147,7 +147,6 @@ function DropdownIconButton({
 export function ToolsNavRail() {
   const openDialog = useDialogStore((s) => s.openDialog);
 
-  // Markdown preview toggle — mirrors Toolbar logic
   const markdownPreviewVisible = useUIStore((s) => s.markdownPreviewVisible);
   const toggleMarkdownPreview = useUIStore((s) => s.toggleMarkdownPreview);
   const activeTabId = useTabsStore((s) => s.activeTabId);
@@ -168,10 +167,13 @@ export function ToolsNavRail() {
     <TooltipProvider>
       <nav
         aria-label="Tools vertical right rail"
-        className="np-scrollbar flex w-11 shrink-0 flex-col items-center gap-1.5 overflow-x-hidden overflow-y-auto border-l py-3 select-none bg-white/70 dark:bg-[#0a0a0f]/80 backdrop-blur-xs border-slate-200/80 dark:border-white/10 shadow-2xs"
-        style={{ borderLeftColor: "var(--np-tab-border)" }}
+        className="np-scrollbar flex w-10 shrink-0 flex-col items-center gap-1 overflow-x-hidden overflow-y-auto border-l py-2.5 select-none"
+        style={{
+          background: "var(--np-rail-bg)",
+          borderLeftColor: "var(--np-rail-border)",
+        }}
       >
-        {/* ── Markdown Preview ─────────────────────────────────────────────── */}
+        {/* ── Markdown Preview ──────────────────────────────────────────── */}
         <ActionIconButton
           icon={Columns2}
           label="Toggle MD Preview (side-by-side)"
@@ -184,8 +186,9 @@ export function ToolsNavRail() {
             toggleMarkdownPreview();
           }}
         />
-        <Separator className="my-1.5 w-4 opacity-30" />
-        {/* ── AI Tools ────────────────────────────────────────────────────── */}
+        <Separator className="my-1 w-4 opacity-30" />
+
+        {/* ── AI Tools ───────────────────────────────────────────────────── */}
         <DropdownIconButton icon={Sparkles} label="Fix Grammar & Spelling (AI)">
           <DropdownMenuItem
             onSelect={() => runAction("tools.ai.fixGrammar.gemini")}
@@ -225,9 +228,9 @@ export function ToolsNavRail() {
           </DropdownMenuItem>
         </DropdownIconButton>
 
-        <Separator className="my-1 w-5 opacity-40" />
+        <Separator className="my-1 w-4 opacity-30" />
 
-        {/* ── Encoders & Text Tools ───────────────────────────────────────── */}
+        {/* ── Encoders & Text Tools ────────────────────────────────────── */}
         <DropdownIconButton icon={Binary} label="Base64 Encode / Decode">
           <DropdownMenuItem onSelect={() => runAction("tools.base64Encode")}>
             Base64 Encode
@@ -337,7 +340,7 @@ export function ToolsNavRail() {
           onClick={() => runAction("tools.textStats")}
         />
 
-        <Separator className="my-1 w-5 opacity-40" />
+        <Separator className="my-1 w-4 opacity-30" />
 
         <ActionIconButton
           icon={KeyRound}
@@ -397,7 +400,7 @@ export function ToolsNavRail() {
           onClick={() => runAction("tools.slugify")}
         />
 
-        <Separator className="my-1 w-5 opacity-40" />
+        <Separator className="my-1 w-4 opacity-30" />
 
         <ActionIconButton
           icon={FileDiff}
