@@ -20,7 +20,6 @@ export default function manifest(): MetadataRoute.Manifest {
         src: "/icon-512.png",
         sizes: "512x512",
         type: "image/png",
-        // @ts-expect-error — form_factor is valid PWA manifest field
         form_factor: "wide",
       },
     ],
