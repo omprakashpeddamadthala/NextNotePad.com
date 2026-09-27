@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import {
   ChevronRight,
   ChevronDown,
@@ -139,11 +139,17 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
     moveNode(draggedId, dropTarget);
   }
 
-  const Icon = isFolder
-    ? node.collapsed
-      ? Folder
-      : FolderOpen
-    : getFileIcon(node.name);
+  // getFileIcon returns a component — useMemo keeps the reference stable
+  // (React Compiler forbids creating components directly in the render body)
+  const Icon = useMemo(
+    () =>
+      isFolder
+        ? node.collapsed
+          ? Folder
+          : FolderOpen
+        : getFileIcon(node.name),
+    [isFolder, node.collapsed, node.name],
+  );
 
   return (
     <div
@@ -187,7 +193,6 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
             ) : (
               <span className="size-3 shrink-0" />
             )}
-            {/* eslint-disable-next-line react-hooks/static-components */}
             <Icon className="size-3.5 shrink-0 opacity-70 transition-opacity group-hover/item:opacity-100" />
             {isRenaming ? (
               <input

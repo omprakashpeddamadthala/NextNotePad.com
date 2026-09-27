@@ -1,7 +1,7 @@
 "use client";
 
 import { ExternalLink } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useDialogStore } from "@/store/dialogStore";
 import { AppLogo } from "@/components/ui/AppLogo";
 import { APP_BRAND } from "@/lib/constants/branding";
