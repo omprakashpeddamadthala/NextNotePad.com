@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, createElement } from "react";
 import {
   ChevronRight,
   ChevronDown,
@@ -57,6 +57,7 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
   const setDropTargetId = useExplorerSelectionStore((s) => s.setDropTargetId);
 
   const isFolder = node.type === "folder";
+  const isCollapsed = isFolder ? node.collapsed : false;
   const dropTarget = isFolder ? node.id : node.parentId;
   const isDropHighlighted = useExplorerSelectionStore(
     (s) => s.dropTargetId === dropTarget && s.draggedNodeId !== node.id,
@@ -92,7 +93,7 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
   function handleClick() {
     setSelectedNodeId(node.id);
     if (isFolder) {
-      setFolderCollapsed(node.id, !node.collapsed);
+      setFolderCollapsed(node.id, !isCollapsed);
       return;
     }
     openFileForUser(node.id);
@@ -139,23 +140,12 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
     moveNode(draggedId, dropTarget);
   }
 
-  // getFileIcon returns a component — useMemo keeps the reference stable
-  // (React Compiler forbids creating components directly in the render body)
-  const Icon = useMemo(
-    () =>
-      isFolder
-        ? node.collapsed
-          ? Folder
-          : FolderOpen
-        : getFileIcon(node.name),
-    [isFolder, node.collapsed, node.name],
-  );
 
   return (
     <div
       role="treeitem"
       aria-selected={isSelected}
-      aria-expanded={isFolder ? !node.collapsed : undefined}
+      aria-expanded={isFolder ? !isCollapsed : undefined}
       tabIndex={-1}
       draggable={!isRenaming}
       onDragStart={handleDragStart}
@@ -185,7 +175,7 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
             )}
           >
             {isFolder ? (
-              node.collapsed ? (
+              isCollapsed ? (
                 <ChevronRight className="text-muted-foreground/50 size-3 shrink-0" />
               ) : (
                 <ChevronDown className="text-muted-foreground/50 size-3 shrink-0" />
@@ -193,7 +183,17 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
             ) : (
               <span className="size-3 shrink-0" />
             )}
-            <Icon className="size-3.5 shrink-0 opacity-70 transition-opacity group-hover/item:opacity-100" />
+            {createElement(
+              isFolder
+                ? isCollapsed
+                  ? Folder
+                  : FolderOpen
+                : getFileIcon(node.name),
+              {
+                className:
+                  "size-3.5 shrink-0 opacity-70 transition-opacity group-hover/item:opacity-100",
+              },
+            )}
             {isRenaming ? (
               <input
                 ref={inputRef}
