@@ -1,7 +1,7 @@
 "use client";
 
 import { X, Pin, FileDiff } from "lucide-react";
-import { useMemo } from "react";
+import { createElement } from "react";
 import { getFileIcon } from "@/lib/fileIcons";
 import { cn } from "@/lib/utils";
 import {
@@ -44,9 +44,6 @@ export function TabItem({
   const closeRight = useTabsStore((s) => s.closeRight);
   const pinTab = useTabsStore((s) => s.pinTab);
 
-  // getFileIcon returns a component — wrap in useMemo so it's stable across renders
-  // (React Compiler forbids creating components directly during render)
-  const Icon = useMemo(() => getFileIcon(node?.name ?? "file.txt"), [node?.name]);
 
   return (
     <ContextMenu>
@@ -88,7 +85,9 @@ export function TabItem({
           {tab.pinned && (
             <Pin className="text-primary size-2.5 shrink-0 fill-current opacity-70" />
           )}
-          <Icon className="size-3.5 shrink-0 opacity-75 transition-opacity group-hover:opacity-100" />
+          {createElement(getFileIcon(node?.name ?? "file.txt"), {
+            className: "size-3.5 shrink-0 opacity-75 transition-opacity group-hover:opacity-100",
+          })}
           <span className="max-w-36 truncate">{node?.name ?? "Untitled"}</span>
           <span className="relative ml-0.5 flex size-3.5 shrink-0 items-center justify-center">
             {isDirty && (
