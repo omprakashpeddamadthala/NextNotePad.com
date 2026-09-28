@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Top-level Node utility scripts (CJS, not part of the Next.js app):
+    "scripts/**",
   ]),
 ]);
 

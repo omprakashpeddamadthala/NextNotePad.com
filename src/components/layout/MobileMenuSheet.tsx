@@ -46,11 +46,14 @@ export function MobileMenuSheet() {
         className="np-scrollbar bg-popover/98 max-h-[92dvh] gap-0 overflow-y-auto rounded-t-3xl border-x p-0"
       >
         <SheetHeader className="bg-popover/95 sticky top-0 z-10 flex-row items-center gap-3 border-b p-4 backdrop-blur-xl">
-          <AppLogo size="md" />
+          <AppLogo size="md" priority />
           <div>
-            <SheetTitle>{APP_BRAND.name}</SheetTitle>
-            <p className="text-muted-foreground text-xs">
-              Choose a menu to find its commands
+            <SheetTitle className="leading-none">
+              {APP_BRAND.name}
+              <span className="text-[#F59E0B] text-xs font-semibold ml-0.5 align-super">.com</span>
+            </SheetTitle>
+            <p className="text-muted-foreground text-[11px] mt-0.5">
+              {APP_BRAND.shortTagline}
             </p>
           </div>
         </SheetHeader>

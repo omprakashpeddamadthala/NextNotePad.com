@@ -8,12 +8,25 @@ export default function manifest(): MetadataRoute.Manifest {
     description: APP_BRAND.description,
     start_url: "/",
     display: "standalone",
-    background_color: "#0e0f12",
-    theme_color: "#4F46E5",
+    background_color: "#0a0d1a",
+    theme_color: "#0a0d1a",
     icons: [
       { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
       { src: "/icon-512-maskable.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
+    screenshots: [
+      {
+        src: "/icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        form_factor: "wide",
+      },
+    ],
+    categories: ["productivity", "utilities"],
+    lang: "en",
+    dir: "ltr",
+    orientation: "any",
+    prefer_related_applications: false,
   };
 }

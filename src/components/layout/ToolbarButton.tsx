@@ -42,22 +42,23 @@ export function ToolbarButton({
           disabled={disabled}
           onClick={onClick}
           className={cn(
-            "text-muted-foreground hover:text-foreground shrink-0 rounded-lg transition-[color,background-color,box-shadow,transform] duration-150 ease-out active:scale-[0.94]",
-            // Touch targets stay finger-sized on phones and tighten to Notepad++ proportions on
-            // desktop, where the pointer is precise and the strip should stay compact.
+            "text-muted-foreground hover:text-foreground shrink-0 rounded-md transition-[color,background-color,transform] duration-100 ease-out active:scale-[0.93]",
             size === "touch"
               ? "size-11"
               : size === "compact"
-                ? "size-7"
-                : "size-8",
+                ? "size-6"
+                : "size-7",
             active &&
-              "bg-primary/12 text-primary ring-primary/20 shadow-xs ring-1",
+              "bg-primary/10 text-primary ring-primary/25 ring-1",
           )}
         >
-          <Icon className={size === "compact" ? "size-3.5" : "size-4"} />
+          <Icon className={cn(
+            "transition-none",
+            size === "compact" ? "size-3.5" : "size-[15px]",
+          )} />
         </Button>
       </TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
+      <TooltipContent className="text-xs">{label}</TooltipContent>
     </Tooltip>
   );
 }

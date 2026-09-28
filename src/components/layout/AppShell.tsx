@@ -128,7 +128,7 @@ export function AppShell() {
   const isMobile = useIsMobile();
 
   return (
-    <div className="np-app-shell bg-background text-foreground flex h-full min-h-0 flex-1 flex-col">
+    <div className="bg-background text-foreground flex h-full min-h-0 flex-1 flex-col">
       {/* Skip-to-editor link for keyboard users */}
       <a
         href="#editor-main"

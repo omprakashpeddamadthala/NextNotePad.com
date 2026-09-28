@@ -18,12 +18,12 @@ export interface AppLogoProps {
 }
 
 const SIZE_MAP: Record<string, string> = {
-  xs: "size-4 rounded-xs",
-  sm: "size-5 rounded-md",
-  md: "size-7 rounded-md",
-  lg: "size-10 rounded-xl",
-  xl: "size-14 rounded-2xl",
-  "2xl": "size-20 rounded-2xl",
+  xs: "size-4 rounded-[5px]",
+  sm: "size-5 rounded-[6px]",
+  md: "size-7 rounded-[8px]",
+  lg: "size-10 rounded-[12px]",
+  xl: "size-14 rounded-[16px]",
+  "2xl": "size-20 rounded-[22px]",
 };
 
 const PIXEL_MAP: Record<string, number> = {
@@ -35,6 +35,7 @@ const PIXEL_MAP: Record<string, number> = {
   "2xl": 80,
 };
 
+/** Application logo — rendered as the icon PNG with optional text/tagline. */
 export function AppLogo({
   size = "sm",
   showText = false,
@@ -49,10 +50,14 @@ export function AppLogo({
 }: AppLogoProps) {
   const isNumber = typeof size === "number";
   const px = isNumber ? size : (PIXEL_MAP[size] ?? 20);
-  const sizeClass = isNumber ? undefined : (SIZE_MAP[size] ?? "size-5 rounded-md");
-  const style = isNumber ? { width: `${size}px`, height: `${size}px` } : undefined;
+  const sizeClass = isNumber ? undefined : (SIZE_MAP[size] ?? "size-5 rounded-[6px]");
+  const style = isNumber
+    ? { width: `${size}px`, height: `${size}px` }
+    : undefined;
 
-  const resolvedTagline = taglineText ?? (layout === "vertical" ? APP_BRAND.tagline : APP_BRAND.shortTagline);
+  const resolvedTagline =
+    taglineText ??
+    (layout === "vertical" ? APP_BRAND.tagline : APP_BRAND.shortTagline);
 
   return (
     <div
@@ -60,13 +65,15 @@ export function AppLogo({
         "select-none",
         layout === "vertical"
           ? "flex flex-col items-center text-center gap-2.5"
-          : "inline-flex items-center gap-2.5",
+          : "inline-flex items-center gap-2",
         className,
       )}
     >
+      {/* Icon container — the new logo has its own dark background baked in */}
       <div
         className={cn(
-          "relative shrink-0 overflow-hidden shadow-xs ring-1 ring-white/15 bg-[#121316] transition-transform duration-200",
+          "relative shrink-0 overflow-hidden transition-all duration-200",
+          "shadow-sm shadow-black/25",
           sizeClass,
           iconClassName,
         )}
@@ -74,36 +81,48 @@ export function AppLogo({
       >
         <Image
           src="/logo.png"
-          alt={APP_BRAND.name}
+          alt={`${APP_BRAND.name} logo`}
           width={px}
           height={px}
           className="size-full object-cover"
-          priority={priority || size === "lg" || size === "xl" || size === "2xl"}
+          priority={
+            priority ||
+            size === "lg" ||
+            size === "xl" ||
+            size === "2xl"
+          }
         />
       </div>
 
+      {/* Text area */}
       {(showText || showTagline || badge) && (
         <div
           className={cn(
             "flex flex-col",
-            layout === "vertical" ? "items-center text-center" : "items-start text-left",
+            layout === "vertical"
+              ? "items-center text-center"
+              : "items-start text-left",
           )}
         >
           {showText && (
-            <div className="flex items-center gap-1.5 leading-tight">
-              <span className="font-heading font-semibold tracking-tight text-foreground text-sm sm:text-base">
+            <div className="flex items-center gap-1.5 leading-none">
+              <span className="font-heading font-semibold tracking-tight text-foreground text-sm sm:text-[15px] leading-none">
                 {APP_BRAND.name}
-                {showDomain && <span className="text-primary font-medium text-xs">.com</span>}
+                {showDomain && (
+                  <span className="text-[#F59E0B] font-medium text-[11px] align-super ml-px">
+                    .com
+                  </span>
+                )}
               </span>
               {badge && (
-                <span className="rounded-full border border-primary/25 bg-primary/10 px-1.5 py-0.2 text-[9px] font-semibold text-primary uppercase tracking-wide">
+                <span className="rounded-full border border-amber-300/30 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-amber-500 uppercase tracking-wide leading-none">
                   {badge}
                 </span>
               )}
             </div>
           )}
           {showTagline && (
-            <p className="text-[11px] sm:text-xs text-muted-foreground/80 leading-snug mt-0.5 max-w-sm">
+            <p className="text-[10.5px] sm:text-[11px] text-muted-foreground/70 leading-snug mt-0.5 max-w-sm">
               {resolvedTagline}
             </p>
           )}
@@ -113,3 +132,45 @@ export function AppLogo({
   );
 }
 
+/**
+ * Full horizontal wordmark — icon + brand name + optional tagline.
+ * Designed for splash screens, about dialogs, and onboarding flows.
+ */
+export function AppWordmark({
+  size = "md",
+  showTagline = true,
+  className,
+}: {
+  size?: "sm" | "md" | "lg";
+  showTagline?: boolean;
+  className?: string;
+}) {
+  const iconSize = size === "sm" ? "sm" : size === "lg" ? "lg" : "md";
+  const titleSize =
+    size === "sm"
+      ? "text-base font-semibold"
+      : size === "lg"
+        ? "text-2xl font-bold"
+        : "text-lg font-bold";
+
+  return (
+    <div className={cn("inline-flex items-center gap-3 select-none", className)}>
+      <AppLogo size={iconSize} priority />
+      <div className="flex flex-col items-start">
+        <span
+          className={cn(
+            "font-heading tracking-tight leading-none text-foreground",
+            titleSize,
+          )}
+        >
+          {APP_BRAND.name}
+        </span>
+        {showTagline && (
+          <span className="text-[11px] text-muted-foreground/70 leading-tight mt-0.5">
+            {APP_BRAND.shortTagline}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}

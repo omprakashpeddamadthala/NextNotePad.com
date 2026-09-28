@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import {
   ChevronRight,
   ChevronDown,
@@ -41,9 +41,6 @@ interface TreeNodeProps {
 export function TreeNode({ node, depth }: TreeNodeProps) {
   const isFavorite = useRecentFilesStore((s) => s.isFavorite(node.id));
 
-  // Selectors are narrowed to a per-node boolean (rather than the raw selected/renaming/drag id)
-  // so a change elsewhere in the tree — selecting a different file, dragging over another row —
-  // doesn't re-render every mounted TreeNode, only the one or two rows whose boolean actually flips.
   const isSelected = useExplorerSelectionStore(
     (s) => s.selectedNodeId === node.id,
   );
@@ -120,8 +117,6 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
 
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
-    // Stop the OS-file-drop branch from also being handled by FileExplorer's panel-level
-    // onDrop, which would otherwise re-import the same payload again at the root.
     e.stopPropagation();
     setDropTargetId(null);
 
@@ -144,11 +139,17 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
     moveNode(draggedId, dropTarget);
   }
 
-  const Icon = isFolder
-    ? node.collapsed
-      ? Folder
-      : FolderOpen
-    : getFileIcon(node.name);
+  // getFileIcon returns a component — useMemo keeps the reference stable
+  // (React Compiler forbids creating components directly in the render body)
+  const Icon = useMemo(
+    () =>
+      isFolder
+        ? node.collapsed
+          ? Folder
+          : FolderOpen
+        : getFileIcon(node.name),
+    [isFolder, node.collapsed, node.name],
+  );
 
   return (
     <div
@@ -171,30 +172,28 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
           <button
             type="button"
             onClick={handleClick}
-            style={{ paddingLeft: `${depth * 14 + 8}px` }}
+            style={{ paddingLeft: `${depth * 12 + 6}px` }}
             className={cn(
-              "group/item relative flex h-9 w-full items-center gap-1.5 rounded-lg pr-2 text-left text-[13px] transition-[color,background-color,box-shadow] duration-150 outline-none sm:h-[30px]",
-              "hover:bg-accent/80 hover:text-foreground focus-visible:ring-ring/25 focus-visible:ring-2",
+              "group/item relative flex h-9 w-full items-center gap-1 rounded-md pr-1.5 text-left text-[12.5px] transition-[color,background-color] duration-100 outline-none sm:h-[28px]",
+              "hover:bg-accent/70 hover:text-foreground focus-visible:ring-ring/20 focus-visible:ring-1",
               isSelected
-                ? "bg-primary/12 text-primary ring-primary/10 before:bg-primary font-semibold shadow-xs ring-1 ring-inset before:absolute before:top-1.5 before:bottom-1.5 before:left-0 before:w-0.5 before:rounded-full"
-                : "text-foreground/90",
+                ? "bg-primary/10 text-primary before:bg-primary font-medium before:absolute before:top-1.5 before:bottom-1.5 before:left-0 before:w-[2.5px] before:rounded-full"
+                : "text-foreground/80",
               isDropHighlighted &&
-                "ring-1.5 ring-primary ring-offset-background ring-offset-1",
-              node.hidden && "italic opacity-50",
+                "ring-1 ring-primary/50 ring-inset",
+              node.hidden && "italic opacity-45",
             )}
           >
             {isFolder ? (
               node.collapsed ? (
-                <ChevronRight className="text-muted-foreground/70 size-3 shrink-0 transition-transform" />
+                <ChevronRight className="text-muted-foreground/50 size-3 shrink-0" />
               ) : (
-                <ChevronDown className="text-muted-foreground/70 size-3 shrink-0 transition-transform" />
+                <ChevronDown className="text-muted-foreground/50 size-3 shrink-0" />
               )
             ) : (
               <span className="size-3 shrink-0" />
             )}
-            {/* Icon is chosen from a fixed set of stable icon components, not created during render. */}
-            {/* eslint-disable-next-line react-hooks/static-components */}
-            <Icon className="size-4 shrink-0 opacity-80 transition-opacity group-hover/item:opacity-100" />
+            <Icon className="size-3.5 shrink-0 opacity-70 transition-opacity group-hover/item:opacity-100" />
             {isRenaming ? (
               <input
                 ref={inputRef}
@@ -210,19 +209,19 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
                     setRenamingNodeId(null);
                   }
                 }}
-                className="border-ring bg-background h-5 flex-1 rounded-sm border px-1 text-xs shadow-2xs outline-none"
+                className="border-ring/50 bg-background h-5 flex-1 rounded-sm border px-1 text-xs shadow-xs outline-none"
               />
             ) : (
               <span className="flex-1 truncate">{node.name}</span>
             )}
             {isFavorite && !isRenaming && (
-              <Star className="size-3 shrink-0 fill-current text-amber-500/90" />
+              <Star className="size-2.5 shrink-0 fill-current text-amber-500/80" />
             )}
             {node.type === "file" && node.locked && !isRenaming && (
-              <Lock className="text-muted-foreground/70 size-3 shrink-0" />
+              <Lock className="text-muted-foreground/50 size-2.5 shrink-0" />
             )}
             {node.hidden && !isRenaming && (
-              <EyeOff className="text-muted-foreground/70 size-3 shrink-0" />
+              <EyeOff className="text-muted-foreground/50 size-2.5 shrink-0" />
             )}
           </button>
         </ContextMenuTrigger>
