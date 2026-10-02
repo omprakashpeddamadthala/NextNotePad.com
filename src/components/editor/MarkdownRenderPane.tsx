@@ -29,7 +29,7 @@ export function MarkdownRenderPane({
   html,
   onRetry,
   skeletonBodyLines = 6,
-  centered = true,
+  centered = false,
   className,
 }: MarkdownRenderPaneProps) {
   if (state === "error") {
@@ -42,7 +42,7 @@ export function MarkdownRenderPane({
     return (
       <div
         className={cn(
-          "animate-in fade-in space-y-4 duration-150",
+          "animate-in fade-in space-y-4 duration-150 w-full",
           centered ? "mx-auto max-w-3xl" : "max-w-none",
           className,
         )}
@@ -56,7 +56,7 @@ export function MarkdownRenderPane({
   return (
     <div
       className={cn(
-        "np-markdown-preview np-print-target animate-in fade-in duration-200",
+        "np-markdown-preview np-print-target animate-in fade-in duration-200 w-full",
         centered ? "mx-auto max-w-3xl" : "max-w-none",
         className,
       )}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { FileText, Pencil, Printer, X, Eye } from "lucide-react";
+import { FileText, Pencil, Printer, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MarkdownRenderPane } from "./MarkdownRenderPane";
 import { useWorkspaceStore } from "@/store/workspaceStore";
@@ -156,20 +156,19 @@ export function MarkdownFullPageView({
       </div>
 
       {/* ── Full Page Document Canvas ─────────────────────────────────── */}
-      <div className="np-scrollbar min-h-0 flex-1 overflow-y-auto px-6 py-6 sm:px-10 lg:px-16">
-        <div className="mx-auto max-w-4xl">
-          <MarkdownRenderPane
-            state={error ? "error" : content === null ? "loading" : "ready"}
-            error={error}
-            html={html}
-            skeletonBodyLines={8}
-            centered={false}
-            onRetry={() => {
-              setError(null);
-              setReloadNonce((n) => n + 1);
-            }}
-          />
-        </div>
+      <div className="np-scrollbar min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 w-full">
+        <MarkdownRenderPane
+          state={error ? "error" : content === null ? "loading" : "ready"}
+          error={error}
+          html={html}
+          skeletonBodyLines={8}
+          centered={false}
+          className="w-full max-w-none"
+          onRetry={() => {
+            setError(null);
+            setReloadNonce((n) => n + 1);
+          }}
+        />
       </div>
     </div>
   );

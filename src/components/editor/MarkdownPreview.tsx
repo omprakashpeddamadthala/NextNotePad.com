@@ -100,8 +100,14 @@ export function MarkdownPreview({ fileId }: MarkdownPreviewProps) {
           <span className="hidden sm:inline">View Full Page</span>
         </Button>
       </div>
-      <div className="np-scrollbar bg-background min-h-0 flex-1 overflow-auto px-6 py-4">
-        <MarkdownRenderPane state="ready" html={html} onRetry={retry} />
+      <div className="np-scrollbar bg-background min-h-0 flex-1 overflow-auto p-4 sm:p-5 w-full">
+        <MarkdownRenderPane
+          state="ready"
+          html={html}
+          centered={false}
+          className="w-full max-w-none"
+          onRetry={retry}
+        />
       </div>
     </div>
   );
