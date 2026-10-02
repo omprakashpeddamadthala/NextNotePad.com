@@ -12,14 +12,9 @@ function todayISO(): string {
   return new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
 }
 
-/** Returns `true` when the stored date is missing or older than today. */
+/** Returns `false`: daily reset is disabled to ensure persistent login sessions. */
 export function isDailyResetNeeded(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    return window.localStorage.getItem(STAMP_KEY) !== todayISO();
-  } catch {
-    return false;
-  }
+  return false;
 }
 
 /** Writes today's date so the reset is not triggered again until tomorrow. */

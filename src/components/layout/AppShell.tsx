@@ -31,6 +31,7 @@ import { GlobalActionsRegistrar } from "./GlobalActionsRegistrar";
 import { ApiLoadingBar } from "./ApiLoadingBar";
 import { CenterApiLoader } from "./CenterApiLoader";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useAutoSyncNotes } from "@/hooks/useAutoSyncNotes";
 
 // Lazy-loaded dialogs — none of these render anything visible until opened
 const SettingsDialog = dynamic(
@@ -119,6 +120,7 @@ export function AppShell() {
   useAuthBootstrap();
   useAppBootstrap();
   useDocumentTitle();
+  useAutoSyncNotes();
 
   const sidebarVisible = useUIStore((s) => s.sidebarVisible);
   const bottomPanelVisible = useUIStore((s) => s.bottomPanelVisible);

@@ -1,7 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 
 const SESSION_COOKIE_NAME = "np_session";
-const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
+const SESSION_TTL_SECONDS = 60 * 60 * 24 * 365; // 365 days (1 year persistent session)
 
 function getSecretKey(): Uint8Array {
   const secret = process.env.JWT_SECRET;
