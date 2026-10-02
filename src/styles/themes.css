@@ -1,36 +1,59 @@
 /*
- * NextNotePad Chrome CSS Variables
- * These are overwritten by ThemeApplier on client to match the active Monaco theme.
- * Light-mode defaults here aligned to the new clean editor palette.
+ * NextNotePad — Unique Brand Chrome Theme
+ * A warm, modern, developer-oriented aesthetic that's distinctly NOT VS Code.
+ * Features: floating panels, pill-shaped elements, warm gradient accents,
+ * organic tab shapes, and a signature amber-to-teal color story.
  */
+
+/* ── Light Mode (IntelliJ IDEA Ultimate Light) ──────────────────────────── */
 :root {
-  --np-toolbar-bg: rgba(245, 246, 248, 0.96);
-  --np-statusbar-bg: #1a1d24;
-  --np-statusbar-fg: #c8cdd8;
+  --np-toolbar-bg: rgba(247, 248, 250, 0.95);
+  --np-statusbar-bg: #ebecf0;
+  --np-statusbar-fg: #43454a;
   --np-tab-active-bg: #ffffff;
-  --np-tab-inactive-bg: #eef0f5;
-  --np-tab-border: #dde1e9;
-  --np-scrollbar: #c4c9d4;
-  --np-menu-hover: #eef0f5;
-  --np-rail-bg: #f0f2f5;
-  --np-rail-border: #dde1e9;
-  --np-sidebar-bg: #f0f2f5;
-  --np-sidebar-border: #dde1e9;
+  --np-tab-inactive-bg: #f7f8fa;
+  --np-tab-border: #dfe1e5;
+  --np-scrollbar: #c1c3c8;
+  --np-menu-hover: #ebecf0;
+  --np-rail-bg: rgba(247, 248, 250, 0.95);
+  --np-rail-border: #dfe1e5;
+  --np-sidebar-bg: #f7f8fa;
+  --np-sidebar-border: #dfe1e5;
+
+  /* JetBrains signature blue & vibrant magenta/purple accents */
+  --np-accent-gradient: linear-gradient(135deg, #087cfa 0%, #af32f7 50%, #ff318c 100%);
+  --np-accent-glow: rgba(53, 116, 240, 0.2);
+  --np-tab-indicator: #3574f0;
+  --np-rail-active-indicator: #3574f0;
+  --np-search-pill-bg: #ffffff;
+  --np-search-pill-border: #dfe1e5;
+  --np-search-pill-focus: rgba(53, 116, 240, 0.25);
+  --np-floating-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.08);
 }
 
+/* ── Dark Mode (IntelliJ IDEA Ultimate Dark / New UI) ───────────────────── */
 .dark {
-  --np-toolbar-bg: rgba(13, 15, 20, 0.97);
-  --np-statusbar-bg: #090b10;
-  --np-statusbar-fg: #8b92a5;
-  --np-tab-active-bg: #151820;
-  --np-tab-inactive-bg: #0d0f14;
-  --np-tab-border: rgba(255, 255, 255, 0.07);
-  --np-scrollbar: #2a2f3e;
-  --np-menu-hover: #1e2130;
-  --np-rail-bg: #11131a;
-  --np-rail-border: rgba(255, 255, 255, 0.07);
-  --np-sidebar-bg: #11131a;
-  --np-sidebar-border: rgba(255, 255, 255, 0.07);
+  --np-toolbar-bg: rgba(30, 31, 34, 0.95);
+  --np-statusbar-bg: #2b2d30;
+  --np-statusbar-fg: #868a91;
+  --np-tab-active-bg: #2b2d30;
+  --np-tab-inactive-bg: #1e1f22;
+  --np-tab-border: #393b40;
+  --np-scrollbar: #43454a;
+  --np-menu-hover: #393b40;
+  --np-rail-bg: rgba(30, 31, 34, 0.95);
+  --np-rail-border: #393b40;
+  --np-sidebar-bg: #1e1f22;
+  --np-sidebar-border: #393b40;
+
+  --np-accent-gradient: linear-gradient(135deg, #3574f0 0%, #af32f7 50%, #ff318c 100%);
+  --np-accent-glow: rgba(53, 116, 240, 0.2);
+  --np-tab-indicator: #3574f0;
+  --np-rail-active-indicator: #3574f0;
+  --np-search-pill-bg: #2b2d30;
+  --np-search-pill-border: #393b40;
+  --np-search-pill-focus: rgba(53, 116, 240, 0.35);
+  --np-floating-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.5);
 }
 
 /* ── Thin, professional scrollbar ────────────────────────────────────────── */
@@ -40,8 +63,8 @@
 }
 
 .np-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 .np-scrollbar::-webkit-scrollbar-track {
@@ -83,7 +106,7 @@
 
 /* ── Monaco bookmark glyph ───────────────────────────────────────────────── */
 .np-bookmark-glyph {
-  background-color: #4a90d9;
+  background-color: #818cf8;
   border-radius: 9999px;
   width: 8px !important;
   height: 8px !important;

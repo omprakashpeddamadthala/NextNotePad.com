@@ -2,7 +2,7 @@ import type { ThemeModule } from "./types";
 
 export const oneDark: ThemeModule = {
   id: "one-dark",
-  label: "One Dark",
+  label: "IntelliJ One Dark",
   monacoThemeId: "np-one-dark",
   chrome: {
     background: "#282c34",

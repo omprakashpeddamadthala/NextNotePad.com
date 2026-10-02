@@ -1,5 +1,3 @@
-import { decodeJwt } from "jose";
-
 export const OAUTH_STATE_COOKIE_NAME = "np_oauth_state";
 
 const GOOGLE_AUTH_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -91,8 +89,24 @@ export interface GoogleProfile {
  * response as the access token, over our own server-to-server request — same trust level we
  * already place in the access token itself.
  */
+function decodeJwtPayload(token: string): Record<string, unknown> {
+  const parts = token.split(".");
+  if (parts.length < 2) {
+    throw new Error("Google id_token is not a valid JWT format");
+  }
+  if (typeof Buffer !== "undefined") {
+    const jsonStr = Buffer.from(parts[1], "base64url").toString("utf-8");
+    return JSON.parse(jsonStr) as Record<string, unknown>;
+  }
+  const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+  const binary = atob(base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "="));
+  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+  const jsonStr = new TextDecoder("utf-8").decode(bytes);
+  return JSON.parse(jsonStr) as Record<string, unknown>;
+}
+
 export function decodeIdTokenProfile(idToken: string): GoogleProfile {
-  const claims = decodeJwt(idToken);
+  const claims = decodeJwtPayload(idToken);
   if (typeof claims.sub !== "string" || typeof claims.email !== "string") {
     throw new Error("Google id_token missing required claims");
   }

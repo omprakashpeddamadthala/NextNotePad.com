@@ -102,7 +102,7 @@ export function WorkspaceDropdown({
             variant === "toolbar" &&
               "border-input bg-background/80 hover:bg-accent hover:text-accent-foreground h-7 border px-2 shadow-xs",
             variant === "sidebar" &&
-              "text-muted-foreground px-1 py-0.5 font-semibold tracking-wider uppercase",
+              "h-7 w-full rounded-md border-border/50 bg-muted/40 px-2 text-[11.5px] font-medium text-foreground hover:bg-accent",
             className,
           )}
           aria-label="Workspace: Guest Mode"
@@ -147,7 +147,7 @@ export function WorkspaceDropdown({
     variant === "toolbar" &&
       "h-7 border border-input bg-background/80 px-2.5 shadow-xs hover:bg-accent hover:text-accent-foreground",
     variant === "sidebar" &&
-      "min-w-0 max-w-full px-1 py-0.5 font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground",
+      "h-7 w-full rounded-md border-border/50 bg-muted/40 px-2 text-[11.5px] font-medium text-foreground hover:bg-accent",
     className,
   );
 

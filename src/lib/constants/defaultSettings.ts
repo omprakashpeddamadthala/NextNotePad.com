@@ -2,7 +2,7 @@ import type { EditorSettings } from "@/types/settings";
 
 export const DEFAULT_SETTINGS: EditorSettings = {
   fontFamily:
-    "var(--font-mono), 'Geist Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Consolas, monospace",
+    "'JetBrains Mono', var(--font-mono), 'Fira Code', 'Cascadia Code', Consolas, monospace",
   fontSize: 15,
   tabWidth: 4,
   insertSpaces: true,

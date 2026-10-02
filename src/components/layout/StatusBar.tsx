@@ -27,8 +27,8 @@ function Segment({
       type={onClick ? "button" : undefined}
       title={title}
       onClick={onClick}
-      className={`flex h-full items-center border-l border-white/10 px-2.5 font-mono text-[11px] tabular-nums transition-colors ${
-        onClick ? "cursor-pointer hover:bg-white/10 active:bg-white/15 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-white/30" : ""
+      className={`flex h-full items-center border-l border-white/8 px-2.5 font-mono text-[11px] tabular-nums transition-colors ${
+        onClick ? "cursor-pointer hover:bg-white/8 active:bg-white/12 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-white/25" : ""
       } ${className ?? ""}`}
     >
       {children}
@@ -64,7 +64,7 @@ export function StatusBar() {
       <div
         role="status"
         aria-label="Status bar"
-        className="flex min-h-6 shrink-0 items-center justify-between border-t border-white/10 bg-[var(--np-statusbar-bg)] pb-[env(safe-area-inset-bottom)] text-[11px] text-[var(--np-statusbar-fg)] select-none"
+      className="np-statusbar-gradient flex min-h-6 shrink-0 items-center justify-between border-t border-white/8 pb-[env(safe-area-inset-bottom)] text-[11px] text-[var(--np-statusbar-fg)] select-none"
       >
         <button
           type="button"
@@ -88,7 +88,7 @@ export function StatusBar() {
     <div
       role="status"
       aria-label="Status bar"
-      className="flex h-6 shrink-0 items-center border-t border-white/10 bg-[var(--np-statusbar-bg)] text-[11px] text-[var(--np-statusbar-fg)] select-none"
+      className="np-statusbar-gradient flex h-6.5 shrink-0 items-center border-t border-white/8 text-[11px] text-[var(--np-statusbar-fg)] select-none"
     >
       {/* Left side: workspace stats */}
       <Segment

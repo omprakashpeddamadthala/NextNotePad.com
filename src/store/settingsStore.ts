@@ -23,7 +23,7 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
   persist(
     (set) => ({
       settings: DEFAULT_SETTINGS,
-      theme: "notepad-light",
+      theme: "notepad-dark",
 
       updateSettings: (patch) =>
         set((state) => ({ settings: { ...state.settings, ...patch } })),

@@ -1,38 +1,45 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { FileText, Pencil, Printer, X } from "lucide-react";
+import { FileText, Pencil, Printer, X, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MarkdownRenderPane } from "./MarkdownRenderPane";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useTabsStore } from "@/store/tabsStore";
 import { useRecentFilesStore } from "@/store/recentFilesStore";
 import { useMarkdownFullPageViewStore } from "@/store/markdownFullPageViewStore";
+import { useUIStore } from "@/store/uiStore";
 import { getActiveRepository } from "@/services/storage/activeRepository";
 import * as modelRegistry from "@/lib/monaco/modelRegistry";
 import { renderMarkdown } from "@/lib/markdown/renderMarkdown";
 
+interface MarkdownFullPageViewProps {
+  fileId: string;
+  onEdit?: () => void;
+  showClose?: boolean;
+}
+
 /** Reads a file's current content for read-only display: the live (possibly-unsaved) Monaco
- *  model if one's still registered, otherwise the last-saved content from storage. Mirrors
- *  DiffTabView's `readTabContent`. */
+ *  model if one's still registered, otherwise the last-saved content from storage. */
 async function readCurrentContent(fileId: string): Promise<string> {
   const existing = modelRegistry.getModel(fileId);
   if (existing) return existing.getValue();
   return getActiveRepository().readFileContent(fileId);
 }
 
-/** Full-page, read-only rendering of a markdown file — replaces the tab content the same way
- *  DiffTabView does. This is the default landing view for a markdown file (the explorer opens it
- *  straight here instead of the editor); it's also reached from the side-by-side preview's "View
- *  Full Page" button. The Edit button opens the normal editor tab for anyone who wants to type.
- *  Printing (for "Save as PDF") isolates the `.np-print-target` content via the print stylesheet
- *  in themes.css, so only the rendered markdown ends up on the page, not the app chrome around it.
- *  Callers must render this with `key={fileId}` so switching files remounts it fresh instead of
- *  needing an effect to reset state — same convention as MarkdownPreview. */
-export function MarkdownFullPageView({ fileId }: { fileId: string }) {
+/** Full-page, read-only rendering of a markdown file.
+ *  This is the default landing view for all markdown files.
+ *  The Edit button opens the normal editor tab for anyone who wants to type.
+ *  Printing isolates the `.np-print-target` content via the print stylesheet. */
+export function MarkdownFullPageView({
+  fileId,
+  onEdit,
+  showClose = false,
+}: MarkdownFullPageViewProps) {
   const closeFullPage = useMarkdownFullPageViewStore((s) => s.closeFullPage);
   const openTab = useTabsStore((s) => s.openTab);
   const addRecent = useRecentFilesStore((s) => s.addRecent);
+  const setMarkdownEditing = useUIStore((s) => s.setMarkdownEditing);
   const node = useWorkspaceStore((s) => s.nodes[fileId]);
 
   const [content, setContent] = useState<string | null>(null);
@@ -40,9 +47,14 @@ export function MarkdownFullPageView({ fileId }: { fileId: string }) {
   const [reloadNonce, setReloadNonce] = useState(0);
 
   function handleEdit() {
-    openTab(fileId);
-    addRecent(fileId);
-    closeFullPage();
+    if (onEdit) {
+      onEdit();
+    } else {
+      setMarkdownEditing(fileId, true);
+      openTab(fileId);
+      addRecent(fileId);
+      closeFullPage();
+    }
   }
 
   useEffect(() => {
@@ -60,6 +72,13 @@ export function MarkdownFullPageView({ fileId }: { fileId: string }) {
   }, [fileId, reloadNonce]);
 
   const html = useMemo(() => renderMarkdown(content ?? ""), [content]);
+
+  const words = useMemo(() => {
+    if (!content) return 0;
+    return content.trim().split(/\s+/).filter(Boolean).length;
+  }, [content]);
+
+  const readTimeMin = useMemo(() => Math.max(1, Math.ceil(words / 200)), [words]);
 
   if (!node) {
     return (
@@ -84,45 +103,73 @@ export function MarkdownFullPageView({ fileId }: { fileId: string }) {
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex h-9 shrink-0 items-center gap-2 border-b bg-[var(--np-toolbar-bg)] px-2.5 text-sm">
-        <FileText className="size-3.5 shrink-0 text-muted-foreground" />
-        <span className="truncate font-medium">{node.name}</span>
-        {/* Labels collapse to icons on narrow screens so the filename keeps room to breathe —
-            the title attribute keeps each button identifiable once its text is hidden. */}
-        <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-1">
-          <Button size="sm" variant="ghost" onClick={handleEdit} title="Edit">
-            <Pencil className="size-3.5" />
-            <span className="hidden sm:inline">Edit</span>
+    <div className="flex h-full w-full flex-col select-text overflow-hidden bg-background">
+      {/* ── Sub-header: document info & view controls ─────────────────── */}
+      <div className="flex h-9 shrink-0 items-center justify-between border-b bg-[var(--np-toolbar-bg)] px-3 text-xs">
+        <div className="flex items-center gap-2 min-w-0">
+          <FileText className="size-3.5 shrink-0 text-primary" />
+          <span className="truncate font-semibold text-foreground">{node.name}</span>
+          <span className="hidden sm:inline-flex rounded-full bg-primary/10 border border-primary/20 px-2 py-0.5 text-[10px] font-medium text-primary">
+            MD Viewer
+          </span>
+          <span className="hidden md:inline text-muted-foreground/60 text-[11px]">
+            {words} words • {readTimeMin} min read
+          </span>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-1.5">
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 gap-1.5 px-2.5 text-xs font-medium cursor-pointer border-border/70 hover:bg-accent/60"
+            onClick={handleEdit}
+            title="Edit Markdown Source (Raw)"
+          >
+            <Pencil className="size-3 text-primary" />
+            <span>Edit Source</span>
           </Button>
+
           <Button
             size="sm"
             variant="ghost"
+            className="h-7 gap-1.5 px-2 text-xs font-medium cursor-pointer text-muted-foreground hover:text-foreground hover:bg-accent/60"
             disabled={content === null || error !== null}
             onClick={() => window.print()}
-            title="Download PDF"
+            title="Download PDF / Print"
           >
-            <Printer className="size-3.5" />
-            <span className="hidden sm:inline">Download PDF</span>
+            <Printer className="size-3" />
+            <span className="hidden sm:inline">PDF</span>
           </Button>
-          <Button size="sm" variant="ghost" onClick={closeFullPage} title="Close">
-            <X className="size-3.5" />
-            <span className="hidden sm:inline">Close</span>
-          </Button>
+
+          {showClose && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2 text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+              onClick={closeFullPage}
+              title="Close Full Page"
+            >
+              <X className="size-3.5" />
+            </Button>
+          )}
         </div>
       </div>
-      <div className="np-scrollbar h-full overflow-auto bg-background px-6 py-4">
-        <MarkdownRenderPane
-          state={error ? "error" : content === null ? "loading" : "ready"}
-          error={error}
-          html={html}
-          skeletonBodyLines={8}
-          centered={false}
-          onRetry={() => {
-            setError(null);
-            setReloadNonce((n) => n + 1);
-          }}
-        />
+
+      {/* ── Full Page Document Canvas ─────────────────────────────────── */}
+      <div className="np-scrollbar min-h-0 flex-1 overflow-y-auto px-6 py-6 sm:px-10 lg:px-16">
+        <div className="mx-auto max-w-4xl">
+          <MarkdownRenderPane
+            state={error ? "error" : content === null ? "loading" : "ready"}
+            error={error}
+            html={html}
+            skeletonBodyLines={8}
+            centered={false}
+            onRetry={() => {
+              setError(null);
+              setReloadNonce((n) => n + 1);
+            }}
+          />
+        </div>
       </div>
     </div>
   );

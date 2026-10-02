@@ -114,7 +114,15 @@ export function useMonacoGlobalActions({
   useRegisterAction(
     "search.find",
     () => {
-      if (registerGlobalActions) editorRef.current?.getAction("actions.find")?.run();
+      if (!registerGlobalActions || !editorRef.current) return;
+      const editor = editorRef.current;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const findController = (editor as any).getContribution?.("editor.contrib.findController");
+      if (findController?.getState?.()?.isRevealed) {
+        findController.closeFindWidget();
+      } else {
+        editor.getAction("actions.find")?.run();
+      }
     },
     [registerGlobalActions],
   );

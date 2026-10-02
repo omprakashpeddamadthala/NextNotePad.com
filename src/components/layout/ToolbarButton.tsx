@@ -42,7 +42,7 @@ export function ToolbarButton({
           disabled={disabled}
           onClick={onClick}
           className={cn(
-            "text-muted-foreground hover:text-foreground shrink-0 rounded-md transition-[color,background-color,transform] duration-100 ease-out active:scale-[0.93]",
+            "text-muted-foreground hover:text-foreground shrink-0 rounded-lg transition-all duration-150 ease-out active:scale-[0.93]",
             size === "touch"
               ? "size-11"
               : size === "compact"

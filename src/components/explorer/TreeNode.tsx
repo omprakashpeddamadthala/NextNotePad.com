@@ -60,7 +60,10 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
   const isCollapsed = isFolder ? node.collapsed : false;
   const dropTarget = isFolder ? node.id : node.parentId;
   const isDropHighlighted = useExplorerSelectionStore(
-    (s) => s.dropTargetId === dropTarget && s.draggedNodeId !== node.id,
+    (s) =>
+      isFolder &&
+      s.dropTargetId === dropTarget &&
+      s.draggedNodeId !== node.id,
   );
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -156,15 +159,19 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
         setDraggedNodeId(null);
         setDropTargetId(null);
       }}
+      className="h-full w-full"
     >
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <button
             type="button"
             onClick={handleClick}
+            onContextMenu={() => {
+              setSelectedNodeId(node.id);
+            }}
             style={{ paddingLeft: `${depth * 12 + 6}px` }}
             className={cn(
-              "group/item relative flex h-9 w-full items-center gap-1 rounded-md pr-1.5 text-left text-[12.5px] transition-[color,background-color] duration-100 outline-none sm:h-[28px]",
+              "group/item relative flex h-full w-full items-center gap-1 rounded-md pr-1.5 text-left text-[12.5px] transition-[color,background-color] duration-100 outline-none",
               "hover:bg-accent/70 hover:text-foreground focus-visible:ring-ring/20 focus-visible:ring-1",
               isSelected
                 ? "bg-primary/10 text-primary before:bg-primary font-medium before:absolute before:top-1.5 before:bottom-1.5 before:left-0 before:w-[2.5px] before:rounded-full"

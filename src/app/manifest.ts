@@ -3,7 +3,7 @@ import { APP_BRAND } from "@/lib/constants/branding";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: `${APP_BRAND.name} — ${APP_BRAND.shortTagline}`,
+    name: APP_BRAND.name,
     short_name: APP_BRAND.name,
     description: APP_BRAND.description,
     start_url: "/",

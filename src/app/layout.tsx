@@ -22,8 +22,8 @@ import "@/styles/themes.css";
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://nextnotepad.com"),
   title: {
-    default: "NextNotePad — Free Online Notepad & Browser Code Editor (Fast, Offline-First)",
-    template: "%s | NextNotePad.com — Online Notepad",
+    default: "NextNotePad",
+    template: "%s — NextNotePad",
   },
   description:
     "NextNotePad (NextNotePad.com) is the #1 free online notepad and browser code editor. Zero install, offline-first with multi-tabs, syntax highlighting, Google Drive sync, diff checker, and developer tools. The modern Notepad++ alternative for your browser.",

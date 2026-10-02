@@ -17,8 +17,7 @@ import { useAdminViewStore } from "@/store/adminViewStore";
 import { useAuthStore } from "@/store/authStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 
-// DOMPurify (used to sanitize the rendered markdown) needs `window` — same ssr:false pattern
-// already used for Monaco itself.
+// DOMPurify (used to sanitize the rendered markdown) needs `window`
 const MarkdownPreview = dynamic(() => import("./MarkdownPreview").then((m) => m.MarkdownPreview), {
   ssr: false,
   loading: () => (
@@ -51,6 +50,8 @@ export function EditorArea() {
   const markdownFullPageFileId = useMarkdownFullPageViewStore((s) => s.fileId);
   const adminViewOpen = useAdminViewStore((s) => s.isOpen);
   const markdownPreviewVisible = useUIStore((s) => s.markdownPreviewVisible);
+  const markdownEditingFileIds = useUIStore((s) => s.markdownEditingFileIds);
+  const setMarkdownEditing = useUIStore((s) => s.setMarkdownEditing);
   const authStatus = useAuthStore((s) => s.status);
   const workspaceReady = useAuthStore((s) => s.workspaceReady);
 
@@ -61,14 +62,16 @@ export function EditorArea() {
     (activeNode.language === "markdown" ||
       activeNode.name.toLowerCase().endsWith(".md") ||
       activeNode.name.toLowerCase().endsWith(".markdown"));
+
+  const isEditingMarkdown = activeTab ? Boolean(markdownEditingFileIds[activeTab.fileId]) : false;
+
   const showMarkdownPreview =
     markdownPreviewVisible &&
     !isSplitView &&
     isMarkdown &&
+    isEditingMarkdown &&
     !activeNode.locked;
-  // Until this resolves, `tabs` may still be a frozen pre-login snapshot (guest mode's
-  // localStorage write-freeze while authenticated) that doesn't match which repo reads will
-  // hit — rendering it early can try to load a stale id against the wrong backend and 404.
+
   const workspaceLoading = authStatus === "loading" || (authStatus === "authenticated" && !workspaceReady);
 
   useEffect(() => {
@@ -85,13 +88,9 @@ export function EditorArea() {
       tabIndex={-1}
       className="flex h-full min-h-0 flex-col outline-none"
     >
-      {/* Markdown Full Page View has its own complete header (filename, Edit/Download PDF/Close)
-          and isn't a regular open tab, so the tab strip would only render as an empty bar above it. */}
-      {!markdownFullPageFileId && !adminViewOpen && <EditorTabs />}
+      {!adminViewOpen && <EditorTabs />}
       <div className="min-h-0 flex-1">
         {adminViewOpen ? (
-          // Checked first, ahead of workspaceLoading — managing users has nothing to do with
-          // whether this admin's own notes workspace has finished loading/syncing.
           <AdminView />
         ) : workspaceLoading ? (
           <div className="animate-in fade-in h-full px-4 py-3 duration-150">
@@ -100,16 +99,24 @@ export function EditorArea() {
         ) : diffView ? (
           <DiffTabView diff={diffView} />
         ) : markdownFullPageFileId ? (
-          <MarkdownFullPageView key={markdownFullPageFileId} fileId={markdownFullPageFileId} />
+          <MarkdownFullPageView
+            key={markdownFullPageFileId}
+            fileId={markdownFullPageFileId}
+            showClose
+          />
         ) : tabs.length === 0 || !activeTab ? (
           <EditorWelcome />
+        ) : isMarkdown && !isEditingMarkdown ? (
+          /* All MD files show directly in the MD viewer with the full page */
+          <MarkdownFullPageView
+            key={activeTab.fileId}
+            fileId={activeTab.fileId}
+            onEdit={() => setMarkdownEditing(activeTab.fileId, true)}
+            showClose={false}
+          />
         ) : isSplitView && splitView ? (
           <SplitEditor split={splitView} />
         ) : (
-          // Always the same ResizablePanelGroup shape — the markdown preview panel is purely
-          // additive (react-resizable-panels redistributes space when a panel is added/removed)
-          // so MonacoEditorWrapper's tree position never changes and it's never remounted,
-          // whether toggling preview on/off or switching between markdown and non-markdown tabs.
           <ResizablePanelGroup orientation="horizontal">
             <ResizablePanel defaultSize={showMarkdownPreview ? "50%" : "100%"} minSize="20%">
               <MonacoEditorWrapper
