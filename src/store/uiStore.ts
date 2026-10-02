@@ -20,6 +20,10 @@ interface UIState {
   /** Explorer's "Show Hidden Items" toggle — hidden files/folders stay out of the tree until this
    *  is on, same idea as a Finder/Explorer dotfile toggle. */
   showHiddenFiles: boolean;
+  /** Right rail (VS Code secondary tools rail) visibility */
+  toolsRailVisible: boolean;
+  /** Explicit raw markdown edit mode per file — if false/unset, MD files show directly in the full-page MD viewer */
+  markdownEditingFileIds: Record<string, boolean>;
 }
 
 interface UIActions {
@@ -33,6 +37,9 @@ interface UIActions {
   setSplitView: (isSplit: boolean) => void;
   toggleMarkdownPreview: () => void;
   toggleShowHiddenFiles: () => void;
+  setToolsRailVisible: (visible: boolean) => void;
+  toggleToolsRail: () => void;
+  setMarkdownEditing: (fileId: string, editing: boolean) => void;
 }
 
 export const useUIStore = create<UIState & UIActions>()(
@@ -46,6 +53,8 @@ export const useUIStore = create<UIState & UIActions>()(
       isSplitView: false,
       markdownPreviewVisible: false,
       showHiddenFiles: false,
+      toolsRailVisible: true,
+      markdownEditingFileIds: {},
 
       setSidebarVisible: (sidebarVisible) => set({ sidebarVisible }),
       toggleSidebar: () => set((state) => ({ sidebarVisible: !state.sidebarVisible })),
@@ -57,6 +66,15 @@ export const useUIStore = create<UIState & UIActions>()(
       setSplitView: (isSplitView) => set({ isSplitView }),
       toggleMarkdownPreview: () => set((state) => ({ markdownPreviewVisible: !state.markdownPreviewVisible })),
       toggleShowHiddenFiles: () => set((state) => ({ showHiddenFiles: !state.showHiddenFiles })),
+      setToolsRailVisible: (toolsRailVisible) => set({ toolsRailVisible }),
+      toggleToolsRail: () => set((state) => ({ toolsRailVisible: !state.toolsRailVisible })),
+      setMarkdownEditing: (fileId, editing) =>
+        set((state) => ({
+          markdownEditingFileIds: {
+            ...state.markdownEditingFileIds,
+            [fileId]: editing,
+          },
+        })),
     }),
     {
       name: "np-ui",
@@ -65,6 +83,7 @@ export const useUIStore = create<UIState & UIActions>()(
         sidebarVisible: state.sidebarVisible,
         bottomPanelVisible: state.bottomPanelVisible,
         showHiddenFiles: state.showHiddenFiles,
+        toolsRailVisible: state.toolsRailVisible,
       }),
     },
   ),

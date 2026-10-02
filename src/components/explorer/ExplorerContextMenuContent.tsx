@@ -42,6 +42,11 @@ export function ExplorerContextMenuContent({ node }: { node: WorkspaceNode }) {
       <ContextMenuItem onSelect={() => createFolderAndRename(containerId)}>
         <FolderPlus /> New Folder
       </ContextMenuItem>
+      {containerId !== null && (
+        <ContextMenuItem onSelect={() => createFolderAndRename(null)}>
+          <FolderPlus /> New Folder at Root
+        </ContextMenuItem>
+      )}
       <ContextMenuSeparator />
       <ContextMenuItem onSelect={() => setRenamingNodeId(node.id)}>
         <Pencil /> Rename
@@ -95,3 +100,38 @@ export function ExplorerContextMenuContent({ node }: { node: WorkspaceNode }) {
     </>
   );
 }
+
+export function ExplorerRootContextMenuContent() {
+  const nodes = useWorkspaceStore((s) => s.nodes);
+  const { createFileAndRename, createFolderAndRename } = useCreateAndRename();
+
+  const hasFolders = Object.values(nodes).some(
+    (n) => !n.deleted && n.type === "folder",
+  );
+
+  return (
+    <>
+      <ContextMenuItem onSelect={() => createFileAndRename(null)}>
+        <FilePlus /> New File
+      </ContextMenuItem>
+      <ContextMenuItem onSelect={() => createFolderAndRename(null)}>
+        <FolderPlus /> New Folder
+      </ContextMenuItem>
+      {hasFolders && (
+        <>
+          <ContextMenuSeparator />
+          <ContextMenuItem
+            onSelect={() => {
+              for (const node of Object.values(nodes)) {
+                if (node.type === "folder") setFolderCollapsed(node.id, true);
+              }
+            }}
+          >
+            <ChevronsDownUp /> Collapse All
+          </ContextMenuItem>
+        </>
+      )}
+    </>
+  );
+}
+

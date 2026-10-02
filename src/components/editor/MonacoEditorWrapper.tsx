@@ -356,6 +356,37 @@ export function MonacoEditorWrapper({
       if (node) setSelectedNodeId(node.id);
     });
 
+    // Toggle find widget on Ctrl+F (opens if closed, closes if already revealed)
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF, () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const findController = (editor as any).getContribution?.("editor.contrib.findController");
+      if (findController?.getState?.()?.isRevealed) {
+        findController.closeFindWidget();
+      } else {
+        editor.getAction("actions.find")?.run();
+      }
+    });
+
+    // Ensure clicking the Find Widget close button ("X" / into mark) always closes the widget reliably
+    const editorDom = editor.getDomNode();
+    if (editorDom) {
+      const handleCloseClick = (e: MouseEvent) => {
+        const target = e.target as HTMLElement | null;
+        if (
+          target?.closest(".find-widget .button.codicon-widget-close") ||
+          target?.closest(".find-widget [aria-label*='Close']") ||
+          target?.closest(".find-widget .codicon-widget-close")
+        ) {
+          e.preventDefault();
+          e.stopPropagation();
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const findController = (editor as any).getContribution?.("editor.contrib.findController");
+          findController?.closeFindWidget?.();
+        }
+      };
+      editorDom.addEventListener("click", handleCloseClick, true);
+    }
+
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyD, () => {
       editor.getAction("editor.action.copyLinesDownAction")?.run();
     });

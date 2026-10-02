@@ -12,6 +12,12 @@ import { useUIStore } from "@/store/uiStore";
 import { useAuthStore } from "@/store/authStore";
 import { useIsMobile } from "@/hooks/useMediaQuery";
 import { moveNode, setFolderCollapsed } from "@/services/fileOperations";
+import {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+} from "@/components/ui/context-menu";
+import { ExplorerRootContextMenuContent } from "./ExplorerContextMenuContent";
 
 /** Must stay in sync with TreeNode's row height — the virtualizer positions rows
  *  absolutely at this pitch, so a mismatch clips or overlaps them. */
@@ -107,6 +113,9 @@ export function FileTree() {
       if (row.node.type === "folder")
         setFolderCollapsed(row.node.id, !row.node.collapsed);
       else openTab(row.node.id);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setSelectedNodeId(null);
     }
   }
 
@@ -117,22 +126,36 @@ export function FileTree() {
       aria-label="File explorer"
       tabIndex={0}
       onKeyDown={handleKeyDown}
-      className="np-scrollbar focus-visible:ring-ring/20 h-full flex-1 overflow-y-auto px-1 pb-2 outline-none focus-visible:ring-2 focus-visible:ring-inset"
-      onDragOver={(e) => {
-        if (rows.length === 0) {
-          e.preventDefault();
-          setDropTargetId("root");
+      onClick={(e) => {
+        if (
+          e.target === e.currentTarget ||
+          !(e.target as HTMLElement).closest('[role="treeitem"]')
+        ) {
+          setSelectedNodeId(null);
         }
+      }}
+      className="np-scrollbar focus-visible:ring-ring/20 flex h-full flex-1 flex-col overflow-y-auto px-1 pb-2 outline-none focus-visible:ring-2 focus-visible:ring-inset"
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDropTargetId("root");
       }}
       onDrop={(e) => {
         e.preventDefault();
-        const draggedId = e.dataTransfer.getData("text/plain") || draggedNodeId;
+        const draggedId =
+          e.dataTransfer.getData("text/plain") || draggedNodeId;
         setDraggedNodeId(null);
         setDropTargetId(null);
         if (draggedId) moveNode(draggedId, null);
       }}
     >
-      <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
+      <div
+        style={{
+          height: virtualizer.getTotalSize(),
+          position: "relative",
+          width: "100%",
+          flexShrink: 0,
+        }}
+      >
         {virtualizer.getVirtualItems().map((virtualRow) => {
           const row = rows[virtualRow.index];
           return (
@@ -152,19 +175,49 @@ export function FileTree() {
           );
         })}
       </div>
+
+      {/* Empty space filler so the user can always click / right-click below items to target root */}
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <div
+            className="w-full flex-1 min-h-[96px] cursor-default"
+            aria-hidden="true"
+            onClick={() => setSelectedNodeId(null)}
+          />
+        </ContextMenuTrigger>
+        <ContextMenuContent
+          className="w-48"
+          onCloseAutoFocus={(e) => e.preventDefault()}
+        >
+          <ExplorerRootContextMenuContent />
+        </ContextMenuContent>
+      </ContextMenu>
+
       {rows.length === 0 &&
         (workspaceLoading ? (
           <TreeSkeleton />
         ) : (
-          <div
-            className={`text-muted-foreground flex h-24 items-center justify-center rounded-sm border-2 border-dashed text-xs ${
-              dropTargetId === "root" ? "border-primary" : "border-transparent"
-            }`}
-          >
-            {filterQuery
-              ? "No files match this filter."
-              : "No files yet — right-click to create one."}
-          </div>
+          <ContextMenu>
+            <ContextMenuTrigger asChild>
+              <div
+                className={`text-muted-foreground flex h-24 items-center justify-center rounded-sm border-2 border-dashed text-xs ${
+                  dropTargetId === "root"
+                    ? "border-primary"
+                    : "border-transparent"
+                }`}
+              >
+                {filterQuery
+                  ? "No files match this filter."
+                  : "No files yet — right-click to create one."}
+              </div>
+            </ContextMenuTrigger>
+            <ContextMenuContent
+              className="w-48"
+              onCloseAutoFocus={(e) => e.preventDefault()}
+            >
+              <ExplorerRootContextMenuContent />
+            </ContextMenuContent>
+          </ContextMenu>
         ))}
     </div>
   );

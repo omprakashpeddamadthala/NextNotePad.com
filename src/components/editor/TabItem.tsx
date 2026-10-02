@@ -74,10 +74,10 @@ export function TabItem({
           aria-selected={isActive}
           className={cn(
             "focus-visible:ring-ring/30 focus-visible:ring-1 focus-visible:outline-none focus-visible:ring-inset",
-            "group relative flex h-9 min-w-0 shrink-0 cursor-default items-center gap-1.5 border-r px-3 text-[12.5px] transition-[color,background-color] duration-100 select-none",
+            "np-tab group relative flex h-9 min-w-0 shrink-0 cursor-default items-center gap-1.5 border-r px-3 text-[12.5px] transition-all duration-150 select-none",
             isActive
-              ? "text-foreground after:bg-primary bg-[var(--np-tab-active-bg)] font-medium after:absolute after:inset-x-0 after:bottom-0 after:h-[2px]"
-              : "text-muted-foreground/70 hover:text-foreground/90 hover:bg-[var(--np-menu-hover)]/60",
+              ? "np-tab-active text-foreground font-medium"
+              : "text-muted-foreground/60 hover:text-foreground/90 hover:bg-[var(--np-menu-hover)]/40",
           )}
           style={{ borderColor: "var(--np-tab-border)" }}
           title={node?.path}

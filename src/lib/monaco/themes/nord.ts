@@ -2,7 +2,7 @@ import type { ThemeModule } from "./types";
 
 export const nord: ThemeModule = {
   id: "nord",
-  label: "Nord",
+  label: "IntelliJ Nord",
   monacoThemeId: "np-nord",
   chrome: {
     background: "#2e3440",

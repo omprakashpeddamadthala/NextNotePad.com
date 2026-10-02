@@ -20,10 +20,7 @@ import {
 import { useUIStore } from "@/store/uiStore";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useIsMobile } from "@/hooks/useMediaQuery";
-import {
-  IconNavRail,
-  CollectionsSidebar,
-} from "@/components/layout/PostmanSidebar";
+import { CollectionsSidebar } from "@/components/layout/PostmanSidebar";
 import { ToolsNavRail } from "@/components/layout/ToolsNavRail";
 import { FileExplorer } from "@/components/explorer/FileExplorer";
 import { EditorArea } from "@/components/editor/EditorArea";
@@ -33,6 +30,7 @@ import { useAuthBootstrap } from "@/hooks/useAuthBootstrap";
 import { GlobalActionsRegistrar } from "./GlobalActionsRegistrar";
 import { ApiLoadingBar } from "./ApiLoadingBar";
 import { CenterApiLoader } from "./CenterApiLoader";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 // Lazy-loaded dialogs — none of these render anything visible until opened
 const SettingsDialog = dynamic(
@@ -120,9 +118,11 @@ export function AppShell() {
   useKeyboardShortcuts();
   useAuthBootstrap();
   useAppBootstrap();
+  useDocumentTitle();
 
   const sidebarVisible = useUIStore((s) => s.sidebarVisible);
   const bottomPanelVisible = useUIStore((s) => s.bottomPanelVisible);
+  const toolsRailVisible = useUIStore((s) => s.toolsRailVisible);
   const mobileSidebarOpen = useUIStore((s) => s.mobileSidebarOpen);
   const setMobileSidebarOpen = useUIStore((s) => s.setMobileSidebarOpen);
   const isMobile = useIsMobile();
@@ -175,54 +175,58 @@ export function AppShell() {
           </Sheet>
         </div>
       ) : (
-        /* ── Desktop: Left Rail + Resizable Workspace Panels + Right Rail ── */
+        /* ── Desktop: Resizable Workspace (Sidebar + Editor Area + Developer Toolkit) ── */
         <div className="bg-background flex min-h-0 flex-1 overflow-hidden">
-          {/* Left navigation rail (primary explorer and quick file actions) */}
-          <IconNavRail />
-
-          {/* min-h-0 flex-1 gives react-resizable-panels a properly-sized parent */}
-          <div className="bg-background min-h-0 flex-1 overflow-hidden">
-            <ResizablePanelGroup orientation="horizontal">
-              {sidebarVisible && (
-                <>
-                  <ResizablePanel
-                    defaultSize="260px"
-                    minSize="180px"
-                    maxSize="450px"
-                    groupResizeBehavior="preserve-pixel-size"
-                  >
-                    <CollectionsSidebar />
-                  </ResizablePanel>
-                  <ResizableHandle withHandle />
-                </>
-              )}
-              <ResizablePanel>
-                <ResizablePanelGroup orientation="vertical">
-                  <ResizablePanel
-                    defaultSize={bottomPanelVisible ? "70%" : "100%"}
-                    minSize="30%"
-                  >
-                    <EditorArea />
-                  </ResizablePanel>
-                  {bottomPanelVisible && (
-                    <>
-                      <ResizableHandle withHandle />
-                      <ResizablePanel
-                        defaultSize="30%"
-                        minSize="10%"
-                        maxSize="70%"
-                      >
-                        <BottomPanel />
-                      </ResizablePanel>
-                    </>
-                  )}
-                </ResizablePanelGroup>
-              </ResizablePanel>
-            </ResizablePanelGroup>
-          </div>
-
-          {/* Right navigation rail (quick developer tools, converters, diff, and AI) */}
-          <ToolsNavRail />
+          <ResizablePanelGroup orientation="horizontal">
+            {sidebarVisible && (
+              <>
+                <ResizablePanel
+                  defaultSize="260px"
+                  minSize="190px"
+                  maxSize="420px"
+                  groupResizeBehavior="preserve-pixel-size"
+                >
+                  <CollectionsSidebar />
+                </ResizablePanel>
+                <ResizableHandle withHandle />
+              </>
+            )}
+            <ResizablePanel>
+              <ResizablePanelGroup orientation="vertical">
+                <ResizablePanel
+                  defaultSize={bottomPanelVisible ? "70%" : "100%"}
+                  minSize="30%"
+                >
+                  <EditorArea />
+                </ResizablePanel>
+                {bottomPanelVisible && (
+                  <>
+                    <ResizableHandle withHandle />
+                    <ResizablePanel
+                      defaultSize="30%"
+                      minSize="10%"
+                      maxSize="70%"
+                    >
+                      <BottomPanel />
+                    </ResizablePanel>
+                  </>
+                )}
+              </ResizablePanelGroup>
+            </ResizablePanel>
+            {toolsRailVisible && (
+              <>
+                <ResizableHandle withHandle />
+                <ResizablePanel
+                  defaultSize="270px"
+                  minSize="230px"
+                  maxSize="420px"
+                  groupResizeBehavior="preserve-pixel-size"
+                >
+                  <ToolsNavRail />
+                </ResizablePanel>
+              </>
+            )}
+          </ResizablePanelGroup>
         </div>
       )}
 

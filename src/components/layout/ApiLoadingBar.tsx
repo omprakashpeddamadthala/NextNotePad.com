@@ -20,7 +20,7 @@ export function ApiLoadingBar() {
       }`}
     >
       {/* Only animate while visible, so a hidden bar isn't burning a compositor thread. */}
-      {visible && <div className="np-indeterminate-bar h-full w-2/5 bg-primary" />}
+      {visible && <div className="np-indeterminate-bar h-full w-2/5" />}
     </div>
   );
 }

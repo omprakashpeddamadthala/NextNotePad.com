@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronsDownUp, Trash2, X } from "lucide-react";
+import { ChevronsDownUp, FilePlus, FolderPlus, Trash2, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ToolbarButton } from "@/components/layout/ToolbarButton";
 import { FileTree } from "./FileTree";
 import { RecycleBinPanel } from "@/components/trash/RecycleBinPanel";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useTrashStore } from "@/store/trashStore";
+import { useCreateAndRename } from "@/hooks/useCreateAndRename";
+import { useNewNodeTargetParentId } from "@/hooks/useNewNodeTargetParentId";
 import {
   importNativeDrop,
   setFolderCollapsed,
@@ -20,6 +22,8 @@ export function FileExplorer() {
   const setFilterQuery = useWorkspaceStore((s) => s.setFilterQuery);
   const nodes = useWorkspaceStore((s) => s.nodes);
   const trashCount = useTrashStore((s) => s.entries.length);
+  const { createFileAndRename, createFolderAndRename } = useCreateAndRename();
+  const targetParentId = useNewNodeTargetParentId();
 
   return (
     <div
@@ -45,6 +49,18 @@ export function FileExplorer() {
         </span>
         {!showTrash && (
           <>
+            <ToolbarButton
+              icon={FilePlus}
+              label="New File"
+              size="compact"
+              onClick={() => createFileAndRename(targetParentId)}
+            />
+            <ToolbarButton
+              icon={FolderPlus}
+              label="New Folder"
+              size="compact"
+              onClick={() => createFolderAndRename(targetParentId)}
+            />
             <ToolbarButton
               icon={ChevronsDownUp}
               label="Collapse All"
