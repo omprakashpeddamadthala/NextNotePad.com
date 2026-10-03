@@ -13,6 +13,7 @@ import { SearchMenu } from "@/components/menu/SearchMenu";
 import { ViewMenu } from "@/components/menu/ViewMenu";
 import { EncodingMenu } from "@/components/menu/EncodingMenu";
 import { LanguageMenu } from "@/components/menu/LanguageMenu";
+import { TerminalMenu } from "@/components/menu/TerminalMenu";
 import { ToolsMenu } from "@/components/menu/ToolsMenu";
 import { WindowMenu } from "@/components/menu/WindowMenu";
 import { HelpMenu } from "@/components/menu/HelpMenu";
@@ -95,6 +96,9 @@ export function MobileMenuSheet() {
             </MenuGridCell>
             <MenuGridCell>
               <ToolsMenu />
+            </MenuGridCell>
+            <MenuGridCell>
+              <TerminalMenu />
             </MenuGridCell>
             <MenuGridCell>
               <WindowMenu />

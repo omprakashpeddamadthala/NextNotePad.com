@@ -15,6 +15,7 @@ import { ViewMenu } from "@/components/menu/ViewMenu";
 import { ToolsMenu } from "@/components/menu/ToolsMenu";
 import { EncodingMenu } from "@/components/menu/EncodingMenu";
 import { LanguageMenu } from "@/components/menu/LanguageMenu";
+import { TerminalMenu } from "@/components/menu/TerminalMenu";
 import { WindowMenu } from "@/components/menu/WindowMenu";
 import { HelpMenu } from "@/components/menu/HelpMenu";
 import { useAuthStore } from "@/store/authStore";
@@ -88,6 +89,7 @@ export function MenuBar() {
             <ToolsMenu />
             <EncodingMenu />
             <LanguageMenu />
+            <TerminalMenu />
             <WindowMenu />
             <HelpMenu />
           </nav>
