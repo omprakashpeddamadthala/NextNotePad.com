@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  Terminal,
-  Search,
-  PanelBottom,
-  Play,
-  Sparkles,
-} from "lucide-react";
+import { Terminal, Search, PanelBottom, Play, Sparkles } from "lucide-react";
 import { TopMenu } from "./TopMenu";
 import {
   DropdownMenuItem,
@@ -50,7 +44,7 @@ export function TerminalMenu() {
         <Search className="size-4" /> Find in Files Panel
         <DropdownMenuShortcut>Ctrl+Shift+F</DropdownMenuShortcut>
       </DropdownMenuItem>
-      <DropdownMenuItem onSelect={() => runAction("edit.formatDocument")}>
+      <DropdownMenuItem onSelect={() => runAction("tools.json.format")}>
         <Play className="size-4" /> Run Formatter / Task
       </DropdownMenuItem>
       <DropdownMenuItem onSelect={() => runAction("tools.base64Encode")}>

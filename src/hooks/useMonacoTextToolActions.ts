@@ -51,52 +51,37 @@ function transformActiveEditor(
   transform: (text: string) => string,
   successMessage: string,
   errorMessage: string,
+  options: { expandSelectionToFullLines?: boolean } = {},
 ): void {
   const model = editor.getModel();
   if (!model) return;
 
   const selection = editor.getSelection();
   const hasSelection = Boolean(selection && !selection.isEmpty());
-  const range = hasSelection && selection ? selection : model.getFullModelRange();
+  let range = hasSelection && selection ? selection : model.getFullModelRange();
+  if (hasSelection && selection && options.expandSelectionToFullLines) {
+    const start = selection.getStartPosition();
+    const end = selection.getEndPosition();
+    const endLineNumber =
+      end.column === 1 && end.lineNumber > start.lineNumber
+        ? end.lineNumber - 1
+        : end.lineNumber;
+    range = model
+      .getFullModelRange()
+      .setStartPosition(start.lineNumber, 1)
+      .setEndPosition(endLineNumber, model.getLineMaxColumn(endLineNumber));
+  }
   const original = model.getValueInRange(range);
   try {
     const transformed = transform(original);
-    editor.executeEdits("tools", [{ range, text: transformed }]);
     editor.pushUndoStop();
-    toast.success(successMessage);
-  } catch {
-    toast.error(errorMessage);
-  }
-}
-
-function transformSelectedLines(
-  editor: MonacoEditorNS.IStandaloneCodeEditor,
-  transform: (text: string) => string,
-  successMessage: string,
-  errorMessage: string,
-): void {
-  const model = editor.getModel();
-  const selection = editor.getSelection();
-  if (!model) return;
-  if (!selection || selection.isEmpty()) {
-    transformActiveEditor(editor, transform, successMessage, errorMessage);
-    return;
-  }
-  const endLine =
-    selection.endColumn === 1 &&
-    selection.endLineNumber > selection.startLineNumber
-      ? selection.endLineNumber - 1
-      : selection.endLineNumber;
-  const range = {
-    startLineNumber: selection.startLineNumber,
-    startColumn: 1,
-    endLineNumber: endLine,
-    endColumn: model.getLineMaxColumn(endLine),
-  };
-  try {
-    editor.executeEdits("tools", [
-      { range, text: transform(model.getValueInRange(range)) },
+    const applied = editor.executeEdits("tools", [
+      { range, text: transformed },
     ]);
+    if (!applied) {
+      toast.error("This file is read-only.");
+      return;
+    }
     editor.pushUndoStop();
     toast.success(successMessage);
   } catch {
@@ -106,15 +91,22 @@ function transformSelectedLines(
 
 /** Reads the selection if one exists, otherwise the whole document — read-only counterpart to
  *  `transformActiveEditor`, used by the hash tool since hashing doesn't mutate the buffer. */
-function getActiveEditorSelectionOrDocument(editor: MonacoEditorNS.IStandaloneCodeEditor): string | null {
+function getActiveEditorSelectionOrDocument(
+  editor: MonacoEditorNS.IStandaloneCodeEditor,
+): string | null {
   const model = editor.getModel();
   if (!model) return null;
   const selection = editor.getSelection();
   const hasSelection = Boolean(selection && !selection.isEmpty());
-  return hasSelection && selection ? model.getValueInRange(selection) : model.getValue();
+  return hasSelection && selection
+    ? model.getValueInRange(selection)
+    : model.getValue();
 }
 
-async function hashActiveEditor(editor: MonacoEditorNS.IStandaloneCodeEditor, algorithm: HashAlgorithm): Promise<void> {
+async function hashActiveEditor(
+  editor: MonacoEditorNS.IStandaloneCodeEditor,
+  algorithm: HashAlgorithm,
+): Promise<void> {
   const text = getActiveEditorSelectionOrDocument(editor);
   if (text === null) {
     toast.error("Open a file first to hash its content.");
@@ -131,7 +123,8 @@ function reportTextStats(editor: MonacoEditorNS.IStandaloneCodeEditor): void {
     toast.error("Open a file first to count its content.");
     return;
   }
-  const { characters, charactersNoSpaces, words, lines } = computeTextStats(text);
+  const { characters, charactersNoSpaces, words, lines } =
+    computeTextStats(text);
   toast.success(
     `${words} words, ${characters} chars (${charactersNoSpaces} w/o spaces), ${lines} lines.`,
   );
@@ -147,7 +140,12 @@ function insertAtCursorOrSelection(
 ): void {
   const selection = editor.getSelection();
   if (!selection) return;
-  editor.executeEdits("tools", [{ range: selection, text }]);
+  editor.pushUndoStop();
+  const applied = editor.executeEdits("tools", [{ range: selection, text }]);
+  if (!applied) {
+    toast.error("This file is read-only.");
+    return;
+  }
   editor.pushUndoStop();
   toast.success(successMessage);
 }
@@ -156,7 +154,10 @@ function insertAtCursorOrSelection(
  *  shared action registry. Split out of `MonacoEditorWrapper` for the same reason
  *  `useMonacoGlobalActions` is: this is "menu command -> text transform" glue, not editor
  *  lifecycle management. */
-export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: UseMonacoTextToolActionsParams): void {
+export function useMonacoTextToolActions({
+  registerGlobalActions,
+  editorRef,
+}: UseMonacoTextToolActionsParams): void {
   useRegisterAction(
     "tools.base64Encode",
     () => {
@@ -187,7 +188,12 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.urlEncode",
     () => {
       if (registerGlobalActions && editorRef.current)
-        transformActiveEditor(editorRef.current, urlEncode, "URL-encoded.", "Couldn't URL-encode this content.");
+        transformActiveEditor(
+          editorRef.current,
+          urlEncode,
+          "URL-encoded.",
+          "Couldn't URL-encode this content.",
+        );
     },
     [registerGlobalActions],
   );
@@ -208,7 +214,12 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.case.upper",
     () => {
       if (registerGlobalActions && editorRef.current)
-        transformActiveEditor(editorRef.current, caseConverters.upper, "Case converted.", "Couldn't convert case.");
+        transformActiveEditor(
+          editorRef.current,
+          caseConverters.upper,
+          "Case converted.",
+          "Couldn't convert case.",
+        );
     },
     [registerGlobalActions],
   );
@@ -216,7 +227,12 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.case.lower",
     () => {
       if (registerGlobalActions && editorRef.current)
-        transformActiveEditor(editorRef.current, caseConverters.lower, "Case converted.", "Couldn't convert case.");
+        transformActiveEditor(
+          editorRef.current,
+          caseConverters.lower,
+          "Case converted.",
+          "Couldn't convert case.",
+        );
     },
     [registerGlobalActions],
   );
@@ -224,7 +240,12 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.case.title",
     () => {
       if (registerGlobalActions && editorRef.current)
-        transformActiveEditor(editorRef.current, caseConverters.title, "Case converted.", "Couldn't convert case.");
+        transformActiveEditor(
+          editorRef.current,
+          caseConverters.title,
+          "Case converted.",
+          "Couldn't convert case.",
+        );
     },
     [registerGlobalActions],
   );
@@ -232,7 +253,12 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.case.sentence",
     () => {
       if (registerGlobalActions && editorRef.current)
-        transformActiveEditor(editorRef.current, caseConverters.sentence, "Case converted.", "Couldn't convert case.");
+        transformActiveEditor(
+          editorRef.current,
+          caseConverters.sentence,
+          "Case converted.",
+          "Couldn't convert case.",
+        );
     },
     [registerGlobalActions],
   );
@@ -240,7 +266,12 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.case.camel",
     () => {
       if (registerGlobalActions && editorRef.current)
-        transformActiveEditor(editorRef.current, caseConverters.camel, "Case converted.", "Couldn't convert case.");
+        transformActiveEditor(
+          editorRef.current,
+          caseConverters.camel,
+          "Case converted.",
+          "Couldn't convert case.",
+        );
     },
     [registerGlobalActions],
   );
@@ -248,7 +279,12 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.case.pascal",
     () => {
       if (registerGlobalActions && editorRef.current)
-        transformActiveEditor(editorRef.current, caseConverters.pascal, "Case converted.", "Couldn't convert case.");
+        transformActiveEditor(
+          editorRef.current,
+          caseConverters.pascal,
+          "Case converted.",
+          "Couldn't convert case.",
+        );
     },
     [registerGlobalActions],
   );
@@ -256,7 +292,12 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.case.snake",
     () => {
       if (registerGlobalActions && editorRef.current)
-        transformActiveEditor(editorRef.current, caseConverters.snake, "Case converted.", "Couldn't convert case.");
+        transformActiveEditor(
+          editorRef.current,
+          caseConverters.snake,
+          "Case converted.",
+          "Couldn't convert case.",
+        );
     },
     [registerGlobalActions],
   );
@@ -264,7 +305,12 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.case.kebab",
     () => {
       if (registerGlobalActions && editorRef.current)
-        transformActiveEditor(editorRef.current, caseConverters.kebab, "Case converted.", "Couldn't convert case.");
+        transformActiveEditor(
+          editorRef.current,
+          caseConverters.kebab,
+          "Case converted.",
+          "Couldn't convert case.",
+        );
     },
     [registerGlobalActions],
   );
@@ -272,35 +318,44 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.case.constant",
     () => {
       if (registerGlobalActions && editorRef.current)
-        transformActiveEditor(editorRef.current, caseConverters.constant, "Case converted.", "Couldn't convert case.");
+        transformActiveEditor(
+          editorRef.current,
+          caseConverters.constant,
+          "Case converted.",
+          "Couldn't convert case.",
+        );
     },
     [registerGlobalActions],
   );
   useRegisterAction(
     "tools.hash.SHA-1",
     () => {
-      if (registerGlobalActions && editorRef.current) void hashActiveEditor(editorRef.current, "SHA-1");
+      if (registerGlobalActions && editorRef.current)
+        void hashActiveEditor(editorRef.current, "SHA-1");
     },
     [registerGlobalActions],
   );
   useRegisterAction(
     "tools.hash.SHA-256",
     () => {
-      if (registerGlobalActions && editorRef.current) void hashActiveEditor(editorRef.current, "SHA-256");
+      if (registerGlobalActions && editorRef.current)
+        void hashActiveEditor(editorRef.current, "SHA-256");
     },
     [registerGlobalActions],
   );
   useRegisterAction(
     "tools.hash.SHA-384",
     () => {
-      if (registerGlobalActions && editorRef.current) void hashActiveEditor(editorRef.current, "SHA-384");
+      if (registerGlobalActions && editorRef.current)
+        void hashActiveEditor(editorRef.current, "SHA-384");
     },
     [registerGlobalActions],
   );
   useRegisterAction(
     "tools.hash.SHA-512",
     () => {
-      if (registerGlobalActions && editorRef.current) void hashActiveEditor(editorRef.current, "SHA-512");
+      if (registerGlobalActions && editorRef.current)
+        void hashActiveEditor(editorRef.current, "SHA-512");
     },
     [registerGlobalActions],
   );
@@ -309,7 +364,12 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.json.format",
     () => {
       if (registerGlobalActions && editorRef.current)
-        transformActiveEditor(editorRef.current, formatJson, "JSON formatted.", "Invalid JSON — couldn't format.");
+        transformActiveEditor(
+          editorRef.current,
+          formatJson,
+          "JSON formatted.",
+          "Invalid JSON — couldn't format.",
+        );
     },
     [registerGlobalActions],
   );
@@ -317,7 +377,12 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.json.minify",
     () => {
       if (registerGlobalActions && editorRef.current)
-        transformActiveEditor(editorRef.current, minifyJson, "JSON minified.", "Invalid JSON — couldn't minify.");
+        transformActiveEditor(
+          editorRef.current,
+          minifyJson,
+          "JSON minified.",
+          "Invalid JSON — couldn't minify.",
+        );
     },
     [registerGlobalActions],
   );
@@ -326,7 +391,13 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.lines.sortAsc",
     () => {
       if (registerGlobalActions && editorRef.current)
-        transformSelectedLines(editorRef.current, sortLinesAscending, "Lines sorted (A-Z).", "Couldn't sort lines.");
+        transformActiveEditor(
+          editorRef.current,
+          sortLinesAscending,
+          "Lines sorted (A-Z).",
+          "Couldn't sort lines.",
+          { expandSelectionToFullLines: true },
+        );
     },
     [registerGlobalActions],
   );
@@ -334,7 +405,13 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.lines.sortDesc",
     () => {
       if (registerGlobalActions && editorRef.current)
-        transformSelectedLines(editorRef.current, sortLinesDescending, "Lines sorted (Z-A).", "Couldn't sort lines.");
+        transformActiveEditor(
+          editorRef.current,
+          sortLinesDescending,
+          "Lines sorted (Z-A).",
+          "Couldn't sort lines.",
+          { expandSelectionToFullLines: true },
+        );
     },
     [registerGlobalActions],
   );
@@ -342,11 +419,12 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.lines.dedupe",
     () => {
       if (registerGlobalActions && editorRef.current)
-        transformSelectedLines(
+        transformActiveEditor(
           editorRef.current,
           removeDuplicateLines,
           "Duplicate lines removed.",
           "Couldn't de-duplicate lines.",
+          { expandSelectionToFullLines: true },
         );
     },
     [registerGlobalActions],
@@ -382,7 +460,12 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.whitespace.tabsToSpaces",
     () => {
       if (registerGlobalActions && editorRef.current)
-        transformActiveEditor(editorRef.current, tabsToSpaces, "Tabs converted to spaces.", "Couldn't convert tabs.");
+        transformActiveEditor(
+          editorRef.current,
+          tabsToSpaces,
+          "Tabs converted to spaces.",
+          "Couldn't convert tabs.",
+        );
     },
     [registerGlobalActions],
   );
@@ -403,7 +486,8 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
   useRegisterAction(
     "tools.textStats",
     () => {
-      if (registerGlobalActions && editorRef.current) reportTextStats(editorRef.current);
+      if (registerGlobalActions && editorRef.current)
+        reportTextStats(editorRef.current);
     },
     [registerGlobalActions],
   );
@@ -412,7 +496,11 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.generateUuid",
     () => {
       if (registerGlobalActions && editorRef.current)
-        insertAtCursorOrSelection(editorRef.current, generateUuid(), "UUID inserted.");
+        insertAtCursorOrSelection(
+          editorRef.current,
+          generateUuid(),
+          "UUID inserted.",
+        );
     },
     [registerGlobalActions],
   );
@@ -462,7 +550,12 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.html.encode",
     () => {
       if (registerGlobalActions && editorRef.current)
-        transformActiveEditor(editorRef.current, htmlEncode, "HTML-encoded.", "Couldn't HTML-encode this content.");
+        transformActiveEditor(
+          editorRef.current,
+          htmlEncode,
+          "HTML-encoded.",
+          "Couldn't HTML-encode this content.",
+        );
     },
     [registerGlobalActions],
   );
@@ -470,7 +563,12 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.html.decode",
     () => {
       if (registerGlobalActions && editorRef.current)
-        transformActiveEditor(editorRef.current, htmlDecode, "HTML-decoded.", "Couldn't HTML-decode this content.");
+        transformActiveEditor(
+          editorRef.current,
+          htmlDecode,
+          "HTML-decoded.",
+          "Couldn't HTML-decode this content.",
+        );
     },
     [registerGlobalActions],
   );
@@ -506,7 +604,12 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.base.decToHex",
     () => {
       if (registerGlobalActions && editorRef.current)
-        transformActiveEditor(editorRef.current, decimalToHex, "Converted to hex.", "Couldn't convert — not a valid decimal number.");
+        transformActiveEditor(
+          editorRef.current,
+          decimalToHex,
+          "Converted to hex.",
+          "Couldn't convert — not a valid decimal number.",
+        );
     },
     [registerGlobalActions],
   );
@@ -514,7 +617,12 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.base.hexToDec",
     () => {
       if (registerGlobalActions && editorRef.current)
-        transformActiveEditor(editorRef.current, hexToDecimal, "Converted to decimal.", "Couldn't convert — not a valid hex number.");
+        transformActiveEditor(
+          editorRef.current,
+          hexToDecimal,
+          "Converted to decimal.",
+          "Couldn't convert — not a valid hex number.",
+        );
     },
     [registerGlobalActions],
   );
@@ -522,7 +630,12 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.base.decToBin",
     () => {
       if (registerGlobalActions && editorRef.current)
-        transformActiveEditor(editorRef.current, decimalToBinary, "Converted to binary.", "Couldn't convert — not a valid decimal number.");
+        transformActiveEditor(
+          editorRef.current,
+          decimalToBinary,
+          "Converted to binary.",
+          "Couldn't convert — not a valid decimal number.",
+        );
     },
     [registerGlobalActions],
   );
@@ -530,7 +643,12 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.base.binToDec",
     () => {
       if (registerGlobalActions && editorRef.current)
-        transformActiveEditor(editorRef.current, binaryToDecimal, "Converted to decimal.", "Couldn't convert — not a valid binary number.");
+        transformActiveEditor(
+          editorRef.current,
+          binaryToDecimal,
+          "Converted to decimal.",
+          "Couldn't convert — not a valid binary number.",
+        );
     },
     [registerGlobalActions],
   );
@@ -539,7 +657,12 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.color.hexToRgb",
     () => {
       if (registerGlobalActions && editorRef.current)
-        transformActiveEditor(editorRef.current, hexToRgb, "Converted to RGB.", "Couldn't convert — not a valid hex color.");
+        transformActiveEditor(
+          editorRef.current,
+          hexToRgb,
+          "Converted to RGB.",
+          "Couldn't convert — not a valid hex color.",
+        );
     },
     [registerGlobalActions],
   );
@@ -547,7 +670,12 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.color.rgbToHex",
     () => {
       if (registerGlobalActions && editorRef.current)
-        transformActiveEditor(editorRef.current, rgbToHex, "Converted to hex.", "Couldn't convert — not a valid rgb() color.");
+        transformActiveEditor(
+          editorRef.current,
+          rgbToHex,
+          "Converted to hex.",
+          "Couldn't convert — not a valid rgb() color.",
+        );
     },
     [registerGlobalActions],
   );
@@ -556,7 +684,12 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.slugify",
     () => {
       if (registerGlobalActions && editorRef.current)
-        transformActiveEditor(editorRef.current, slugify, "Slugified.", "Couldn't slugify this content.");
+        transformActiveEditor(
+          editorRef.current,
+          slugify,
+          "Slugified.",
+          "Couldn't slugify this content.",
+        );
     },
     [registerGlobalActions],
   );

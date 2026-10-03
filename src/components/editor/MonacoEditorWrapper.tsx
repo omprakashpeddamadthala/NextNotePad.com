@@ -41,6 +41,7 @@ function insertImageMarkdown(
 }
 
 import { useEffect, useRef, useState } from "react";
+import type { RefObject } from "react";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import type { OnMount } from "@monaco-editor/react";
@@ -87,17 +88,19 @@ interface MonacoEditorWrapperProps {
   registerGlobalActions?: boolean;
 }
 
-function MonacoActionsRegistrar({
+interface MonacoActionRegistrarProps {
+  editorRef: RefObject<MonacoEditorNS.IStandaloneCodeEditor | null>;
+  fileId: string;
+  tabId: string;
+  saveActiveFile: () => Promise<boolean>;
+}
+
+function MonacoActionRegistrar({
   editorRef,
   fileId,
   tabId,
   saveActiveFile,
-}: {
-  editorRef: React.RefObject<MonacoEditorNS.IStandaloneCodeEditor | null>;
-  fileId: string;
-  tabId: string;
-  saveActiveFile: () => Promise<boolean>;
-}) {
+}: MonacoActionRegistrarProps) {
   useMonacoGlobalActions({
     registerGlobalActions: true,
     editorRef,
@@ -109,7 +112,6 @@ function MonacoActionsRegistrar({
   useMonacoAiActions({ registerGlobalActions: true, editorRef });
   return null;
 }
-
 export function MonacoEditorWrapper({
   fileId,
   tabId,
@@ -392,7 +394,9 @@ export function MonacoEditorWrapper({
     // Toggle find widget on Ctrl+F (opens if closed, closes if already revealed)
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF, () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const findController = (editor as any).getContribution?.("editor.contrib.findController");
+      const findController = (editor as any).getContribution?.(
+        "editor.contrib.findController",
+      );
       if (findController?.getState?.()?.isRevealed) {
         findController.closeFindWidget();
       } else {
@@ -413,7 +417,9 @@ export function MonacoEditorWrapper({
           e.preventDefault();
           e.stopPropagation();
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const findController = (editor as any).getContribution?.("editor.contrib.findController");
+          const findController = (editor as any).getContribution?.(
+            "editor.contrib.findController",
+          );
           findController?.closeFindWidget?.();
         }
       };
@@ -650,7 +656,7 @@ export function MonacoEditorWrapper({
       }}
     >
       {registerGlobalActions && (
-        <MonacoActionsRegistrar
+        <MonacoActionRegistrar
           editorRef={editorRef}
           fileId={fileId}
           tabId={tabId}
