@@ -41,6 +41,7 @@ function insertImageMarkdown(
 }
 
 import { useEffect, useRef, useState } from "react";
+import type { RefObject } from "react";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import type { OnMount } from "@monaco-editor/react";
@@ -85,6 +86,31 @@ interface MonacoEditorWrapperProps {
   fileId: string;
   tabId: string;
   registerGlobalActions?: boolean;
+}
+
+interface MonacoActionRegistrarProps {
+  editorRef: RefObject<MonacoEditorNS.IStandaloneCodeEditor | null>;
+  fileId: string;
+  tabId: string;
+  saveActiveFile: () => void;
+}
+
+function MonacoActionRegistrar({
+  editorRef,
+  fileId,
+  tabId,
+  saveActiveFile,
+}: MonacoActionRegistrarProps) {
+  useMonacoGlobalActions({
+    registerGlobalActions: true,
+    editorRef,
+    fileId,
+    tabId,
+    saveActiveFile,
+  });
+  useMonacoTextToolActions({ registerGlobalActions: true, editorRef });
+  useMonacoAiActions({ registerGlobalActions: true, editorRef });
+  return null;
 }
 
 export function MonacoEditorWrapper({
@@ -359,7 +385,9 @@ export function MonacoEditorWrapper({
     // Toggle find widget on Ctrl+F (opens if closed, closes if already revealed)
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF, () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const findController = (editor as any).getContribution?.("editor.contrib.findController");
+      const findController = (editor as any).getContribution?.(
+        "editor.contrib.findController",
+      );
       if (findController?.getState?.()?.isRevealed) {
         findController.closeFindWidget();
       } else {
@@ -380,7 +408,9 @@ export function MonacoEditorWrapper({
           e.preventDefault();
           e.stopPropagation();
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const findController = (editor as any).getContribution?.("editor.contrib.findController");
+          const findController = (editor as any).getContribution?.(
+            "editor.contrib.findController",
+          );
           findController?.closeFindWidget?.();
         }
       };
@@ -389,6 +419,10 @@ export function MonacoEditorWrapper({
 
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyD, () => {
       editor.getAction("editor.action.copyLinesDownAction")?.run();
+    });
+
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyL, () => {
+      editor.getAction("editor.action.deleteLines")?.run();
     });
 
     editor.addCommand(
@@ -500,16 +534,6 @@ export function MonacoEditorWrapper({
     void persistFile(id, tid);
   }
 
-  useMonacoGlobalActions({
-    registerGlobalActions,
-    editorRef,
-    fileId,
-    tabId,
-    saveActiveFile,
-  });
-  useMonacoTextToolActions({ registerGlobalActions, editorRef });
-  useMonacoAiActions({ registerGlobalActions, editorRef });
-
   const themeModule = THEME_MODULES[theme];
 
   // -------------------------------------------------------------------------
@@ -615,6 +639,14 @@ export function MonacoEditorWrapper({
         void handleImageFile(imgFile);
       }}
     >
+      {registerGlobalActions && (
+        <MonacoActionRegistrar
+          editorRef={editorRef}
+          fileId={fileId}
+          tabId={tabId}
+          saveActiveFile={saveActiveFile}
+        />
+      )}
       {isLocked && <LockedFileOverlay key={fileId} fileId={fileId} />}
       {loadError !== null && !isLocked && (
         <div className="bg-background absolute inset-0 z-10">
