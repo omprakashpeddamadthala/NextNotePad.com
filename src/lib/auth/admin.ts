@@ -11,7 +11,8 @@ function adminEmail(): string {
 }
 
 /** True for the one permanent, un-demotable, un-blockable admin account. */
-export function isBootstrapAdmin(email: string): boolean {
+export function isBootstrapAdmin(email?: string | null): boolean {
+  if (!email || typeof email !== "string") return false;
   return email.toLowerCase() === adminEmail();
 }
 
