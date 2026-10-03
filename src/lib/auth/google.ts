@@ -21,18 +21,21 @@ function getEnv(name: string): string {
  * so reuse its origin rather than adding another env var or trusting client-controlled headers.
  */
 export function getAppOrigin(request?: { headers: Headers; url: string }): string {
-  if (request) {
-    const host = request.headers.get("x-forwarded-host") || request.headers.get("host");
-    const proto = request.headers.get("x-forwarded-proto") || (request.url.startsWith("https") ? "https" : "http");
-    if (host) {
-      return `${proto}://${host}`;
-    }
-  }
   const envUri = process.env.GOOGLE_REDIRECT_URI;
   if (envUri) {
     try {
       return new URL(envUri).origin;
     } catch {}
+  }
+  if (request) {
+    const host = request.headers.get("x-forwarded-host") || request.headers.get("host");
+    const rawProto = request.headers.get("x-forwarded-proto") || (request.url.startsWith("https") ? "https" : "http");
+    const proto = rawProto.split(",")[0].trim();
+    if (host) {
+      const isLocal = host.startsWith("localhost") || host.startsWith("127.0.0.1");
+      const safeProto = isLocal ? proto : "https";
+      return `${safeProto}://${host}`;
+    }
   }
   return "http://localhost:3000";
 }

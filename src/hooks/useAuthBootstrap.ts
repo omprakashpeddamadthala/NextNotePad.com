@@ -40,12 +40,19 @@ export function useAuthBootstrap(): void {
 
     (async () => {
       try {
-        // Goes through the shared client so the startup auth + workspace load drives the same
-        // progress indicator as every other API call. A 401 here just means "not signed in",
-        // which the catch below turns into guest mode rather than an error.
-        const user = await fetchJson<AuthUser>("/api/auth/me", {
+        const data = await fetchJson<
+          ({ authenticated?: boolean; user?: AuthUser | null } & Partial<AuthUser>) | null
+        >("/api/auth/me", {
           action: "Check session",
         });
+
+        const user: AuthUser | null =
+          data?.user ?? (data?.id && data?.email ? (data as AuthUser) : null);
+
+        if (!user) {
+          useAuthStore.getState().setGuest();
+          return;
+        }
 
         useAuthStore.getState().setAuthenticated(user);
         await migrateOrLoadCloudWorkspace();

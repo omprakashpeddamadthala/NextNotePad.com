@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { buildGoogleAuthUrl, OAUTH_STATE_COOKIE_NAME } from "@/lib/auth/google";
+import { buildGoogleAuthUrl, getAppOrigin, OAUTH_STATE_COOKIE_NAME } from "@/lib/auth/google";
 
 export async function GET() {
   try {
@@ -16,10 +16,13 @@ export async function GET() {
       );
     }
 
+    const appOrigin = getAppOrigin();
+    const isHttps = appOrigin.startsWith("https");
+
     const response = NextResponse.redirect(authUrl);
     response.cookies.set(OAUTH_STATE_COOKIE_NAME, state, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: isHttps,
       sameSite: "lax",
       maxAge: 600,
       path: "/",

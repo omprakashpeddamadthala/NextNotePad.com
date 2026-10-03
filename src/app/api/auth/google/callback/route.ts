@@ -33,6 +33,12 @@ export async function GET(request: NextRequest) {
     return res;
   }
   if (!code || !state || !expectedState || state !== expectedState) {
+    console.error("[api/auth/google/callback] OAuth validation failed:", {
+      hasCode: !!code,
+      hasState: !!state,
+      hasExpectedState: !!expectedState,
+      stateMatch: state === expectedState,
+    });
     const res = NextResponse.redirect(
       new URL("/?authError=invalid_state", appOrigin),
     );
@@ -73,18 +79,12 @@ export async function GET(request: NextRequest) {
     // (see src/lib/drive/workspaceService.ts) — nothing app-related is stored in the database.
 
     const sessionToken = await signSessionToken({ userId: user.id });
-    cookieStore.set(SESSION_COOKIE_NAME, sessionToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: SESSION_TTL_SECONDS,
-      path: "/",
-    });
+    const isHttps = appOrigin.startsWith("https");
 
     const response = NextResponse.redirect(new URL("/", appOrigin));
     response.cookies.set(SESSION_COOKIE_NAME, sessionToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: isHttps,
       sameSite: "lax",
       maxAge: SESSION_TTL_SECONDS,
       path: "/",
