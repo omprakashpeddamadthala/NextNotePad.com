@@ -5,6 +5,10 @@ services:
     ports:
       - "3000:3000"
     environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql://kamyaabi:Kam9507%40%40%23%23@103.99.36.194:5432/om_test?schema=public}
+      - DATABASE_USERNAME=${DATABASE_USERNAME:-kamyaabi}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD:-Kam9507@@##}
+      - JDBC_DATABASE_URL=${JDBC_DATABASE_URL:-jdbc:postgresql://103.99.36.194:5432/om_test}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-http://localhost:3000/api/auth/google/callback}
