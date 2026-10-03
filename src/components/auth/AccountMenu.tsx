@@ -63,7 +63,7 @@ export function AccountMenu() {
     return (
       <Button
         size="sm"
-        className="np-signin-btn h-7.5 gap-2 px-3 text-[11.5px] font-medium shadow-sm transition-all duration-200 cursor-pointer"
+        className="np-signin-btn h-7.5 cursor-pointer gap-2 px-3 text-[11.5px] font-medium shadow-sm transition-all duration-200"
         onClick={() => {
           // A real full-page navigation is required here — this hits an API route that 302s
           // to Google's consent screen, not an internal Next.js page.
@@ -71,7 +71,11 @@ export function AccountMenu() {
           window.location.href = "/api/auth/google";
         }}
       >
-        <svg className="size-3.5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+        <svg
+          className="size-3.5 shrink-0"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
           <path
             fill="#4285F4"
             d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -137,7 +141,7 @@ export function AccountMenu() {
           }}
         >
           {syncing ? <Loader2 className="animate-spin" /> : <CloudDownload />}
-          {syncing ? "Syncing…" : "Sync from Drive"}
+          {syncing ? "Refreshing…" : "Refresh from Drive"}
         </DropdownMenuItem>
         {user.isAdmin && (
           <DropdownMenuItem

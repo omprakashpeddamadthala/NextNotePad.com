@@ -5,7 +5,6 @@ import { useMultiWorkspaceStore } from "@/store/multiWorkspaceStore";
 import { fetchJson, ApiError } from "@/lib/api/fetchJson";
 import { migrateOrLoadCloudWorkspace } from "@/services/auth/migrateGuestWorkspace";
 import { syncSettingsOnLogin } from "@/services/settingsSync";
-import { autoSyncFromDriveOnLogin } from "@/services/driveImport";
 
 /** Runs once on mount: checks for an existing session and, if found, loads the cloud workspace. */
 export function useAuthBootstrap(): void {
@@ -21,7 +20,8 @@ export function useAuthBootstrap(): void {
       if (authError) {
         let message = "Google Sign-in failed. Please try again.";
         if (authError === "invalid_state") {
-          message = "Sign-in session expired or state mismatch. Please try signing in again.";
+          message =
+            "Sign-in session expired or state mismatch. Please try signing in again.";
         } else if (authError === "access_denied") {
           message = "Google Sign-in was cancelled or access was denied.";
         } else if (authError === "oauth_failed") {
@@ -30,7 +30,11 @@ export function useAuthBootstrap(): void {
         toast.error(message);
         const url = new URL(window.location.href);
         url.searchParams.delete("authError");
-        window.history.replaceState({}, document.title, url.pathname + url.search);
+        window.history.replaceState(
+          {},
+          document.title,
+          url.pathname + url.search,
+        );
       }
     }
 
@@ -39,16 +43,17 @@ export function useAuthBootstrap(): void {
         // Goes through the shared client so the startup auth + workspace load drives the same
         // progress indicator as every other API call. A 401 here just means "not signed in",
         // which the catch below turns into guest mode rather than an error.
-        const user = await fetchJson<AuthUser>("/api/auth/me", { action: "Check session" });
+        const user = await fetchJson<AuthUser>("/api/auth/me", {
+          action: "Check session",
+        });
 
         useAuthStore.getState().setAuthenticated(user);
         await migrateOrLoadCloudWorkspace();
         await useMultiWorkspaceStore.getState().loadWorkspaces();
         await syncSettingsOnLogin();
+        // The tree and settings above were read straight from Drive (the source of truth), so
+        // there is no separate "pull from Drive" step anymore.
         useAuthStore.getState().setWorkspaceReady();
-        // Fire-and-forget: catches up with anything sitting in Drive (added from another
-        // device/browser, or directly in Drive) without delaying the workspace becoming usable.
-        void autoSyncFromDriveOnLogin();
       } catch (err) {
         // A 401 is the normal signed-out path, so only surface the genuinely unexpected ones.
         if (!(err instanceof ApiError) || err.status !== 401) {

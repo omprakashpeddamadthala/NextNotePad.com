@@ -5,7 +5,7 @@
  * The active workspace drives what the sidebar shows and what API routes target.
  *
  * Persistence: activeWorkspaceId is persisted in localStorage as a fast hint for the
- * initial render. The authoritative source of truth is the server (User.activeWorkspaceId).
+ * initial render. The authoritative source of truth is `.appConfig.json` in the user's Drive.
  */
 
 import { create } from "zustand";
@@ -63,9 +63,16 @@ interface MultiWorkspaceActions {
    * Create a new workspace (including its Drive folder).
    * On success, automatically switches to the new workspace.
    */
-  createWorkspace: (name: string, description?: string) => Promise<WorkspaceRecord | null>;
+  createWorkspace: (
+    name: string,
+    description?: string,
+  ) => Promise<WorkspaceRecord | null>;
   /** Rename an existing workspace. */
-  renameWorkspace: (id: string, name: string, description?: string) => Promise<boolean>;
+  renameWorkspace: (
+    id: string,
+    name: string,
+    description?: string,
+  ) => Promise<boolean>;
   /** Delete a workspace. */
   deleteWorkspace: (id: string) => Promise<boolean>;
   /** Open/close the Create Workspace modal. */
@@ -97,7 +104,9 @@ const initialState: MultiWorkspaceState = {
   loadError: null,
 };
 
-export const useMultiWorkspaceStore = create<MultiWorkspaceState & MultiWorkspaceActions>()(
+export const useMultiWorkspaceStore = create<
+  MultiWorkspaceState & MultiWorkspaceActions
+>()(
   persist(
     (set, get) => ({
       ...initialState,
@@ -105,17 +114,18 @@ export const useMultiWorkspaceStore = create<MultiWorkspaceState & MultiWorkspac
       loadWorkspaces: async () => {
         set({ loadingWorkspaces: true, loadError: null });
         try {
-          const data = await fetchJson<{ workspaces: WorkspaceRecord[]; activeWorkspaceId: string | null }>(
-            "/api/workspaces",
-            { action: "Load workspaces" },
-          );
+          const data = await fetchJson<{
+            workspaces: WorkspaceRecord[];
+            activeWorkspaceId: string | null;
+          }>("/api/workspaces", { action: "Load workspaces" });
           set({
             workspaces: data.workspaces,
             activeWorkspaceId: data.activeWorkspaceId,
             loadingWorkspaces: false,
           });
         } catch (err) {
-          const message = err instanceof Error ? err.message : "Failed to load workspaces.";
+          const message =
+            err instanceof Error ? err.message : "Failed to load workspaces.";
           set({ loadingWorkspaces: false, loadError: message });
         }
       },
@@ -132,7 +142,8 @@ export const useMultiWorkspaceStore = create<MultiWorkspaceState & MultiWorkspac
           );
           set({ activeWorkspaceId: workspace.id, switchingWorkspace: false });
         } catch (err) {
-          const message = err instanceof Error ? err.message : "Failed to switch workspace.";
+          const message =
+            err instanceof Error ? err.message : "Failed to switch workspace.";
           toast.error(message);
           set({ switchingWorkspace: false });
         }
@@ -141,10 +152,13 @@ export const useMultiWorkspaceStore = create<MultiWorkspaceState & MultiWorkspac
       createWorkspace: async (name: string, description?: string) => {
         set({ creatingWorkspace: true });
         try {
-          const workspace = await fetchJson<WorkspaceRecord>("/api/workspaces", {
-            ...jsonBody("POST", { name, description }),
-            action: "Create workspace",
-          });
+          const workspace = await fetchJson<WorkspaceRecord>(
+            "/api/workspaces",
+            {
+              ...jsonBody("POST", { name, description }),
+              action: "Create workspace",
+            },
+          );
 
           set((state) => ({
             workspaces: [...state.workspaces, workspace],
@@ -156,23 +170,33 @@ export const useMultiWorkspaceStore = create<MultiWorkspaceState & MultiWorkspac
           toast.success(`Workspace "${workspace.name}" created successfully.`);
           return workspace;
         } catch (err) {
-          const message = err instanceof Error ? err.message : "Failed to create workspace.";
+          const message =
+            err instanceof Error ? err.message : "Failed to create workspace.";
           toast.error(message);
           set({ creatingWorkspace: false });
           return null;
         }
       },
 
-      renameWorkspace: async (id: string, name: string, description?: string) => {
+      renameWorkspace: async (
+        id: string,
+        name: string,
+        description?: string,
+      ) => {
         set({ renamingWorkspace: true });
         try {
-          const updated = await fetchJson<WorkspaceRecord>(`/api/workspaces/${id}`, {
-            ...jsonBody("PATCH", { name, description }),
-            action: "Rename workspace",
-          });
+          const updated = await fetchJson<WorkspaceRecord>(
+            `/api/workspaces/${id}`,
+            {
+              ...jsonBody("PATCH", { name, description }),
+              action: "Rename workspace",
+            },
+          );
 
           set((state) => ({
-            workspaces: state.workspaces.map((w) => (w.id === id ? updated : w)),
+            workspaces: state.workspaces.map((w) =>
+              w.id === id ? updated : w,
+            ),
             renamingWorkspace: false,
             renameModalOpen: false,
             targetWorkspaceId: null,
@@ -181,7 +205,8 @@ export const useMultiWorkspaceStore = create<MultiWorkspaceState & MultiWorkspac
           toast.success(`Workspace renamed to "${updated.name}".`);
           return true;
         } catch (err) {
-          const message = err instanceof Error ? err.message : "Failed to rename workspace.";
+          const message =
+            err instanceof Error ? err.message : "Failed to rename workspace.";
           toast.error(message);
           set({ renamingWorkspace: false });
           return false;
@@ -199,7 +224,9 @@ export const useMultiWorkspaceStore = create<MultiWorkspaceState & MultiWorkspac
           const { workspaces, activeWorkspaceId } = get();
           const remaining = workspaces.filter((w) => w.id !== id);
           const wasActive = activeWorkspaceId === id;
-          const nextActiveId = wasActive ? (remaining[0]?.id ?? null) : activeWorkspaceId;
+          const nextActiveId = wasActive
+            ? (remaining[0]?.id ?? null)
+            : activeWorkspaceId;
 
           set({
             workspaces: remaining,
@@ -212,7 +239,8 @@ export const useMultiWorkspaceStore = create<MultiWorkspaceState & MultiWorkspac
           toast.success("Workspace deleted successfully.");
           return true;
         } catch (err) {
-          const message = err instanceof Error ? err.message : "Failed to delete workspace.";
+          const message =
+            err instanceof Error ? err.message : "Failed to delete workspace.";
           toast.error(message);
           set({ deletingWorkspace: false });
           return false;
@@ -229,14 +257,18 @@ export const useMultiWorkspaceStore = create<MultiWorkspaceState & MultiWorkspac
 
       updateWorkspaceLocally: (id, patch) =>
         set((state) => ({
-          workspaces: state.workspaces.map((w) => (w.id === id ? { ...w, ...patch } : w)),
+          workspaces: state.workspaces.map((w) =>
+            w.id === id ? { ...w, ...patch } : w,
+          ),
         })),
 
       removeWorkspaceLocally: (id) =>
         set((state) => {
           const remaining = state.workspaces.filter((w) => w.id !== id);
           const newActiveId =
-            state.activeWorkspaceId === id ? (remaining[0]?.id ?? null) : state.activeWorkspaceId;
+            state.activeWorkspaceId === id
+              ? (remaining[0]?.id ?? null)
+              : state.activeWorkspaceId;
           return { workspaces: remaining, activeWorkspaceId: newActiveId };
         }),
 
