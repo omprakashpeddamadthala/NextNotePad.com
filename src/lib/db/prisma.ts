@@ -8,7 +8,12 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function getDatabaseUrl(): string {
-  let url = process.env.DATABASE_URL;
+  let url =
+    process.env.DATABASE_URL ||
+    process.env.JDBC_DATABASE_URL ||
+    process.env.POSTGRES_URL ||
+    process.env.POSTGRESQL_URL;
+
   if (!url) {
     throw new Error("DATABASE_URL is not set. Please configure PostgreSQL credentials.");
   }
@@ -26,15 +31,34 @@ function getDatabaseUrl(): string {
   return url;
 }
 
-function createClient() {
-  const connectionString = getDatabaseUrl();
-  const pool = globalForPrisma.pgPool ?? new Pool({ connectionString });
-  if (process.env.NODE_ENV !== "production") globalForPrisma.pgPool = pool;
+function getOrCreatePool(): Pool {
+  if (globalForPrisma.pgPool) {
+    return globalForPrisma.pgPool;
+  }
 
+  const connectionString = getDatabaseUrl();
+  const pool = new Pool({
+    connectionString,
+    connectionTimeoutMillis: 10000,
+    idleTimeoutMillis: 30000,
+    max: 10,
+  });
+
+  pool.on("error", (err) => {
+    console.error("[prisma/pg-pool] Unexpected error on idle client:", err);
+  });
+
+  globalForPrisma.pgPool = pool;
+  return pool;
+}
+
+function createClient(): PrismaClient {
+  const pool = getOrCreatePool();
   const adapter = new PrismaPg(pool);
-  return new PrismaClient({ adapter });
+  const client = new PrismaClient({ adapter });
+  globalForPrisma.prisma = client;
+  return client;
 }
 
 export const prisma = globalForPrisma.prisma ?? createClient();
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
