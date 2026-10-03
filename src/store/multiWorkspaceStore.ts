@@ -15,9 +15,12 @@ import { fetchJson, jsonBody } from "@/lib/api/fetchJson";
 import { toast } from "sonner";
 import {
   cacheWorkspaceList,
+  invalidateDriveFileIndex,
+  invalidateWorkspaceTree,
   loadWorkspaceList,
   type WorkspaceListResponse,
 } from "@/services/storage/driveDataClient";
+import { hasPendingWorkspaceMutation } from "@/services/storage/workspaceMutationGuard";
 
 export interface WorkspaceRecord {
   id: string;
@@ -149,10 +152,15 @@ export const useMultiWorkspaceStore = create<
       },
 
       switchWorkspace: async (workspaceId: string) => {
-        const { activeWorkspaceId } = get();
+        const { activeWorkspaceId, switchingWorkspace } = get();
         if (activeWorkspaceId === workspaceId) return true;
+        if (switchingWorkspace) return false;
+        if (hasPendingWorkspaceMutation()) {
+          toast.error("Wait for the current file operation to finish.");
+          return false;
+        }
 
-        set({ activeWorkspaceId: workspaceId, switchingWorkspace: true });
+        set({ switchingWorkspace: true });
         try {
           const workspace = await fetchJson<WorkspaceRecord>(
             `/api/workspaces/${workspaceId}/switch`,
@@ -236,6 +244,7 @@ export const useMultiWorkspaceStore = create<
             workspaces: get().workspaces,
             activeWorkspaceId: get().activeWorkspaceId,
           });
+          void invalidateDriveFileIndex();
 
           toast.success(`Workspace renamed to "${updated.name}".`);
           return true;
@@ -274,6 +283,10 @@ export const useMultiWorkspaceStore = create<
             workspaces: remaining,
             activeWorkspaceId: nextActiveId,
           });
+          void Promise.all([
+            invalidateWorkspaceTree(id),
+            invalidateDriveFileIndex(),
+          ]);
 
           toast.success("Workspace deleted successfully.");
           return true;

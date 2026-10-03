@@ -58,6 +58,7 @@ interface LegacyFile {
   driveFileId: string | null;
 }
 
+const LEGACY_ID_PROPERTY = "nnp_legacy_id";
 const done = new Set<string>();
 const running = new Map<string, Promise<void>>();
 
@@ -116,8 +117,18 @@ export async function migrateLegacyData(
       });
     } else {
       folder =
+        existingDriveWorkspaces.find(
+          (w) => w.appProperties[LEGACY_ID_PROPERTY] === ws.id,
+        ) ??
         existingDriveWorkspaces.find((w) => w.name === ws.name) ??
-        (await createWorkspaceFolder(ds, ws.name, ws.description));
+        (await createWorkspaceFolder(ds, ws.name, ws.description, {
+          [LEGACY_ID_PROPERTY]: ws.id,
+        }));
+      if (folder.appProperties[LEGACY_ID_PROPERTY] !== ws.id) {
+        folder = await ds.update(folder.id, {
+          appProperties: { [LEGACY_ID_PROPERTY]: ws.id },
+        });
+      }
       await prisma.$executeRawUnsafe(
         `UPDATE "Workspace" SET "driveWorkspaceFolderId" = $1 WHERE "id" = $2`,
         folder.id,
@@ -139,13 +150,24 @@ export async function migrateLegacyData(
       if (!parent) continue; // parent was soft-deleted; the subtree is effectively deleted too
       const props = folderProps({ collapsed: f.collapsed, hidden: f.hidden });
       const live = await liveEntry(ds, f.driveFileId);
+      const marked =
+        live ??
+        (await ds.findChildByAppProperty(
+          parent,
+          LEGACY_ID_PROPERTY,
+          f.id,
+          { folder: true },
+        ));
       const entry =
-        live && isFolder(live)
-          ? await placeUnder(ds, live, parent, {
+        marked && isFolder(marked)
+          ? await placeUnder(ds, marked, parent, {
               name: f.name,
-              appProperties: props,
+              appProperties: { ...props, [LEGACY_ID_PROPERTY]: f.id },
             })
-          : await ds.createFolder(f.name, parent, props);
+          : await ds.createFolder(f.name, parent, {
+              ...props,
+              [LEGACY_ID_PROPERTY]: f.id,
+            });
       if (entry.id !== f.driveFileId) {
         await prisma.$executeRawUnsafe(
           `UPDATE "Folder" SET "driveFileId" = $1 WHERE "id" = $2`,
@@ -166,15 +188,26 @@ export async function migrateLegacyData(
       if (!parent) continue;
       const props = fileProps(f);
       const live = await liveEntry(ds, f.driveFileId);
+      const marked =
+        live ??
+        (await ds.findChildByAppProperty(
+          parent,
+          LEGACY_ID_PROPERTY,
+          f.id,
+          { folder: false },
+        ));
       const entry =
-        live && !isFolder(live)
-          ? await placeUnder(ds, live, parent, {
+        marked && !isFolder(marked)
+          ? await placeUnder(ds, marked, parent, {
               name: f.name,
-              appProperties: props,
+              appProperties: { ...props, [LEGACY_ID_PROPERTY]: f.id },
               content: f.content ?? "",
             })
           : await ds.createFile(f.name, parent, f.content ?? "", {
-              appProperties: stripNulls(props),
+              appProperties: {
+                ...stripNulls(props),
+                [LEGACY_ID_PROPERTY]: f.id,
+              },
             });
       if (entry.id !== f.driveFileId) {
         await prisma.$executeRawUnsafe(

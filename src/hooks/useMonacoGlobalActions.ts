@@ -11,7 +11,7 @@ interface UseMonacoGlobalActionsParams {
   editorRef: RefObject<MonacoEditorNS.IStandaloneCodeEditor | null>;
   fileId: string;
   tabId: string;
-  saveActiveFile: () => void;
+  saveActiveFile: () => Promise<boolean>;
 }
 
 /** Wires every menu/shortcut command that maps to a built-in Monaco editor action (cut, copy,
@@ -32,7 +32,7 @@ export function useMonacoGlobalActions({
   useRegisterAction(
     "file.save",
     () => {
-      if (registerGlobalActions) saveActiveFile();
+      if (registerGlobalActions) void saveActiveFile();
     },
     [registerGlobalActions, fileId, tabId],
   );
@@ -41,8 +41,9 @@ export function useMonacoGlobalActions({
     "file.saveAs",
     () => {
       if (!registerGlobalActions) return;
-      saveActiveFile();
-      void duplicateNode(fileId).then((newId) => {
+      void saveActiveFile().then(async (saved) => {
+        if (!saved) return;
+        const newId = await duplicateNode(fileId);
         if (!newId) return;
         setSelectedNodeId(newId);
         setRenamingNodeId(newId);

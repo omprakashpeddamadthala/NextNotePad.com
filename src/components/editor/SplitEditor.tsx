@@ -7,6 +7,7 @@ import type { SplitView } from "@/store/tabsStore";
 
 export function SplitEditor({ split }: { split: SplitView }) {
   const tabs = useTabsStore((s) => s.tabs);
+  const activeTabId = useTabsStore((s) => s.activeTabId);
   const leftTab = tabs.find((t) => t.id === split.leftTabId);
   const rightTab = tabs.find((t) => t.id === split.rightTabId);
 
@@ -15,11 +16,21 @@ export function SplitEditor({ split }: { split: SplitView }) {
   return (
     <ResizablePanelGroup orientation="horizontal">
       <ResizablePanel defaultSize="50%" minSize="20%">
-        <MonacoEditorWrapper key="split-left" fileId={leftTab.fileId} tabId={leftTab.id} registerGlobalActions />
+        <MonacoEditorWrapper
+          key="split-left"
+          fileId={leftTab.fileId}
+          tabId={leftTab.id}
+          registerGlobalActions={activeTabId === leftTab.id}
+        />
       </ResizablePanel>
       <ResizableHandle />
       <ResizablePanel defaultSize="50%" minSize="20%">
-        <MonacoEditorWrapper key="split-right" fileId={rightTab.fileId} tabId={rightTab.id} />
+        <MonacoEditorWrapper
+          key="split-right"
+          fileId={rightTab.fileId}
+          tabId={rightTab.id}
+          registerGlobalActions={activeTabId === rightTab.id}
+        />
       </ResizablePanel>
     </ResizablePanelGroup>
   );

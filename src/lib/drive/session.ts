@@ -36,6 +36,8 @@ function googleStatus(err: unknown): number | null {
 
 /** Maps service/Drive failures onto the JSON error shape the client's `fetchJson` expects. */
 export function driveErrorResponse(err: unknown, action: string) {
+  if (err instanceof SyntaxError)
+    return NextResponse.json({ error: "Invalid JSON request body." }, { status: 400 });
   if (err instanceof AppError)
     return NextResponse.json({ error: err.message }, { status: err.status });
   if (err instanceof DriveNotFoundError)
@@ -56,8 +58,23 @@ export function driveErrorResponse(err: unknown, action: string) {
       { error: "Google Drive is rate-limiting requests. Try again shortly." },
       { status: 503 },
     );
+  if (status !== null || isNetworkError(err))
+    return NextResponse.json(
+      { error: `${action} failed — Google Drive is unreachable.` },
+      { status: 502 },
+    );
   return NextResponse.json(
-    { error: `${action} failed — Google Drive is unreachable.` },
-    { status: 502 },
+    { error: `${action} failed.` },
+    { status: 500 },
+  );
+}
+
+function isNetworkError(err: unknown): boolean {
+  const code = (err as { code?: unknown })?.code;
+  return (
+    code === "ECONNRESET" ||
+    code === "ECONNREFUSED" ||
+    code === "ENOTFOUND" ||
+    code === "ETIMEDOUT"
   );
 }

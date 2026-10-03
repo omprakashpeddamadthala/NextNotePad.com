@@ -31,6 +31,22 @@ function service(fake: ReturnType<typeof createFakeDrive>, userId: string) {
 }
 
 async function seedLegacyUser(id: string) {
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM "File" WHERE "workspaceId" IN (SELECT "id" FROM "Workspace" WHERE "userId" = $1)`,
+    id,
+  );
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM "Folder" WHERE "workspaceId" IN (SELECT "id" FROM "Workspace" WHERE "userId" = $1)`,
+    id,
+  );
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM "Workspace" WHERE "userId" = $1`,
+    id,
+  );
+  await prisma.$executeRawUnsafe(
+    `DELETE FROM "UserSettings" WHERE "userId" = $1`,
+    id,
+  );
   await prisma.$executeRawUnsafe(`DELETE FROM "User" WHERE "id" = $1`, id);
   await prisma.$executeRawUnsafe(
     `INSERT INTO "User" ("id","email","googleId","updatedAt") VALUES ($1,$2,$3,now())`,
@@ -148,7 +164,7 @@ async function main() {
     );
     assert.ok(!tree.some((n) => n.name === ".workspace.json"));
 
-    await ws.trashNode(ds, folder.id);
+    await ws.trashNode(ds, wsId, folder.id, "folder");
     assert.equal((await ws.loadWorkspaceTree(ds, wsId)).length, 0);
     assert.equal(await ds.hasTrashedChildren(wsId), true);
   });
@@ -199,7 +215,7 @@ async function main() {
     assert.equal(fake.calls.list, 2);
   });
 
-  await test("content-only save is a single Drive update (no metadata read)", async () => {
+  await test("content-only save authorizes once, then performs one Drive update", async () => {
     const fake = createFakeDrive();
     const ds = service(fake, "hot");
     const wsId = (await ws.listWorkspaces(ds))[0].id;
@@ -211,7 +227,7 @@ async function main() {
     fake.calls.get = 0;
     fake.calls.update = 0;
     await ws.updateNode(ds, wsId, file.id, { content: "abc" });
-    assert.equal(fake.calls.get, 0);
+    assert.equal(fake.calls.get, 1);
     assert.equal(fake.calls.update, 1);
   });
 

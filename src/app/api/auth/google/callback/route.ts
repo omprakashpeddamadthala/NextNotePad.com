@@ -5,7 +5,7 @@ import {
   decodeIdTokenProfile,
   fetchGoogleProfile,
   getAppOrigin,
-  OAUTH_STATE_COOKIE_NAME,
+  oauthStateCookieName,
 } from "@/lib/auth/google";
 import {
   signSessionToken,
@@ -36,15 +36,18 @@ export async function GET(request: NextRequest) {
   const oauthError = url.searchParams.get("error");
 
   const cookieStore = await cookies();
-  const expectedState = cookieStore.get(OAUTH_STATE_COOKIE_NAME)?.value;
-  cookieStore.delete(OAUTH_STATE_COOKIE_NAME);
+  const stateCookieName = state ? oauthStateCookieName(state) : null;
+  const expectedState = stateCookieName
+    ? cookieStore.get(stateCookieName)?.value
+    : undefined;
+  if (stateCookieName) cookieStore.delete(stateCookieName);
   const appOrigin = getAppOrigin(request);
 
   if (oauthError) {
     const res = NextResponse.redirect(
       new URL(`/?authError=${encodeURIComponent(oauthError)}`, appOrigin),
     );
-    res.cookies.delete(OAUTH_STATE_COOKIE_NAME);
+    if (stateCookieName) res.cookies.delete(stateCookieName);
     return res;
   }
   if (!code || !state || !expectedState || state !== expectedState) {
@@ -57,7 +60,7 @@ export async function GET(request: NextRequest) {
     const res = NextResponse.redirect(
       new URL("/?authError=invalid_state", appOrigin),
     );
-    res.cookies.delete(OAUTH_STATE_COOKIE_NAME);
+    if (stateCookieName) res.cookies.delete(stateCookieName);
     return res;
   }
 
@@ -110,7 +113,7 @@ export async function GET(request: NextRequest) {
       maxAge: SESSION_TTL_SECONDS,
       path: "/",
     });
-    response.cookies.delete(OAUTH_STATE_COOKIE_NAME);
+    response.cookies.delete(stateCookieName!);
 
     return response;
   } catch (err) {
@@ -122,7 +125,7 @@ export async function GET(request: NextRequest) {
         appOrigin,
       ),
     );
-    res.cookies.delete(OAUTH_STATE_COOKIE_NAME);
+    res.cookies.delete(stateCookieName!);
     return res;
   }
 }

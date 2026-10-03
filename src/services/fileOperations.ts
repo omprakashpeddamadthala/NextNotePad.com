@@ -4,6 +4,7 @@ import { useTabsStore } from "@/store/tabsStore";
 import { useTrashStore } from "@/store/trashStore";
 import { useRecentFilesStore } from "@/store/recentFilesStore";
 import { usePendingGotoStore } from "@/store/pendingGotoStore";
+import { useMultiWorkspaceStore } from "@/store/multiWorkspaceStore";
 import { generateId } from "@/lib/id";
 import { joinPath } from "@/lib/utils/pathUtils";
 import { detectLanguageFromFilename } from "@/lib/constants/languages";
@@ -17,7 +18,11 @@ import {
 import type { FileNode, FolderNode, WorkspaceNode } from "@/types/file";
 import * as localRepo from "@/services/storage/workspaceRepository";
 import * as cloudRepo from "@/services/storage/cloudWorkspaceRepository";
-import { getActiveRepository, isCloudMode } from "@/services/storage/activeRepository";
+import { withWorkspaceMutation } from "@/services/storage/workspaceMutationGuard";
+import {
+  getActiveRepository,
+  isCloudMode,
+} from "@/services/storage/activeRepository";
 import { closeAllSpecialViews } from "@/services/specialViews";
 
 function splitNameExt(name: string): [string, string] {
@@ -26,7 +31,11 @@ function splitNameExt(name: string): [string, string] {
   return [name.slice(0, dotIndex), name.slice(dotIndex)];
 }
 
-export function uniqueSiblingName(nodes: NodeMap, parentId: string | null, name: string): string {
+export function uniqueSiblingName(
+  nodes: NodeMap,
+  parentId: string | null,
+  name: string,
+): string {
   if (!siblingNameExists(nodes, parentId, name)) return name;
   const [base, ext] = splitNameExt(name);
   let counter = 1;
@@ -38,7 +47,10 @@ export function uniqueSiblingName(nodes: NodeMap, parentId: string | null, name:
   return candidate;
 }
 
-export function nextUntitledName(nodes: NodeMap, parentId: string | null): string {
+export function nextUntitledName(
+  nodes: NodeMap,
+  parentId: string | null,
+): string {
   let counter = 1;
   let candidate = `new ${counter}.txt`;
   while (siblingNameExists(nodes, parentId, candidate)) {
@@ -48,15 +60,23 @@ export function nextUntitledName(nodes: NodeMap, parentId: string | null): strin
   return candidate;
 }
 
-export function nextUntitledFolderName(nodes: NodeMap, parentId: string | null): string {
+export function nextUntitledFolderName(
+  nodes: NodeMap,
+  parentId: string | null,
+): string {
   if (!siblingNameExists(nodes, parentId, "New Folder")) return "New Folder";
   let counter = 2;
-  while (siblingNameExists(nodes, parentId, `New Folder ${counter}`)) counter += 1;
+  while (siblingNameExists(nodes, parentId, `New Folder ${counter}`))
+    counter += 1;
   return `New Folder ${counter}`;
 }
 
 /** Opens (or focuses) a file's tab and jumps the editor to a specific line/column. */
-export function openFileAtLocation(fileId: string, line: number, column = 1): void {
+export function openFileAtLocation(
+  fileId: string,
+  line: number,
+  column = 1,
+): void {
   // Markdown Full Page View (and diff view) render in place of the tab content and are checked
   // before the active tab in EditorArea, so without this a stale special view for another file
   // would keep showing even after this tab opens underneath it — e.g. jumping to a search match
@@ -67,7 +87,11 @@ export function openFileAtLocation(fileId: string, line: number, column = 1): vo
   usePendingGotoStore.getState().requestGoto(fileId, line, column);
 }
 
-export async function createFile(parentId: string | null, name: string, content = ""): Promise<string> {
+export async function createFile(
+  parentId: string | null,
+  name: string,
+  content = "",
+): Promise<string> {
   const workspace = useWorkspaceStore.getState();
   if (siblingNameExists(workspace.nodes, parentId, name)) {
     toast.error(`"${name}" already exists here.`);
@@ -75,12 +99,21 @@ export async function createFile(parentId: string | null, name: string, content 
   }
 
   if (isCloudMode()) {
-    const node = (await cloudRepo.createCloudFile(parentId, name, content)) as FileNode;
-    useWorkspaceStore.getState().addNode(node);
+    const workspaceId = useMultiWorkspaceStore.getState().activeWorkspaceId;
+    const node = (await cloudRepo.createCloudFile(
+      parentId,
+      name,
+      content,
+    )) as FileNode;
+    if (useMultiWorkspaceStore.getState().activeWorkspaceId === workspaceId) {
+      useWorkspaceStore.getState().addNode(node);
+    }
     return node.id;
   }
 
-  const parent = parentId ? (workspace.nodes[parentId] as FolderNode | undefined) : null;
+  const parent = parentId
+    ? (workspace.nodes[parentId] as FolderNode | undefined)
+    : null;
   const path = joinPath(parent?.path ?? "", name);
   const id = generateId();
   const now = Date.now();
@@ -106,11 +139,14 @@ export async function createFile(parentId: string | null, name: string, content 
     encryptionIv: null,
   };
   workspace.addNode(node);
-  void localRepo.writeFileContent(id, content);
+  await localRepo.writeFileContent(id, content);
   return id;
 }
 
-export async function createFolder(parentId: string | null, name: string): Promise<string> {
+export async function createFolder(
+  parentId: string | null,
+  name: string,
+): Promise<string> {
   const workspace = useWorkspaceStore.getState();
   if (siblingNameExists(workspace.nodes, parentId, name)) {
     toast.error(`"${name}" already exists here.`);
@@ -118,12 +154,20 @@ export async function createFolder(parentId: string | null, name: string): Promi
   }
 
   if (isCloudMode()) {
-    const node = (await cloudRepo.createCloudFolder(parentId, name)) as FolderNode;
-    useWorkspaceStore.getState().addNode(node);
+    const workspaceId = useMultiWorkspaceStore.getState().activeWorkspaceId;
+    const node = (await cloudRepo.createCloudFolder(
+      parentId,
+      name,
+    )) as FolderNode;
+    if (useMultiWorkspaceStore.getState().activeWorkspaceId === workspaceId) {
+      useWorkspaceStore.getState().addNode(node);
+    }
     return node.id;
   }
 
-  const parent = parentId ? (workspace.nodes[parentId] as FolderNode | undefined) : null;
+  const parent = parentId
+    ? (workspace.nodes[parentId] as FolderNode | undefined)
+    : null;
   const path = joinPath(parent?.path ?? "", name);
   const id = generateId();
   const now = Date.now();
@@ -155,18 +199,51 @@ export function renameNode(id: string, newName: string): void {
     throw new Error("duplicate-name");
   }
   const parent = node.parentId ? workspace.nodes[node.parentId] : null;
-  const pathPatch = recomputeSubtreePaths(workspace.nodes, id, parent?.path ?? "", newName);
+  const previousPaths = Object.fromEntries(
+    [node, ...collectSubtree(workspace.nodes, id)].map((item) => [
+      item.id,
+      item.path,
+    ]),
+  );
+  const previousName = node.name;
+  const previousLanguage = node.type === "file" ? node.language : undefined;
+  const workspaceId = useMultiWorkspaceStore.getState().activeWorkspaceId;
+  const pathPatch = recomputeSubtreePaths(
+    workspace.nodes,
+    id,
+    parent?.path ?? "",
+    newName,
+  );
   workspace.updatePaths(pathPatch);
   workspace.updateNode(id, {
     name: newName,
-    ...(node.type === "file" ? { language: detectLanguageFromFilename(newName) } : {}),
+    ...(node.type === "file"
+      ? { language: detectLanguageFromFilename(newName) }
+      : {}),
   });
 
   if (isCloudMode()) {
     const patch =
-      node.type === "file" ? { name: newName, language: detectLanguageFromFilename(newName) } : { name: newName };
-    const patchFn = node.type === "folder" ? cloudRepo.patchCloudFolder : cloudRepo.patchCloudFile;
-    void patchFn(id, patch).catch(() => toast.error(`Failed to sync rename of "${newName}".`));
+      node.type === "file"
+        ? { name: newName, language: detectLanguageFromFilename(newName) }
+        : { name: newName };
+    const patchFn =
+      node.type === "folder"
+        ? cloudRepo.patchCloudFolder
+        : cloudRepo.patchCloudFile;
+    void patchFn(id, patch).catch(() => {
+      if (
+        useMultiWorkspaceStore.getState().activeWorkspaceId === workspaceId &&
+        useWorkspaceStore.getState().nodes[id]?.name === newName
+      ) {
+        useWorkspaceStore.getState().updatePaths(previousPaths);
+        useWorkspaceStore.getState().updateNode(id, {
+          name: previousName,
+          ...(previousLanguage ? { language: previousLanguage } : {}),
+        });
+      }
+      toast.error(`Failed to sync rename of "${newName}".`);
+    });
   }
 }
 
@@ -180,9 +257,21 @@ export function setFileLanguage(id: string, language: string): void {
   workspace.updateNode(id, { language });
 
   if (isCloudMode()) {
-    void cloudRepo
-      .patchCloudFile(id, { language })
-      .catch(() => toast.error(`Failed to sync language change for "${node.name}".`));
+    const previousLanguage = node.language;
+    const workspaceId = useMultiWorkspaceStore.getState().activeWorkspaceId;
+    void cloudRepo.patchCloudFile(id, { language }).catch(() => {
+      if (
+        useMultiWorkspaceStore.getState().activeWorkspaceId === workspaceId &&
+        useWorkspaceStore.getState().nodes[id]?.type === "file" &&
+        (useWorkspaceStore.getState().nodes[id] as FileNode).language ===
+          language
+      ) {
+        useWorkspaceStore
+          .getState()
+          .updateNode(id, { language: previousLanguage });
+      }
+      toast.error(`Failed to sync language change for "${node.name}".`);
+    });
   }
 }
 
@@ -194,11 +283,23 @@ export function toggleNodeHidden(id: string): void {
   const node = workspace.nodes[id];
   if (!node) return;
   const hidden = !node.hidden;
+  const workspaceId = useMultiWorkspaceStore.getState().activeWorkspaceId;
   workspace.updateNode(id, { hidden });
 
   if (isCloudMode()) {
-    const patchFn = node.type === "folder" ? cloudRepo.patchCloudFolder : cloudRepo.patchCloudFile;
-    void patchFn(id, { hidden }).catch(() => toast.error(`Failed to sync visibility of "${node.name}".`));
+    const patchFn =
+      node.type === "folder"
+        ? cloudRepo.patchCloudFolder
+        : cloudRepo.patchCloudFile;
+    void patchFn(id, { hidden }).catch(() => {
+      if (
+        useMultiWorkspaceStore.getState().activeWorkspaceId === workspaceId &&
+        useWorkspaceStore.getState().nodes[id]?.hidden === hidden
+      ) {
+        useWorkspaceStore.getState().updateNode(id, { hidden: node.hidden });
+      }
+      toast.error(`Failed to sync visibility of "${node.name}".`);
+    });
   }
 }
 
@@ -210,12 +311,21 @@ export function setFolderCollapsed(id: string, collapsed: boolean): void {
   const workspace = useWorkspaceStore.getState();
   const node = workspace.nodes[id];
   if (!node || node.type !== "folder") return;
+  const workspaceId = useMultiWorkspaceStore.getState().activeWorkspaceId;
   workspace.setCollapsed(id, collapsed);
 
   if (isCloudMode()) {
-    void cloudRepo
-      .patchCloudFolder(id, { collapsed })
-      .catch(() => toast.error(`Failed to sync folder state for "${node.name}".`));
+    void cloudRepo.patchCloudFolder(id, { collapsed }).catch(() => {
+      if (
+        useMultiWorkspaceStore.getState().activeWorkspaceId === workspaceId &&
+        useWorkspaceStore.getState().nodes[id]?.type === "folder" &&
+        (useWorkspaceStore.getState().nodes[id] as FolderNode).collapsed ===
+          collapsed
+      ) {
+        useWorkspaceStore.getState().setCollapsed(id, node.collapsed);
+      }
+      toast.error(`Failed to sync folder state for "${node.name}".`);
+    });
   }
 }
 
@@ -234,29 +344,76 @@ export function moveNode(id: string, newParentId: string | null): void {
     toast.error(`"${node.name}" already exists in the destination.`);
     return;
   }
-  const pathPatch = recomputeSubtreePaths(workspace.nodes, id, newParent?.path ?? "", node.name);
+  const pathPatch = recomputeSubtreePaths(
+    workspace.nodes,
+    id,
+    newParent?.path ?? "",
+    node.name,
+  );
+  const previousPaths = Object.fromEntries(
+    [node, ...collectSubtree(workspace.nodes, id)].map((item) => [
+      item.id,
+      item.path,
+    ]),
+  );
+  const previousParentId = node.parentId;
+  const workspaceId = useMultiWorkspaceStore.getState().activeWorkspaceId;
   workspace.updatePaths(pathPatch);
   workspace.updateNode(id, { parentId: newParentId });
 
   if (isCloudMode()) {
-    const patchFn = node.type === "folder" ? cloudRepo.patchCloudFolder : cloudRepo.patchCloudFile;
-    void patchFn(id, { parentId: newParentId }).catch(() => toast.error(`Failed to sync move of "${node.name}".`));
+    const patchFn =
+      node.type === "folder"
+        ? cloudRepo.patchCloudFolder
+        : cloudRepo.patchCloudFile;
+    void patchFn(id, { parentId: newParentId }).catch(() => {
+      if (
+        useMultiWorkspaceStore.getState().activeWorkspaceId === workspaceId &&
+        useWorkspaceStore.getState().nodes[id]?.parentId === newParentId
+      ) {
+        useWorkspaceStore.getState().updatePaths(previousPaths);
+        useWorkspaceStore
+          .getState()
+          .updateNode(id, { parentId: previousParentId });
+      }
+      toast.error(`Failed to sync move of "${node.name}".`);
+    });
   }
 }
 
 /** Duplicates one cloud file, preserving its lock state — a locked source stays locked in the
  *  copy (same ciphertext/salt/iv, so the same passphrase still unlocks it), matching how
  *  guest-mode duplication carries lock state over via its plain object spread. */
-async function duplicateCloudFile(source: FileNode, parentId: string | null, newName: string): Promise<FileNode> {
+async function duplicateCloudFile(
+  source: FileNode,
+  parentId: string | null,
+  newName: string,
+  workspaceId: string,
+): Promise<FileNode> {
   const content = await cloudRepo.readFileContent(source.id);
-  const created = (await cloudRepo.createCloudFile(parentId, newName, content)) as FileNode;
+  const created = (await cloudRepo.createCloudFile(
+    parentId,
+    newName,
+    content,
+    workspaceId,
+  )) as FileNode;
   if (!source.locked) return created;
-  const relocked = (await cloudRepo.patchCloudFile(created.id, {
-    locked: true,
-    encryptionSalt: source.encryptionSalt,
-    encryptionIv: source.encryptionIv,
-  })) as FileNode;
-  return relocked;
+  try {
+    return (await cloudRepo.patchCloudFile(
+      created.id,
+      {
+        locked: true,
+        encryptionSalt: source.encryptionSalt,
+        encryptionIv: source.encryptionIv,
+      },
+      workspaceId,
+    )) as FileNode;
+  } catch (error) {
+    await cloudRepo
+      .deleteFileContent(created.id, workspaceId)
+      .catch(() => undefined);
+    throw error;
+  }
 }
 
 export async function duplicateNode(id: string): Promise<string | null> {
@@ -266,30 +423,72 @@ export async function duplicateNode(id: string): Promise<string | null> {
   const newName = uniqueSiblingName(workspace.nodes, node.parentId, node.name);
 
   if (isCloudMode()) {
-    if (node.type === "file") {
-      const created = await duplicateCloudFile(node, node.parentId, newName);
-      useWorkspaceStore.getState().addNode(created);
-      return created.id;
-    }
+    const workspaceId = useMultiWorkspaceStore.getState().activeWorkspaceId;
+    if (!workspaceId) throw new Error("No active workspace.");
+    return withWorkspaceMutation(async () => {
+      const createdIds: string[] = [];
+      try {
+        if (node.type === "file") {
+          const created = await duplicateCloudFile(
+            node,
+            node.parentId,
+            newName,
+            workspaceId,
+          );
+          createdIds.push(created.id);
+          useWorkspaceStore.getState().addNode(created);
+          return created.id;
+        }
 
-    const createdFolder = (await cloudRepo.createCloudFolder(node.parentId, newName)) as FolderNode;
-    useWorkspaceStore.getState().addNode(createdFolder);
+        const createdFolder = (await cloudRepo.createCloudFolder(
+          node.parentId,
+          newName,
+          workspaceId,
+        )) as FolderNode;
+        createdIds.push(createdFolder.id);
+        useWorkspaceStore.getState().addNode(createdFolder);
 
-    const descendants = collectSubtree(workspace.nodes, id);
-    const idMap = new Map<string, string>([[id, createdFolder.id]]);
-    for (const d of descendants) {
-      const mappedParentId = idMap.get(d.parentId!) ?? createdFolder.id;
-      if (d.type === "folder") {
-        const createdSub = (await cloudRepo.createCloudFolder(mappedParentId, d.name)) as FolderNode;
-        useWorkspaceStore.getState().addNode(createdSub);
-        idMap.set(d.id, createdSub.id);
-      } else {
-        const createdFile = await duplicateCloudFile(d, mappedParentId, d.name);
-        useWorkspaceStore.getState().addNode(createdFile);
-        idMap.set(d.id, createdFile.id);
+        const descendants = collectSubtree(workspace.nodes, id);
+        const idMap = new Map<string, string>([[id, createdFolder.id]]);
+        for (const d of descendants) {
+          const mappedParentId = idMap.get(d.parentId!) ?? createdFolder.id;
+          if (d.type === "folder") {
+            const createdSub = (await cloudRepo.createCloudFolder(
+              mappedParentId,
+              d.name,
+              workspaceId,
+            )) as FolderNode;
+            createdIds.push(createdSub.id);
+            useWorkspaceStore.getState().addNode(createdSub);
+            idMap.set(d.id, createdSub.id);
+          } else {
+            const createdFile = await duplicateCloudFile(
+              d,
+              mappedParentId,
+              d.name,
+              workspaceId,
+            );
+            createdIds.push(createdFile.id);
+            useWorkspaceStore.getState().addNode(createdFile);
+            idMap.set(d.id, createdFile.id);
+          }
+        }
+        return createdFolder.id;
+      } catch (error) {
+        for (const createdId of [...createdIds].reverse()) {
+          const created = useWorkspaceStore.getState().nodes[createdId];
+          try {
+            if (created?.type === "folder")
+              await cloudRepo.deleteCloudFolder(createdId, workspaceId);
+            else await cloudRepo.deleteFileContent(createdId, workspaceId);
+          } catch {
+            // Continue cleaning up the remaining partial duplicate.
+          }
+        }
+        useWorkspaceStore.getState().removeNodes(createdIds);
+        throw error;
       }
-    }
-    return createdFolder.id;
+    });
   }
 
   const parent = node.parentId ? workspace.nodes[node.parentId] : null;
@@ -328,22 +527,28 @@ export async function duplicateNode(id: string): Promise<string | null> {
   const descendants = collectSubtree(workspace.nodes, id);
   const idMap = new Map<string, string>([[id, newId]]);
   for (const d of descendants) idMap.set(d.id, generateId());
+  const newDescendantsByOriginalId = new Map<string, WorkspaceNode>();
 
   const newDescendants: WorkspaceNode[] = descendants.map((d) => {
     const mappedId = idMap.get(d.id)!;
     const mappedParentId = idMap.get(d.parentId!) ?? newId;
-    const parentPath = mappedParentId === newId ? newPath : (workspace.nodes[d.parentId!]?.path ?? "");
-    return {
+    const mappedParent =
+      mappedParentId === newId
+        ? newFolder
+        : newDescendantsByOriginalId.get(d.parentId!);
+    const duplicated = {
       ...d,
       id: mappedId,
       parentId: mappedParentId,
-      path: joinPath(parentPath, d.name),
+      path: joinPath(mappedParent?.path ?? newPath, d.name),
       createdAt: now,
       updatedAt: now,
       lastSynced: null,
       version: 1,
       checksum: null,
     } as WorkspaceNode;
+    newDescendantsByOriginalId.set(d.id, duplicated);
+    return duplicated;
   });
 
   workspace.addNode(newFolder);
@@ -370,18 +575,33 @@ export function moveToTrash(id: string): void {
 
   const descendants = collectSubtree(workspace.nodes, id);
   const idsToRemove = [id, ...descendants.map((d) => d.id)];
-  for (const removedId of idsToRemove) {
-    const tab = tabs.tabForFile(removedId);
-    if (tab) tabs.closeTab(tab.id);
-  }
-
   if (isCloudMode()) {
-    workspace.removeNodes(idsToRemove);
-    const deleteCall = node.type === "folder" ? cloudRepo.deleteCloudFolder(id) : cloudRepo.deleteFileContent(id);
-    void deleteCall.catch(() => toast.error(`Failed to delete "${node.name}" on the server.`));
+    const deleteCall =
+      node.type === "folder"
+        ? cloudRepo.deleteCloudFolder(id)
+        : cloudRepo.deleteFileContent(id);
+    const workspaceId = useMultiWorkspaceStore.getState().activeWorkspaceId;
+    void deleteCall
+      .then(() => {
+        if (useMultiWorkspaceStore.getState().activeWorkspaceId !== workspaceId)
+          return;
+        const currentTabs = useTabsStore.getState();
+        for (const removedId of idsToRemove) {
+          const tab = currentTabs.tabForFile(removedId);
+          if (tab) currentTabs.closeTab(tab.id, { force: true });
+        }
+        useWorkspaceStore.getState().removeNodes(idsToRemove);
+      })
+      .catch(() =>
+        toast.error(`Failed to delete "${node.name}" on the server.`),
+      );
     return;
   }
 
+  for (const removedId of idsToRemove) {
+    const tab = tabs.tabForFile(removedId);
+    if (tab) tabs.closeTab(tab.id, { force: true });
+  }
   const trash = useTrashStore.getState();
   trash.addEntry({ node, deletedAt: Date.now(), descendants });
   workspace.removeNodes(idsToRemove);
@@ -394,29 +614,62 @@ export function restoreFromTrash(nodeId: string): void {
   if (!entry) return;
 
   let node = entry.node;
-  const parentStillExists = node.parentId ? Boolean(workspace.nodes[node.parentId]) : true;
+  const parentStillExists = node.parentId
+    ? Boolean(workspace.nodes[node.parentId])
+    : true;
   if (!parentStillExists) {
     node = { ...node, parentId: null, path: joinPath("", node.name) };
   }
   if (siblingNameExists(workspace.nodes, node.parentId, node.name)) {
-    node = { ...node, name: uniqueSiblingName(workspace.nodes, node.parentId, node.name) };
+    node = {
+      ...node,
+      name: uniqueSiblingName(workspace.nodes, node.parentId, node.name),
+    };
   }
 
-  workspace.addNode(node);
-  workspace.addNodes(entry.descendants);
+  const restoredMap: NodeMap = Object.fromEntries(
+    [node, ...entry.descendants].map((item) => [item.id, item]),
+  );
+  const parentPath = node.parentId
+    ? (workspace.nodes[node.parentId]?.path ?? "")
+    : "";
+  const pathPatch = recomputeSubtreePaths(
+    restoredMap,
+    node.id,
+    parentPath,
+    node.name,
+  );
+  workspace.addNode({ ...node, path: pathPatch[node.id] });
+  workspace.addNodes(
+    entry.descendants.map((descendant) => ({
+      ...descendant,
+      path: pathPatch[descendant.id],
+    })),
+  );
 }
 
 export async function permanentlyDelete(nodeId: string): Promise<void> {
   const trash = useTrashStore.getState();
-  const entry = trash.removeEntry(nodeId);
+  const entry = trash.entries.find((item) => item.node.id === nodeId);
   if (!entry) return;
-  const allFiles = [entry.node, ...entry.descendants].filter((n) => n.type === "file");
-  await Promise.all(allFiles.map((f) => getActiveRepository().deleteFileContent(f.id)));
+  const allFiles = [entry.node, ...entry.descendants].filter(
+    (n) => n.type === "file",
+  );
+  await Promise.all(
+    allFiles.map((f) => getActiveRepository().deleteFileContent(f.id)),
+  );
+  trash.removeEntry(nodeId);
+  useTabsStore.getState().forgetClosedFiles(allFiles.map((file) => file.id));
+  for (const file of allFiles)
+    useRecentFilesStore.getState().removeRecent(file.id);
 }
 
 /** Imports OS files dropped onto the explorer (flat — no folder structure). Used directly for the
  *  "Open" file-input flow, and as `importNativeDrop`'s fallback when entries aren't available. */
-export async function importNativeFiles(files: FileList | File[], parentId: string | null): Promise<void> {
+export async function importNativeFiles(
+  files: FileList | File[],
+  parentId: string | null,
+): Promise<void> {
   for (const file of Array.from(files)) {
     const workspace = useWorkspaceStore.getState();
     const name = uniqueSiblingName(workspace.nodes, parentId, file.name);
@@ -428,7 +681,9 @@ export async function importNativeFiles(files: FileList | File[], parentId: stri
 /** A directory's entries must be paged via repeated `readEntries()` calls — a single call isn't
  *  guaranteed to return everything in a large folder, per the (non-standard but universally
  *  implemented) File and Directory Entries API. */
-function readAllDirectoryEntries(reader: FileSystemDirectoryReader): Promise<FileSystemEntry[]> {
+function readAllDirectoryEntries(
+  reader: FileSystemDirectoryReader,
+): Promise<FileSystemEntry[]> {
   return new Promise((resolve, reject) => {
     const all: FileSystemEntry[] = [];
     function readBatch() {
@@ -449,13 +704,18 @@ function readEntryFile(entry: FileSystemFileEntry): Promise<File> {
   return new Promise((resolve, reject) => entry.file(resolve, reject));
 }
 
-async function importEntry(entry: FileSystemEntry, parentId: string | null): Promise<void> {
+async function importEntry(
+  entry: FileSystemEntry,
+  parentId: string | null,
+): Promise<void> {
   const workspace = useWorkspaceStore.getState();
   const name = uniqueSiblingName(workspace.nodes, parentId, entry.name);
 
   if (entry.isDirectory) {
     const folderId = await createFolder(parentId, name);
-    const children = await readAllDirectoryEntries((entry as FileSystemDirectoryEntry).createReader());
+    const children = await readAllDirectoryEntries(
+      (entry as FileSystemDirectoryEntry).createReader(),
+    );
     for (const child of children) {
       await importEntry(child, folderId);
     }
@@ -470,7 +730,10 @@ async function importEntry(entry: FileSystemEntry, parentId: string | null): Pro
 /** Imports whatever the OS drag-and-drop payload contains — files and folders alike, preserving
  *  directory structure — by walking `DataTransferItem.webkitGetAsEntry()`. Falls back to a flat
  *  file-only import if the browser doesn't expose entries (e.g. a synthetic DataTransfer). */
-export async function importNativeDrop(dataTransfer: DataTransfer, parentId: string | null): Promise<void> {
+export async function importNativeDrop(
+  dataTransfer: DataTransfer,
+  parentId: string | null,
+): Promise<void> {
   const items = dataTransfer.items ? Array.from(dataTransfer.items) : [];
   const entries = items
     .filter((item) => item.kind === "file")
@@ -492,6 +755,8 @@ export async function emptyTrash(): Promise<void> {
   const allFiles = trash.entries.flatMap((entry) =>
     [entry.node, ...entry.descendants].filter((n) => n.type === "file"),
   );
-  await Promise.all(allFiles.map((f) => getActiveRepository().deleteFileContent(f.id)));
+  await Promise.all(
+    allFiles.map((f) => getActiveRepository().deleteFileContent(f.id)),
+  );
   trash.emptyTrash();
 }

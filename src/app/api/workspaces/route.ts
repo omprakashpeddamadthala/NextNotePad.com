@@ -6,6 +6,7 @@ import {
   listWorkspaceEntries,
   listWorkspaces,
   setActiveWorkspace,
+  withWorkspaceMutationLock,
   workspaceToDto,
 } from "@/lib/drive/workspaceService";
 import { unauthorized, badRequest } from "@/lib/api/respond";
@@ -47,18 +48,20 @@ export async function POST(request: NextRequest) {
     const parsed = createWorkspaceSchema.safeParse(await request.json());
     if (!parsed.success) return badRequest(parsed.error);
     const { name, description } = parsed.data;
-    const { ds } = session;
+    const { ds, user } = session;
 
-    const existing = await listWorkspaceEntries(ds);
-    if (existing.some((w) => w.name === name)) {
-      return NextResponse.json(
-        { error: `A workspace named "${name}" already exists.` },
-        { status: 409 },
-      );
-    }
-    const folder = await createWorkspaceFolder(ds, name, description);
-    await setActiveWorkspace(ds, folder.id);
-    return NextResponse.json(workspaceToDto(folder));
+    return await withWorkspaceMutationLock(user.id, async () => {
+      const existing = await listWorkspaceEntries(ds);
+      if (existing.some((w) => w.name === name)) {
+        return NextResponse.json(
+          { error: `A workspace named "${name}" already exists.` },
+          { status: 409 },
+        );
+      }
+      const folder = await createWorkspaceFolder(ds, name, description);
+      await setActiveWorkspace(ds, folder.id);
+      return NextResponse.json(workspaceToDto(folder));
+    });
   } catch (err) {
     return driveErrorResponse(err, "Create workspace");
   }

@@ -157,22 +157,28 @@ export function minifyJson(text: string): string {
   return JSON.stringify(JSON.parse(text));
 }
 
+function transformLines(
+  text: string,
+  transform: (lines: string[]) => string[],
+): string {
+  const eol = text.includes("\r\n") ? "\r\n" : "\n";
+  return transform(text.split(/\r?\n/)).join(eol);
+}
+
 export function sortLinesAscending(text: string): string {
-  return text
-    .split("\n")
-    .sort((a, b) => a.localeCompare(b))
-    .join("\n");
+  return transformLines(text, (lines) =>
+    lines.sort((a, b) => a.localeCompare(b)),
+  );
 }
 
 export function sortLinesDescending(text: string): string {
-  return text
-    .split("\n")
-    .sort((a, b) => b.localeCompare(a))
-    .join("\n");
+  return transformLines(text, (lines) =>
+    lines.sort((a, b) => b.localeCompare(a)),
+  );
 }
 
 export function removeDuplicateLines(text: string): string {
-  return Array.from(new Set(text.split("\n"))).join("\n");
+  return transformLines(text, (lines) => Array.from(new Set(lines)));
 }
 
 export function trimTrailingWhitespace(text: string): string {
@@ -181,7 +187,8 @@ export function trimTrailingWhitespace(text: string): string {
 
 /** Collapses runs of 2+ consecutive blank lines down to a single blank line. */
 export function collapseBlankLines(text: string): string {
-  return text.replace(/(\r?\n)(?:\r?\n){2,}/g, "$1$1");
+  const eol = text.includes("\r\n") ? "\r\n" : "\n";
+  return text.replace(/(?:\r?\n[ \t]*){3,}/g, `${eol}${eol}`);
 }
 
 const INDENT_WIDTH = 4;

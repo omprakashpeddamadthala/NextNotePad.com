@@ -11,8 +11,29 @@ import {
   readDriveFileContent,
   writeCachedFileContent,
 } from "./driveDataClient";
+import { withWorkspaceMutation } from "./workspaceMutationGuard";
 
 // --- Same shape as the local repository (services/storage/workspaceRepository.ts) ---
+
+const fileMutationQueues = new Map<string, Promise<void>>();
+
+function enqueueFileMutation<T>(
+  fileId: string,
+  mutation: () => Promise<T>,
+): Promise<T> {
+  const previous = fileMutationQueues.get(fileId) ?? Promise.resolve();
+  const result = previous.catch(() => undefined).then(mutation);
+  const tail = result.then(
+    () => undefined,
+    () => undefined,
+  );
+  fileMutationQueues.set(fileId, tail);
+  void tail.finally(() => {
+    if (fileMutationQueues.get(fileId) === tail)
+      fileMutationQueues.delete(fileId);
+  });
+  return result;
+}
 
 export async function readFileContent(fileId: string): Promise<string> {
   const node = useWorkspaceStore.getState().nodes[fileId];
@@ -26,28 +47,47 @@ export async function writeFileContent(
   fileId: string,
   content: string,
 ): Promise<void> {
-  await fetchOk(`/api/files/${fileId}`, {
-    ...jsonBody("PATCH", { content }),
-    action: "Save file",
-  });
-  const node = useWorkspaceStore.getState().nodes[fileId];
-  await writeCachedFileContent(
-    fileId,
-    content,
-    node?.type === "file" ? node.version : undefined,
+  const workspaceId = requireActiveWorkspaceId();
+  await enqueueFileMutation(fileId, () =>
+    withWorkspaceMutation(async () => {
+      const node = await fetchJson<WorkspaceNode>(
+        workspaceUrl(`/api/files/${fileId}`, workspaceId),
+        {
+          ...jsonBody("PATCH", { content }),
+          action: "Save file",
+        },
+      );
+      await Promise.all([
+        writeCachedFileContent(fileId, content, node.version),
+        invalidateWorkspaceTree(workspaceId),
+      ]);
+      if (
+        activeWorkspaceId() === workspaceId &&
+        useWorkspaceStore.getState().nodes[fileId]?.type === "file"
+      ) {
+        useWorkspaceStore.getState().updateNode(fileId, node);
+      }
+    }),
   );
 }
 
-export async function deleteFileContent(fileId: string): Promise<void> {
-  await fetchOk(`/api/files/${fileId}`, {
-    method: "DELETE",
-    action: "Delete file",
-  });
-  await Promise.all([
-    invalidateFileContent(fileId),
-    invalidateActiveTree(),
-    invalidateDriveFileIndex(),
-  ]);
+export async function deleteFileContent(
+  fileId: string,
+  workspaceId = requireActiveWorkspaceId(),
+): Promise<void> {
+  await enqueueFileMutation(fileId, () =>
+    withWorkspaceMutation(async () => {
+      await fetchOk(workspaceUrl(`/api/files/${fileId}`, workspaceId), {
+        method: "DELETE",
+        action: "Delete file",
+      });
+      await Promise.all([
+        invalidateFileContent(fileId),
+        invalidateWorkspaceTree(workspaceId),
+        invalidateDriveFileIndex(),
+      ]);
+    }),
+  );
 }
 
 export async function duplicateFileContent(
@@ -68,9 +108,15 @@ function activeWorkspaceId(): string | null {
   return useMultiWorkspaceStore.getState().activeWorkspaceId;
 }
 
-async function invalidateActiveTree(): Promise<void> {
+function requireActiveWorkspaceId(): string {
   const workspaceId = activeWorkspaceId();
-  if (workspaceId) await invalidateWorkspaceTree(workspaceId);
+  if (!workspaceId) throw new Error("No active workspace.");
+  return workspaceId;
+}
+
+function workspaceUrl(path: string, workspaceId: string): string {
+  const separator = path.includes("?") ? "&" : "?";
+  return `${path}${separator}${new URLSearchParams({ workspaceId })}`;
 }
 
 export async function fetchWorkspaceTree(
@@ -103,14 +149,17 @@ export async function createCloudFile(
   parentId: string | null,
   name: string,
   content: string,
+  workspaceId = requireActiveWorkspaceId(),
 ): Promise<WorkspaceNode> {
-  const node = await fetchJson<WorkspaceNode>("/api/files", {
-    ...jsonBody("POST", { parentId, name, content }),
-    action: "Create file",
-  });
+  const node = await withWorkspaceMutation(() =>
+    fetchJson<WorkspaceNode>(workspaceUrl("/api/files", workspaceId), {
+      ...jsonBody("POST", { parentId, name, content }),
+      action: "Create file",
+    }),
+  );
   await Promise.all([
     writeCachedFileContent(node.id, content, node.version),
-    invalidateActiveTree(),
+    invalidateWorkspaceTree(workspaceId),
     invalidateDriveFileIndex(),
   ]);
   return node;
@@ -119,12 +168,15 @@ export async function createCloudFile(
 export async function createCloudFolder(
   parentId: string | null,
   name: string,
+  workspaceId = requireActiveWorkspaceId(),
 ): Promise<WorkspaceNode> {
-  const node = await fetchJson<WorkspaceNode>("/api/folders", {
-    ...jsonBody("POST", { parentId, name }),
-    action: "Create folder",
-  });
-  await invalidateActiveTree();
+  const node = await withWorkspaceMutation(() =>
+    fetchJson<WorkspaceNode>(workspaceUrl("/api/folders", workspaceId), {
+      ...jsonBody("POST", { parentId, name }),
+      action: "Create folder",
+    }),
+  );
+  await invalidateWorkspaceTree(workspaceId);
   return node;
 }
 
@@ -140,21 +192,30 @@ export async function patchCloudFile(
     encryptionSalt?: string | null;
     encryptionIv?: string | null;
   },
+  workspaceId = requireActiveWorkspaceId(),
 ): Promise<WorkspaceNode> {
-  const node = await fetchJson<WorkspaceNode>(`/api/files/${fileId}`, {
-    ...jsonBody("PATCH", patch),
-    action: "Update file",
-  });
-  if (patch.content !== undefined)
-    await writeCachedFileContent(fileId, patch.content, node.version);
-  if (
-    patch.name !== undefined ||
-    patch.parentId !== undefined ||
-    patch.hidden !== undefined
-  ) {
-    await Promise.all([invalidateActiveTree(), invalidateDriveFileIndex()]);
-  }
-  return node;
+  return enqueueFileMutation(fileId, () =>
+    withWorkspaceMutation(async () => {
+      const node = await fetchJson<WorkspaceNode>(
+        workspaceUrl(`/api/files/${fileId}`, workspaceId),
+        {
+          ...jsonBody("PATCH", patch),
+          action: "Update file",
+        },
+      );
+      if (patch.content !== undefined)
+        await writeCachedFileContent(fileId, patch.content, node.version);
+      await Promise.all([
+        invalidateWorkspaceTree(workspaceId),
+        patch.name !== undefined ||
+        patch.parentId !== undefined ||
+        patch.hidden !== undefined
+          ? invalidateDriveFileIndex()
+          : Promise.resolve(),
+      ]);
+      return node;
+    }),
+  );
 }
 
 export async function patchCloudFolder(
@@ -165,27 +226,42 @@ export async function patchCloudFolder(
     collapsed?: boolean;
     hidden?: boolean;
   },
+  workspaceId = requireActiveWorkspaceId(),
 ): Promise<WorkspaceNode> {
-  const node = await fetchJson<WorkspaceNode>(`/api/folders/${folderId}`, {
-    ...jsonBody("PATCH", patch),
-    action: "Update folder",
-  });
-  if (
+  const node = await withWorkspaceMutation(() =>
+    fetchJson<WorkspaceNode>(
+      workspaceUrl(`/api/folders/${folderId}`, workspaceId),
+      {
+        ...jsonBody("PATCH", patch),
+        action: "Update folder",
+      },
+    ),
+  );
+  await Promise.all([
+    invalidateWorkspaceTree(workspaceId),
     patch.name !== undefined ||
     patch.parentId !== undefined ||
     patch.hidden !== undefined
-  ) {
-    await Promise.all([invalidateActiveTree(), invalidateDriveFileIndex()]);
-  }
+      ? invalidateDriveFileIndex()
+      : Promise.resolve(),
+  ]);
   return node;
 }
 
-export async function deleteCloudFolder(folderId: string): Promise<void> {
-  await fetchOk(`/api/folders/${folderId}`, {
-    method: "DELETE",
-    action: "Delete folder",
-  });
-  await Promise.all([invalidateActiveTree(), invalidateDriveFileIndex()]);
+export async function deleteCloudFolder(
+  folderId: string,
+  workspaceId = requireActiveWorkspaceId(),
+): Promise<void> {
+  await withWorkspaceMutation(() =>
+    fetchOk(workspaceUrl(`/api/folders/${folderId}`, workspaceId), {
+      method: "DELETE",
+      action: "Delete folder",
+    }),
+  );
+  await Promise.all([
+    invalidateWorkspaceTree(workspaceId),
+    invalidateDriveFileIndex(),
+  ]);
 }
 
 export interface ImportNodeInput {
@@ -204,16 +280,19 @@ export interface ImportNodeInput {
 export async function importWorkspace(
   nodes: ImportNodeInput[],
 ): Promise<{ idMap: Record<string, string> }> {
-  const result = await fetchJson<{ idMap: Record<string, string> }>(
-    "/api/workspace/import",
-    {
+  const workspaceId = activeWorkspaceId();
+  const result = await withWorkspaceMutation(() =>
+    fetchJson<{ idMap: Record<string, string> }>("/api/workspace/import", {
       // A full guest-workspace migration can be much larger than a normal request, so it gets a
       // longer leash than the default timeout before being treated as hung.
       ...jsonBody("POST", { nodes }),
       action: "Import workspace",
       timeoutMs: 60000,
-    },
+    }),
   );
-  await Promise.all([invalidateActiveTree(), invalidateDriveFileIndex()]);
+  await Promise.all([
+    workspaceId ? invalidateWorkspaceTree(workspaceId) : Promise.resolve(),
+    invalidateDriveFileIndex(),
+  ]);
   return result;
 }

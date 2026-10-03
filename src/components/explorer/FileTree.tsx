@@ -77,6 +77,8 @@ export function FileTree() {
   const rowHeight = isMobile ? ROW_HEIGHT_TOUCH : ROW_HEIGHT_DESKTOP;
 
   const parentRef = useRef<HTMLDivElement>(null);
+  // TanStack Virtual returns imperative functions that React Compiler intentionally skips.
+  // eslint-disable-next-line react-hooks/incompatible-library
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => parentRef.current,

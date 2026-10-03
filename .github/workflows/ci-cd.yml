@@ -16,7 +16,7 @@ jobs:
     env:
       # Only needed so `prisma generate`/`next build` have a value to read — no real database is
       # touched during typecheck/lint/build.
-      DATABASE_URL: "file:./dev.db"
+      DATABASE_URL: "postgresql://nextnotepad:nextnotepad@localhost:5432/nextnotepad?schema=public"
     steps:
       - name: Checkout
         uses: actions/checkout@v6

@@ -1,34 +1,38 @@
 {
   "name": "nextnotepad",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "private": true,
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "dev": "next dev",
     "prebuild": "node scripts/bump-version.mjs",
-    "build": "next build",
-    "start": "next start",
+    "build": "node --max-old-space-size=4096 node_modules/next/dist/bin/next build",
+    "start": "npm run migrate:deploy && next start",
+    "migrate:deploy": "node scripts/deploy-migrations.mjs",
     "bump-version": "node scripts/bump-version.mjs",
     "lint": "eslint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "postinstall": "prisma generate",
     "test:drive": "tsx scripts/drive-test/run.ts",
-    "test:drive-cache": "tsx scripts/drive-cache-test.ts"
+    "test:drive-cache": "tsx scripts/drive-cache-test.ts",
+    "test:text-tools": "tsx scripts/text-tools-test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.18.0",
     "@hookform/resolvers": "^5.7.1",
     "@monaco-editor/react": "^4.7.0",
-    "@prisma/adapter-better-sqlite3": "^7.9.1",
     "@prisma/adapter-pg": "^7.10.0",
-    "@prisma/client": "^7.9.1",
+    "@prisma/client": "^7.10.0",
     "@tanstack/react-query": "^5.101.4",
     "@tanstack/react-virtual": "^3.14.9",
     "@types/pg": "^8.23.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
-    "dompurify": "^3.4.13",
+    "dompurify": "^3.4.16",
     "file-saver": "^2.0.5",
     "googleapis": "^174.0.0",
     "idb-keyval": "^6.3.0",
@@ -36,8 +40,8 @@
     "jszip": "^3.10.1",
     "lucide-react": "^1.28.0",
     "marked": "^18.0.9",
-    "monaco-editor": "^0.56.0",
-    "next": "^15.5.22",
+    "monaco-editor": "^0.57.0",
+    "next": "^15.5.27",
     "pg": "^8.23.1",
     "radix-ui": "^1.6.7",
     "react": "^19.2.8",
@@ -66,10 +70,18 @@
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.9.6",
     "prettier-plugin-tailwindcss": "^0.8.1",
-    "prisma": "^7.9.1",
+    "prisma": "^7.10.0",
     "shadcn": "^4.16.2",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5"
+  },
+  "overrides": {
+    "monaco-editor": {
+      "dompurify": "3.4.16"
+    },
+    "next": {
+      "postcss": "8.5.26"
+    }
   }
 }

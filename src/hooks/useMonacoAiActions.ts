@@ -66,6 +66,7 @@ function runStreamingAiAction(
 
   const model = editor.getModel();
   if (!model) return;
+  const textModel = model;
 
   const selection = editor.getSelection();
   const hasSelection = Boolean(selection && !selection.isEmpty());
@@ -104,6 +105,17 @@ function runStreamingAiAction(
     };
   }
 
+  function applyEdit(
+    editRange: Parameters<MonacoEditorNS.ITextModel["pushEditOperations"]>[1][number]["range"],
+    text: string,
+  ) {
+    textModel.pushEditOperations(
+      [],
+      [{ range: editRange, text }],
+      () => null,
+    );
+  }
+
   void config
     .call(
       original,
@@ -118,7 +130,7 @@ function runStreamingAiAction(
               endLineNumber: insertPos.lineNumber,
               endColumn: insertPos.column,
             };
-        editor.executeEdits("tools.ai", [{ range: editRange, text: delta }]);
+        applyEdit(editRange, delta);
         firstChunk = false;
         endOffset += delta.length;
       },
@@ -133,9 +145,9 @@ function runStreamingAiAction(
       ) {
         // Streaming can drift on trivial whitespace even when no real change was made — snap
         // back to the exact original text rather than leave that drift.
-        editor.executeEdits("tools.ai", [{ range: currentRange, text: original }]);
+        applyEdit(currentRange, original);
       }
-      editor.pushUndoStop();
+      textModel.pushStackElement();
       if (result.trim() === original.trim()) {
         toast.success(config.unchangedMessage, { id: toastId });
       } else {
@@ -145,8 +157,8 @@ function runStreamingAiAction(
     .catch((err: unknown) => {
       if (streamed) {
         // Restore whatever partial/garbled text the failed stream left behind.
-        editor.executeEdits("tools.ai", [{ range: spanFromStart(), text: original }]);
-        editor.pushUndoStop();
+        applyEdit(spanFromStart(), original);
+        textModel.pushStackElement();
       }
       toast.error(describeError(err, config.notConfiguredMessage), { id: toastId });
     })
