@@ -1,129 +1,69 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/auth/session";
-import { prisma } from "@/lib/db/prisma";
-import { unauthorized, notFound, badRequest, serverError } from "@/lib/api/respond";
+import { getDriveSession, driveErrorResponse } from "@/lib/drive/session";
+import { AppConfigService } from "@/lib/drive/appConfigService";
+import {
+  getWorkspace,
+  listWorkspaceEntries,
+  renameWorkspace,
+  setActiveWorkspace,
+  workspaceToDto,
+} from "@/lib/drive/workspaceService";
+import { unauthorized, badRequest } from "@/lib/api/respond";
 import { updateWorkspaceSchema } from "@/lib/validation/workspaceSchemas";
-import { getDriveClientForUser } from "@/lib/drive/driveClient";
-import { renameWorkspaceFolder, deleteWorkspaceFolder } from "@/lib/drive/workspaceFolder";
 
-/** GET /api/workspaces/[id] — get a single workspace. */
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getSessionUser();
-  if (!user) return unauthorized();
+type Ctx = { params: Promise<{ id: string }> };
 
-  const { id } = await params;
-  const workspace = await prisma.workspace.findUnique({ where: { id, userId: user.id } });
-  if (!workspace) return notFound("Workspace not found.");
-
-  return NextResponse.json({
-    id: workspace.id,
-    name: workspace.name,
-    description: workspace.description,
-    driveWorkspaceFolderId: workspace.driveWorkspaceFolderId,
-    createdAt: workspace.createdAt,
-    updatedAt: workspace.updatedAt,
-  });
-}
-
-/** PATCH /api/workspaces/[id] — rename or update workspace. */
-export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getSessionUser();
-  if (!user) return unauthorized();
-
-  const { id } = await params;
-  const workspace = await prisma.workspace.findUnique({ where: { id, userId: user.id } });
-  if (!workspace) return notFound("Workspace not found.");
-
-  const parsed = updateWorkspaceSchema.safeParse(await request.json());
-  if (!parsed.success) return badRequest(parsed.error);
-
-  const { name, description } = parsed.data;
-
-  // Check for duplicate name (excluding self)
-  if (name && name !== workspace.name) {
-    const duplicate = await prisma.workspace.findFirst({
-      where: { userId: user.id, name: { equals: name }, id: { not: id } },
-    });
-    if (duplicate) {
-      return NextResponse.json({ error: `A workspace named "${name}" already exists.` }, { status: 409 });
-    }
-  }
-
+export async function GET(_req: NextRequest, { params }: Ctx) {
   try {
-    const updated = await prisma.workspace.update({
-      where: { id },
-      data: {
-        ...(name !== undefined ? { name } : {}),
-        ...(description !== undefined ? { description } : {}),
-      },
-    });
-
-    let driveWorkspaceFolderId = updated.driveWorkspaceFolderId;
-    if (name && name !== workspace.name && (user.googleAccessToken || user.googleRefreshToken)) {
-      try {
-        const drive = getDriveClientForUser(user);
-        driveWorkspaceFolderId = await renameWorkspaceFolder(drive, workspace.id, name);
-      } catch (driveErr) {
-        console.error(`Failed to sync workspace rename to Drive for workspace ${workspace.id}:`, driveErr);
-      }
-    }
-
-    return NextResponse.json({
-      id: updated.id,
-      name: updated.name,
-      description: updated.description,
-      driveWorkspaceFolderId,
-      createdAt: updated.createdAt,
-      updatedAt: updated.updatedAt,
-    });
+    const session = await getDriveSession();
+    if (!session) return unauthorized();
+    const { id } = await params;
+    return NextResponse.json(
+      workspaceToDto(await getWorkspace(session.ds, id)),
+    );
   } catch (err) {
-    console.error("Failed to update workspace:", err);
-    return serverError("Failed to update workspace.");
+    return driveErrorResponse(err, "Load workspace");
   }
 }
 
-/** DELETE /api/workspaces/[id] — delete a workspace (and its files). */
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getSessionUser();
-  if (!user) return unauthorized();
-
-  const { id } = await params;
-  const workspace = await prisma.workspace.findUnique({ where: { id, userId: user.id } });
-  if (!workspace) return notFound("Workspace not found.");
-
-  // Refuse to delete the user's only workspace
-  const count = await prisma.workspace.count({ where: { userId: user.id } });
-  if (count <= 1) {
-    return NextResponse.json({ error: "Cannot delete your only workspace." }, { status: 400 });
-  }
-
+/** PATCH /api/workspaces/[id] — renames the Drive folder itself and rewrites `.workspace.json`. */
+export async function PATCH(request: NextRequest, { params }: Ctx) {
   try {
-    // If this was the active workspace, switch to another before deleting
-    if (user.activeWorkspaceId === id) {
-      const another = await prisma.workspace.findFirst({
-        where: { userId: user.id, id: { not: id } },
-        orderBy: { createdAt: "asc" },
-      });
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { activeWorkspaceId: another?.id ?? null },
-      });
-    }
+    const session = await getDriveSession();
+    if (!session) return unauthorized();
+    const { id } = await params;
+    const parsed = updateWorkspaceSchema.safeParse(await request.json());
+    if (!parsed.success) return badRequest(parsed.error);
+    return NextResponse.json(
+      workspaceToDto(await renameWorkspace(session.ds, id, parsed.data)),
+    );
+  } catch (err) {
+    return driveErrorResponse(err, "Rename workspace");
+  }
+}
 
-    // Delete or trash the workspace folder in Google Drive if connected
-    if (user.googleAccessToken || user.googleRefreshToken) {
-      try {
-        const drive = getDriveClientForUser(user);
-        await deleteWorkspaceFolder(drive, workspace);
-      } catch (driveErr) {
-        console.error(`Failed to delete Drive folder for workspace ${workspace.id}:`, driveErr);
-      }
+/** DELETE /api/workspaces/[id] — moves the workspace folder (and everything in it) to Drive's trash. */
+export async function DELETE(_req: NextRequest, { params }: Ctx) {
+  try {
+    const session = await getDriveSession();
+    if (!session) return unauthorized();
+    const { id } = await params;
+    const { ds } = session;
+    await getWorkspace(ds, id);
+    const all = await listWorkspaceEntries(ds);
+    if (all.length <= 1) {
+      return NextResponse.json(
+        { error: "Cannot delete your only workspace." },
+        { status: 400 },
+      );
     }
-
-    await prisma.workspace.delete({ where: { id } });
+    const config = await new AppConfigService(ds).load({ fresh: true });
+    if (config.activeWorkspaceId === id) {
+      await setActiveWorkspace(ds, all.find((w) => w.id !== id)!.id);
+    }
+    await ds.trash(id);
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("Failed to delete workspace:", err);
-    return serverError("Failed to delete workspace.");
+    return driveErrorResponse(err, "Delete workspace");
   }
 }

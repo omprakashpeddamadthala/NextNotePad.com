@@ -1,6 +1,6 @@
 # NextNotePad.com
 
-A fast, modern browser-based text editor built with Next.js. It runs entirely client-side out of the box (offline-first "Guest Mode"), with an optional Google account sign-in that backs your workspace with a real database and one-way sync to Google Drive.
+A fast, modern browser-based text editor built with Next.js. It runs entirely client-side out of the box (offline-first "Guest Mode"), with an optional Google account sign-in that stores your workspaces, files and settings directly in your own Google Drive.
 
 The UI deliberately avoids the "modern SaaS code editor" look — square corners, flat instant menus, a classic segmented status bar, and Notepad++'s color themes — instead of the rounded/animated defaults you'd get from shadcn/VS Code out of the box.
 
@@ -14,8 +14,8 @@ The UI deliberately avoids the "modern SaaS code editor" look — square corners
 - **Recycle bin** — soft-deleted files/folders can be restored.
 - **Export/import** — zip a workspace up or restore from one (`jszip`, `file-saver`).
 - **Workspace stats**, responsive layout for mobile/tablet, resizable panels.
-- **Google Sign-In** — JWT-based session (`jose`) backed by Prisma/SQLite (`User`, `Workspace`, `Folder`, `File`, `UserSettings` tables). On first login your local guest workspace is migrated into your cloud workspace automatically.
-- **One-way Google Drive sync** — every create/rename/move/delete is pushed to a `NextNotePad.com` folder in your Drive in the background (via Next.js `after()`, so it never blocks the UI). Failed pushes are tracked and retryable from a sync-status badge in the toolbar. *(Pulling changes made directly in Drive back into the app is not yet implemented — push-only for now.)*
+- **Google Sign-In** — JWT-based session (`jose`). The database holds only account identity (`User`: Google id, email, OAuth tokens, admin/blocked flags) plus the deployment-wide `AppConfig`. On first login your local guest workspace is imported into your Drive automatically.
+- **Google Drive is the source of truth** — every workspace is a real folder under `NextNotePad.com/Workspaces/` in your Drive (with a `.workspace.json`), files and folders are real Drive items (language/encoding/hidden/lock metadata in Drive `appProperties`), and theme, editor settings, recent files, favorites and the active workspace live in `NextNotePad.com/.appConfig.json`. Content is fetched lazily when a file is opened; saves go straight to Drive, with a toolbar badge for Saving / Offline / Sync failed. Existing database-backed accounts are copied to Drive once, idempotently, on their next request (`src/lib/drive/legacyMigration.ts`).
 - **PWA-ready** — installable manifest + service worker (`public/sw.js`).
 
 ## Tech stack
@@ -100,7 +100,6 @@ src/
       folders/        Folder CRUD
       workspace/      Workspace fetch + guest-workspace import
       settings/        Per-user editor settings
-      sync/            Drive sync status + manual retry
     page.tsx           App shell
   components/
     editor/            Monaco wrapper, tabs
@@ -120,7 +119,7 @@ src/
     search/               Search/replace engine
     shortcuts/            Keyboard shortcut → action registry
   lib/
-    drive/               Google Drive client, root-folder management, push sync
+    drive/               DriveService, AppConfigService (.appConfig.json), workspace tree, legacy migration
     auth/                 JWT/session helpers
     monaco/themes/         9 editor color themes
     db/                    Prisma client singleton
@@ -132,7 +131,18 @@ prisma/
 
 ## Data model
 
-Prisma models (SQLite): `User` → `Workspace` (1:1) → `Folder`/`File` (nested tree, soft-delete via `deletedAt`), `UserSettings` (theme + serialized editor settings), and `SyncFailure` (one row per entity currently failing to push to Drive, cleared on successful retry).
+Database (Prisma): `User` (authentication / account identity only) and `AppConfig` (deployment-wide AI provider keys). Everything else lives in the user's Google Drive:
+
+```text
+NextNotePad.com/
+├── .appConfig.json        versioned: settings, recentFiles, favorites, activeWorkspaceId, migrations
+└── Workspaces/
+    └── <Workspace name>/
+        ├── .workspace.json
+        └── …folders and files
+```
+
+The legacy `Workspace` / `Folder` / `File` / `SyncFailure` / `UserSettings` tables are no longer in the Prisma schema but are intentionally **not dropped** yet — the one-time Drive migration reads them. Drop them only after verifying migrated data. `npm run test:drive` runs the Drive service + migration tests against an in-memory Drive (needs `DATABASE_URL` pointing at a Postgres with the legacy tables).
 
 ## Docker
 
@@ -153,7 +163,7 @@ Development has proceeded in phases:
 - ✅ **Phase 1** — Guest Mode (fully client-side editor, no backend)
 - ✅ **Phase 2a** — Google OAuth + JWT sessions + cloud-backed workspace (Prisma/SQLite)
 - ✅ **Phase 2b** — One-way push sync to Google Drive
-- ⏳ **Phase 2c** — Pulling Drive changes back into the app + full conflict resolution + background retry queue
+- ✅ **Phase 2c** — Google Drive as the single source of truth (DB keeps auth identity only)
 - ⏳ **Phase 3** — Offline/service-worker hardening, security hardening
 - ⏳ **Phase 4** — Postgres option, deploy hardening, large-workspace (10k+ file) perf validation
 

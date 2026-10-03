@@ -1,0 +1,376 @@
+import type { drive_v3 } from "googleapis";
+
+export const ROOT_FOLDER_NAME = "NextNotePad.com";
+export const WORKSPACES_FOLDER_NAME = "Workspaces";
+export const APP_CONFIG_FILE_NAME = ".appConfig.json";
+export const WORKSPACE_META_FILE_NAME = ".workspace.json";
+export const FOLDER_MIME = "application/vnd.google-apps.folder";
+
+/** Fields requested for every entry — enough to build a tree node without a second request. */
+const ENTRY_FIELDS =
+  "id,name,mimeType,parents,appProperties,description,size,createdTime,modifiedTime,version,trashed";
+
+export interface DriveEntry {
+  id: string;
+  name: string;
+  mimeType: string;
+  parents: string[];
+  appProperties: Record<string, string>;
+  description: string | null;
+  size: number;
+  createdTime: number;
+  modifiedTime: number;
+  version: number;
+  trashed: boolean;
+}
+
+export class DriveNotFoundError extends Error {
+  constructor(id: string) {
+    super(`Drive entry ${id} not found`);
+    this.name = "DriveNotFoundError";
+  }
+}
+
+function escapeQuery(value: string): string {
+  return value.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+}
+
+function toEntry(f: drive_v3.Schema$File): DriveEntry {
+  return {
+    id: f.id ?? "",
+    name: f.name ?? "",
+    mimeType: f.mimeType ?? "",
+    parents: f.parents ?? [],
+    appProperties:
+      (f.appProperties as Record<string, string> | undefined) ?? {},
+    description: f.description ?? null,
+    size: Number(f.size ?? 0),
+    createdTime: f.createdTime ? Date.parse(f.createdTime) : Date.now(),
+    modifiedTime: f.modifiedTime ? Date.parse(f.modifiedTime) : Date.now(),
+    version: Number(f.version ?? 1),
+    trashed: Boolean(f.trashed),
+  };
+}
+
+function isNotFound(err: unknown): boolean {
+  const e = err as {
+    code?: number;
+    status?: number;
+    response?: { status?: number };
+  };
+  return e?.code === 404 || e?.status === 404 || e?.response?.status === 404;
+}
+
+function isRetryable(err: unknown): boolean {
+  const e = err as {
+    code?: number | string;
+    status?: number;
+    response?: { status?: number };
+  };
+  const status = Number(e?.response?.status ?? e?.status ?? e?.code);
+  return (
+    status === 429 ||
+    status >= 500 ||
+    e?.code === "ECONNRESET" ||
+    e?.code === "ETIMEDOUT"
+  );
+}
+
+async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
+  let lastErr: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      if (!isRetryable(err) || i === attempts - 1) throw err;
+      await new Promise((r) =>
+        setTimeout(r, 250 * 2 ** i + Math.random() * 100),
+      );
+    }
+  }
+  throw lastErr;
+}
+
+/** Per-user ids of the fixed folders, cached in-process so hot paths don't re-query Drive for
+ *  them. A stale id (folder deleted in Drive) is detected by a 404 and re-resolved. */
+interface LayoutIds {
+  rootId?: string;
+  workspacesId?: string;
+}
+const layoutCache = new Map<string, LayoutIds>();
+const inFlight = new Map<string, Promise<string>>();
+
+/** Collapses concurrent identical lookups/creates (e.g. two requests both ensuring the root
+ *  folder) into one Drive call, so they can't race into creating duplicates. */
+function dedupe(key: string, fn: () => Promise<string>): Promise<string> {
+  const existing = inFlight.get(key);
+  if (existing) return existing;
+  const p = fn().finally(() => inFlight.delete(key));
+  inFlight.set(key, p);
+  return p;
+}
+
+/**
+ * The only module that talks to the Drive API. Everything persistent about a signed-in user's
+ * workspaces lives in their Drive under `NextNotePad.com/`; this class exposes the small set of
+ * primitives the rest of the server needs (list, read, create, update, trash) with retries,
+ * pagination, minimal field masks and cached folder ids.
+ */
+export class DriveService {
+  constructor(
+    readonly drive: drive_v3.Drive,
+    readonly userId: string,
+  ) {}
+
+  private get layout(): LayoutIds {
+    let l = layoutCache.get(this.userId);
+    if (!l) {
+      l = {};
+      layoutCache.set(this.userId, l);
+    }
+    return l;
+  }
+
+  static clearCache(userId?: string) {
+    if (userId) layoutCache.delete(userId);
+    else layoutCache.clear();
+  }
+
+  async list(q: string, pageSize = 1000): Promise<DriveEntry[]> {
+    const out: DriveEntry[] = [];
+    let pageToken: string | undefined;
+    do {
+      const res = await withRetry(() =>
+        this.drive.files.list({
+          q,
+          pageSize,
+          pageToken,
+          spaces: "drive",
+          fields: `nextPageToken, files(${ENTRY_FIELDS})`,
+        }),
+      );
+      for (const f of res.data.files ?? []) out.push(toEntry(f));
+      pageToken = res.data.nextPageToken ?? undefined;
+    } while (pageToken);
+    return out;
+  }
+
+  async findChild(
+    parentId: string,
+    name: string,
+    opts: { folder?: boolean } = {},
+  ): Promise<DriveEntry | null> {
+    const mime =
+      opts.folder === undefined
+        ? ""
+        : opts.folder
+          ? ` and mimeType = '${FOLDER_MIME}'`
+          : ` and mimeType != '${FOLDER_MIME}'`;
+    const found = await this.list(
+      `name = '${escapeQuery(name)}' and '${parentId}' in parents and trashed = false${mime}`,
+      10,
+    );
+    return found[0] ?? null;
+  }
+
+  async listChildren(parentId: string): Promise<DriveEntry[]> {
+    return this.list(`'${parentId}' in parents and trashed = false`);
+  }
+
+  async hasTrashedChildren(parentId: string): Promise<boolean> {
+    const res = await withRetry(() =>
+      this.drive.files.list({
+        q: `'${parentId}' in parents and trashed = true`,
+        pageSize: 1,
+        fields: "files(id)",
+      }),
+    );
+    return (res.data.files ?? []).length > 0;
+  }
+
+  /** Every non-trashed entry this app can see. With the `drive.file` scope that is exactly the
+   *  files and folders NextNotePad created — one paginated request for a typical account, used
+   *  to build workspace trees and the cross-workspace search index without walking folder by
+   *  folder. */
+  async listAllAppEntries(): Promise<DriveEntry[]> {
+    return this.list("trashed = false");
+  }
+
+  async get(id: string): Promise<DriveEntry> {
+    try {
+      const res = await withRetry(() =>
+        this.drive.files.get({ fileId: id, fields: ENTRY_FIELDS }),
+      );
+      return toEntry(res.data);
+    } catch (err) {
+      if (isNotFound(err)) throw new DriveNotFoundError(id);
+      throw err;
+    }
+  }
+
+  async readText(id: string): Promise<string> {
+    try {
+      const res = await withRetry(() =>
+        this.drive.files.get(
+          { fileId: id, alt: "media" },
+          { responseType: "text" },
+        ),
+      );
+      return typeof res.data === "string"
+        ? res.data
+        : res.data == null
+          ? ""
+          : JSON.stringify(res.data);
+    } catch (err) {
+      if (isNotFound(err)) throw new DriveNotFoundError(id);
+      throw err;
+    }
+  }
+
+  async createFolder(
+    name: string,
+    parentId: string,
+    appProperties?: Record<string, string>,
+    description?: string,
+  ): Promise<DriveEntry> {
+    const res = await withRetry(() =>
+      this.drive.files.create({
+        requestBody: {
+          name,
+          mimeType: FOLDER_MIME,
+          parents: [parentId],
+          appProperties,
+          description,
+        },
+        fields: ENTRY_FIELDS,
+      }),
+    );
+    return toEntry(res.data);
+  }
+
+  async createFile(
+    name: string,
+    parentId: string,
+    content: string,
+    opts: { mimeType?: string; appProperties?: Record<string, string> } = {},
+  ): Promise<DriveEntry> {
+    const mimeType = opts.mimeType ?? "text/plain";
+    const res = await withRetry(() =>
+      this.drive.files.create({
+        requestBody: {
+          name,
+          parents: [parentId],
+          mimeType,
+          appProperties: opts.appProperties,
+        },
+        media: { mimeType, body: content },
+        fields: ENTRY_FIELDS,
+      }),
+    );
+    return toEntry(res.data);
+  }
+
+  /** Metadata update. `appProperties` keys set to `null` are removed (Drive semantics). Moving
+   *  requires the current parent; pass `fromParentId` when known to save a lookup. */
+  async update(
+    id: string,
+    patch: {
+      name?: string;
+      description?: string | null;
+      appProperties?: Record<string, string | null>;
+      moveTo?: { parentId: string; fromParentId?: string };
+      content?: string;
+      mimeType?: string;
+    },
+  ): Promise<DriveEntry> {
+    let addParents: string | undefined;
+    let removeParents: string | undefined;
+    if (patch.moveTo) {
+      const from =
+        patch.moveTo.fromParentId ?? (await this.get(id)).parents.join(",");
+      if (from !== patch.moveTo.parentId) {
+        addParents = patch.moveTo.parentId;
+        removeParents = from || undefined;
+      }
+    }
+    const requestBody: drive_v3.Schema$File = {};
+    if (patch.name !== undefined) requestBody.name = patch.name;
+    if (patch.description !== undefined)
+      requestBody.description = patch.description;
+    if (patch.appProperties)
+      requestBody.appProperties = patch.appProperties as Record<string, string>;
+    try {
+      const res = await withRetry(() =>
+        this.drive.files.update({
+          fileId: id,
+          addParents,
+          removeParents,
+          requestBody,
+          ...(patch.content !== undefined
+            ? {
+                media: {
+                  mimeType: patch.mimeType ?? "text/plain",
+                  body: patch.content,
+                },
+              }
+            : {}),
+          fields: ENTRY_FIELDS,
+        }),
+      );
+      return toEntry(res.data);
+    } catch (err) {
+      if (isNotFound(err)) throw new DriveNotFoundError(id);
+      throw err;
+    }
+  }
+
+  /** Moves to Drive's trash (restorable for 30 days) rather than hard-deleting. */
+  async trash(id: string): Promise<void> {
+    try {
+      await withRetry(() =>
+        this.drive.files.update({
+          fileId: id,
+          requestBody: { trashed: true },
+          fields: "id",
+        }),
+      );
+    } catch (err) {
+      if (!isNotFound(err)) throw err;
+    }
+  }
+
+  private async ensureFolder(
+    cacheKey: keyof LayoutIds,
+    name: string,
+    parentId: string,
+  ): Promise<string> {
+    const cached = this.layout[cacheKey];
+    if (cached) return cached;
+    return dedupe(`${this.userId}:${cacheKey}`, async () => {
+      const existing = await this.findChild(parentId, name, { folder: true });
+      const id =
+        existing?.id ??
+        (await this.createFolder(name, parentId, { nnp_kind: cacheKey })).id;
+      this.layout[cacheKey] = id;
+      return id;
+    });
+  }
+
+  ensureRootFolder(): Promise<string> {
+    return this.ensureFolder("rootId", ROOT_FOLDER_NAME, "root");
+  }
+
+  async ensureWorkspacesFolder(): Promise<string> {
+    return this.ensureFolder(
+      "workspacesId",
+      WORKSPACES_FOLDER_NAME,
+      await this.ensureRootFolder(),
+    );
+  }
+
+  /** Re-resolves cached folder ids after a 404 (e.g. the user deleted the folder in Drive). */
+  invalidateLayout() {
+    layoutCache.delete(this.userId);
+  }
+}

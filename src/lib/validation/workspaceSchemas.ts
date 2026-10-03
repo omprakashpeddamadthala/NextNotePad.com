@@ -51,13 +51,37 @@ export const updateFolderSchema = z.object({
 });
 
 export const updateSettingsSchema = z.object({
-  theme: z.string().min(1),
-  json: z.string().min(1),
+  theme: z.string().min(1).optional(),
+  json: z
+    .string()
+    .min(1)
+    .refine((v) => {
+      try {
+        const parsed = JSON.parse(v);
+        return (
+          typeof parsed === "object" &&
+          parsed !== null &&
+          !Array.isArray(parsed)
+        );
+      } catch {
+        return false;
+      }
+    }, "Must be a JSON object")
+    .optional(),
+  recentFiles: z
+    .array(z.object({ fileId: z.string(), openedAt: z.number() }))
+    .max(100)
+    .optional(),
+  favorites: z.array(z.string()).max(1000).optional(),
 });
 
 // New multi-workspace schemas
 export const createWorkspaceSchema = z.object({
-  name: z.string().min(1, "Workspace name is required").max(100, "Name must be 100 characters or less").trim(),
+  name: z
+    .string()
+    .min(1, "Workspace name is required")
+    .max(100, "Name must be 100 characters or less")
+    .trim(),
   description: z.string().max(500).optional(),
 });
 

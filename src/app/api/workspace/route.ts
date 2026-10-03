@@ -1,30 +1,24 @@
 import { NextResponse } from "next/server";
-import { getSessionUserWithWorkspace } from "@/lib/auth/session";
-import { prisma } from "@/lib/db/prisma";
-import { folderToDto, fileToDto } from "@/lib/dto/workspaceDto";
-import { unauthorized, serverError } from "@/lib/api/respond";
+import {
+  getDriveSessionWithWorkspace,
+  driveErrorResponse,
+} from "@/lib/drive/session";
+import { loadWorkspaceTree } from "@/lib/drive/workspaceService";
+import { unauthorized } from "@/lib/api/respond";
 
+/** The active workspace's tree, read straight from its Drive folder (metadata only — file
+ *  content is fetched lazily per file). `hasAnyHistory` is true if anything was ever created
+ *  here, including items since moved to Drive's trash, so guest migration never re-triggers. */
 export async function GET() {
   try {
-    const session = await getSessionUserWithWorkspace();
+    const session = await getDriveSessionWithWorkspace();
     if (!session) return unauthorized();
-
-    const folders = await prisma.folder.findMany({ where: { workspaceId: session.workspaceId, deletedAt: null } });
-    const files = await prisma.file.findMany({ where: { workspaceId: session.workspaceId, deletedAt: null } });
-
-    let hasAnyHistory = folders.length > 0 || files.length > 0;
-    if (!hasAnyHistory) {
-      const everFolderCount = await prisma.folder.count({ where: { workspaceId: session.workspaceId } });
-      const everFileCount = everFolderCount > 0 ? 1 : await prisma.file.count({ where: { workspaceId: session.workspaceId } });
-      hasAnyHistory = everFolderCount > 0 || everFileCount > 0;
-    }
-
-    return NextResponse.json({
-      nodes: [...folders.map(folderToDto), ...files.map((f) => fileToDto(f))],
-      hasAnyHistory,
-    });
+    const { ds, workspaceId } = session;
+    const nodes = await loadWorkspaceTree(ds, workspaceId);
+    const hasAnyHistory =
+      nodes.length > 0 || (await ds.hasTrashedChildren(workspaceId));
+    return NextResponse.json({ nodes, hasAnyHistory, workspaceId });
   } catch (err) {
-    console.error("Failed to load workspace tree:", err);
-    return serverError("Failed to load workspace tree.");
+    return driveErrorResponse(err, "Load workspace");
   }
 }
