@@ -36,16 +36,78 @@ function splitWords(input: string): string[] {
     .filter(Boolean);
 }
 
+function capitalizeFirstCasedCharacter(text: string): string {
+  let offset = 0;
+  for (const character of text) {
+    const upper = character.toUpperCase();
+    if (upper !== character.toLowerCase()) {
+      return (
+        text.slice(0, offset) + upper + text.slice(offset + character.length)
+      );
+    }
+    offset += character.length;
+  }
+  return text;
+}
+
+function titleCase(text: string): string {
+  const lower = text.toLowerCase();
+  const segments = new Intl.Segmenter(undefined, {
+    granularity: "word",
+  }).segment(lower);
+  return Array.from(segments, (segment) =>
+    segment.isWordLike
+      ? capitalizeFirstCasedCharacter(segment.segment)
+      : segment.segment,
+  ).join("");
+}
+
+function sentenceCase(text: string): string {
+  const lower = text.toLowerCase();
+  let capitalizeNext = true;
+  let afterTerminator = false;
+  let result = "";
+
+  for (const character of lower) {
+    const isCased = character.toUpperCase() !== character.toLowerCase();
+    const isSentenceWrapper = `"'\u201c\u201d\u2018\u2019([{`.includes(
+      character,
+    );
+    if (capitalizeNext && isCased) {
+      result += character.toUpperCase();
+      capitalizeNext = false;
+    } else {
+      result += character;
+      if (capitalizeNext && !/\s/.test(character) && !isSentenceWrapper)
+        capitalizeNext = false;
+    }
+
+    if (afterTerminator) {
+      if (/\s/.test(character)) {
+        capitalizeNext = true;
+      } else if (!`"'”’)]}`.includes(character)) {
+        afterTerminator = false;
+      }
+    }
+    if (".!?".includes(character)) afterTerminator = true;
+  }
+
+  return result;
+}
+
 export const caseConverters = {
   upper: (text: string) => text.toUpperCase(),
   lower: (text: string) => text.toLowerCase(),
-  title: (text: string) => text.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()),
-  sentence: (text: string) =>
-    text.toLowerCase().replace(/(^\s*\w|[.!?]\s+\w)/g, (c) => c.toUpperCase()),
+  title: titleCase,
+  sentence: sentenceCase,
   camel: (text: string) => {
     const words = splitWords(text);
     return words
-      .map((w, i) => (i === 0 ? w.toLowerCase() : w[0].toUpperCase() + w.slice(1).toLowerCase()))
+      .map((w, i) =>
+        i === 0
+          ? w.toLowerCase()
+          : w[0].toUpperCase() + w.slice(1).toLowerCase(),
+      )
       .join("");
   },
   pascal: (text: string) =>
@@ -68,10 +130,18 @@ export const caseConverters = {
 
 export type CaseConverterId = keyof typeof caseConverters;
 
-export const HASH_ALGORITHMS = ["SHA-1", "SHA-256", "SHA-384", "SHA-512"] as const;
+export const HASH_ALGORITHMS = [
+  "SHA-1",
+  "SHA-256",
+  "SHA-384",
+  "SHA-512",
+] as const;
 export type HashAlgorithm = (typeof HASH_ALGORITHMS)[number];
 
-export async function computeHash(algorithm: HashAlgorithm, text: string): Promise<string> {
+export async function computeHash(
+  algorithm: HashAlgorithm,
+  text: string,
+): Promise<string> {
   const data = new TextEncoder().encode(text);
   const digest = await crypto.subtle.digest(algorithm, data);
   return Array.from(new Uint8Array(digest))
@@ -88,11 +158,17 @@ export function minifyJson(text: string): string {
 }
 
 export function sortLinesAscending(text: string): string {
-  return text.split("\n").sort((a, b) => a.localeCompare(b)).join("\n");
+  return text
+    .split("\n")
+    .sort((a, b) => a.localeCompare(b))
+    .join("\n");
 }
 
 export function sortLinesDescending(text: string): string {
-  return text.split("\n").sort((a, b) => b.localeCompare(a)).join("\n");
+  return text
+    .split("\n")
+    .sort((a, b) => b.localeCompare(a))
+    .join("\n");
 }
 
 export function removeDuplicateLines(text: string): string {
@@ -100,15 +176,12 @@ export function removeDuplicateLines(text: string): string {
 }
 
 export function trimTrailingWhitespace(text: string): string {
-  return text
-    .split("\n")
-    .map((line) => line.replace(/[ \t]+$/, ""))
-    .join("\n");
+  return text.replace(/[ \t]+(?=\r?$)/gm, "");
 }
 
 /** Collapses runs of 2+ consecutive blank lines down to a single blank line. */
 export function collapseBlankLines(text: string): string {
-  return text.replace(/\n{3,}/g, "\n\n");
+  return text.replace(/(\r?\n)(?:\r?\n){2,}/g, "$1$1");
 }
 
 const INDENT_WIDTH = 4;
@@ -142,13 +215,15 @@ export function generateUuid(): string {
   return uuidv4();
 }
 
-/** Accepts Unix time in seconds or milliseconds (10 vs 13+ digit input) and returns an ISO 8601
- *  string. Throws on non-numeric or out-of-range input so callers can surface an error toast. */
+/** Accepts Unix time in seconds or milliseconds and returns an ISO 8601 string. Values with an
+ *  absolute magnitude of at least 1e11 are treated as milliseconds, matching common Unix-time
+ *  detection while allowing valid 12-digit millisecond timestamps. */
 export function unixToIsoDate(text: string): string {
   const trimmed = text.trim();
   if (!/^-?\d+$/.test(trimmed)) throw new Error("Not a valid Unix timestamp");
   const n = Number(trimmed);
-  const ms = trimmed.replace("-", "").length >= 13 ? n : n * 1000;
+  if (!Number.isFinite(n)) throw new Error("Timestamp out of range");
+  const ms = Math.abs(n) >= 100_000_000_000 ? n : n * 1000;
   const date = new Date(ms);
   if (Number.isNaN(date.getTime())) throw new Error("Timestamp out of range");
   return date.toISOString();
@@ -161,7 +236,10 @@ export function isoDateToUnix(text: string): string {
 }
 
 function base64UrlDecode(segment: string): string {
-  const padded = segment.replace(/-/g, "+").replace(/_/g, "/").padEnd(segment.length + ((4 - (segment.length % 4)) % 4), "=");
+  const padded = segment
+    .replace(/-/g, "+")
+    .replace(/_/g, "/")
+    .padEnd(segment.length + ((4 - (segment.length % 4)) % 4), "=");
   const binary = atob(padded);
   const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
   return new TextDecoder("utf-8", { fatal: false }).decode(bytes);
@@ -171,7 +249,8 @@ function base64UrlDecode(segment: string): string {
  *  the signature, since that needs the signing secret/key which the editor doesn't have. */
 export function decodeJwt(text: string): string {
   const parts = text.trim().split(".");
-  if (parts.length < 2) throw new Error("Not a valid JWT — expected header.payload.signature");
+  if (parts.length < 2)
+    throw new Error("Not a valid JWT — expected header.payload.signature");
   const header = JSON.parse(base64UrlDecode(parts[0]));
   const payload = JSON.parse(base64UrlDecode(parts[1]));
   return `Header:\n${JSON.stringify(header, null, 2)}\n\nPayload:\n${JSON.stringify(payload, null, 2)}`;
@@ -198,7 +277,10 @@ export function htmlEncode(text: string): string {
 }
 
 export function htmlDecode(text: string): string {
-  return text.replace(/&amp;|&lt;|&gt;|&quot;|&#39;|&apos;/g, (m) => HTML_UNESCAPES[m]);
+  return text.replace(
+    /&amp;|&lt;|&gt;|&quot;|&#39;|&apos;/g,
+    (m) => HTML_UNESCAPES[m],
+  );
 }
 
 /** Escapes a raw (possibly multi-line) string into the form you'd embed as a JSON string value —
@@ -211,26 +293,38 @@ export function unescapeJsonString(text: string): string {
   return JSON.parse(`"${text}"`);
 }
 
-function parseIntStrict(text: string, radix: number, pattern: RegExp): number {
-  const trimmed = text.trim().replace(/^0[xXbB]/, "");
-  if (!pattern.test(trimmed)) throw new Error(`Not a valid base-${radix} number`);
-  return parseInt(trimmed, radix);
+function parseBigIntStrict(
+  text: string,
+  radix: 2 | 10 | 16,
+  pattern: RegExp,
+): bigint {
+  let trimmed = text.trim();
+  const negative = trimmed.startsWith("-");
+  if (negative) trimmed = trimmed.slice(1);
+  if (radix === 16) trimmed = trimmed.replace(/^0x/i, "");
+  if (radix === 2) trimmed = trimmed.replace(/^0b/i, "");
+  if (!pattern.test(trimmed))
+    throw new Error(`Not a valid base-${radix} number`);
+
+  const prefix = radix === 16 ? "0x" : radix === 2 ? "0b" : "";
+  const value = BigInt(`${prefix}${trimmed}`);
+  return negative ? -value : value;
 }
 
 export function decimalToHex(text: string): string {
-  return parseIntStrict(text, 10, /^-?\d+$/).toString(16);
+  return parseBigIntStrict(text, 10, /^\d+$/).toString(16);
 }
 
 export function hexToDecimal(text: string): string {
-  return parseIntStrict(text, 16, /^-?[0-9a-fA-F]+$/).toString(10);
+  return parseBigIntStrict(text, 16, /^[0-9a-fA-F]+$/).toString(10);
 }
 
 export function decimalToBinary(text: string): string {
-  return parseIntStrict(text, 10, /^-?\d+$/).toString(2);
+  return parseBigIntStrict(text, 10, /^\d+$/).toString(2);
 }
 
 export function binaryToDecimal(text: string): string {
-  return parseIntStrict(text, 2, /^-?[01]+$/).toString(10);
+  return parseBigIntStrict(text, 2, /^[01]+$/).toString(10);
 }
 
 export function hexToRgb(text: string): string {
@@ -249,9 +343,14 @@ export function hexToRgb(text: string): string {
 }
 
 export function rgbToHex(text: string): string {
-  const match = text.trim().match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*[\d.]+\s*)?\)/i);
+  const match = text
+    .trim()
+    .match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*[\d.]+\s*)?\)/i);
   if (!match) throw new Error("Not a valid rgb()/rgba() color");
-  const toHex = (n: string) => Math.max(0, Math.min(255, Number(n))).toString(16).padStart(2, "0");
+  const toHex = (n: string) =>
+    Math.max(0, Math.min(255, Number(n)))
+      .toString(16)
+      .padStart(2, "0");
   return `#${toHex(match[1])}${toHex(match[2])}${toHex(match[3])}`;
 }
 
