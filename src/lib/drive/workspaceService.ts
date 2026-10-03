@@ -24,6 +24,7 @@ const P = {
   salt: "nnp_salt",
   iv: "nnp_iv",
 } as const;
+export const GUEST_IMPORT_ID_PROPERTY = "nnp_guest_import_id";
 
 const bool = (v: string | undefined, fallback: boolean) =>
   v === undefined ? fallback : v === "1";
@@ -149,6 +150,29 @@ function stripNulls(
 
 /** Drive's query language has a length cap, so a level of the tree is fetched in chunks. */
 const PARENTS_PER_QUERY = 40;
+const workspaceMutationTails = new Map<string, Promise<void>>();
+
+export async function withWorkspaceMutationLock<T>(
+  userId: string,
+  operation: () => Promise<T>,
+): Promise<T> {
+  const previous = workspaceMutationTails.get(userId) ?? Promise.resolve();
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const tail = previous.catch(() => undefined).then(() => gate);
+  workspaceMutationTails.set(userId, tail);
+  await previous.catch(() => undefined);
+  try {
+    return await operation();
+  } finally {
+    release();
+    if (workspaceMutationTails.get(userId) === tail) {
+      workspaceMutationTails.delete(userId);
+    }
+  }
+}
 
 // ----- workspaces -----
 
@@ -194,12 +218,13 @@ export async function createWorkspaceFolder(
   ds: DriveService,
   name: string,
   description?: string | null,
+  appProperties: Record<string, string> = {},
 ): Promise<DriveEntry> {
   const parent = await ds.ensureWorkspacesFolder();
   const folder = await ds.createFolder(
     name,
     parent,
-    { [P.kind]: "workspace" },
+    { [P.kind]: "workspace", ...appProperties },
     description ?? undefined,
   );
   await writeWorkspaceMeta(ds, folder);
@@ -220,7 +245,14 @@ export async function resolveActiveWorkspaceId(
 ): Promise<string> {
   const configs = new AppConfigService(ds);
   const config = await configs.load();
-  if (config.activeWorkspaceId) return config.activeWorkspaceId;
+  if (config.activeWorkspaceId) {
+    try {
+      await getWorkspace(ds, config.activeWorkspaceId);
+      return config.activeWorkspaceId;
+    } catch (error) {
+      if (!(error instanceof AppError) || error.status !== 404) throw error;
+    }
+  }
   const list = await listWorkspaces(ds);
   const id = list[0].id;
   await configs.update((c) => {
@@ -348,6 +380,7 @@ export async function resolveParent(
   });
   if (parent.trashed || !isFolder(parent))
     throw new AppError("Parent folder not found", 404);
+  await assertNodeInWorkspace(ds, parent, workspaceId);
   return parent.id;
 }
 
@@ -388,6 +421,7 @@ export async function createNode(
     content?: string;
     language?: string;
     encoding?: string;
+    importId?: string;
   },
 ): Promise<DriveEntry> {
   const parent = await resolveParent(ds, workspaceId, input.parentId);
@@ -395,14 +429,24 @@ export async function createNode(
     return ds.createFolder(
       input.name,
       parent,
-      folderProps({ collapsed: true }),
+      {
+        ...folderProps({ collapsed: true }),
+        ...(input.importId
+          ? { [GUEST_IMPORT_ID_PROPERTY]: input.importId }
+          : {}),
+      },
     );
   return ds.createFile(input.name, parent, input.content ?? "", {
     appProperties: stripNulls(
-      fileProps({
-        language: input.language ?? detectLanguageFromFilename(input.name),
-        encoding: input.encoding ?? "UTF-8",
-      }),
+      {
+        ...fileProps({
+          language: input.language ?? detectLanguageFromFilename(input.name),
+          encoding: input.encoding ?? "UTF-8",
+        }),
+        ...(input.importId
+          ? { [GUEST_IMPORT_ID_PROPERTY]: input.importId }
+          : {}),
+      },
     ),
   });
 }
@@ -453,7 +497,17 @@ export async function updateNode(
   workspaceId: string,
   id: string,
   patch: NodePatch,
+  expectedType?: "file" | "folder",
 ): Promise<DriveEntry> {
+  const current = await getNode(ds, id);
+  await assertNodeInWorkspace(ds, current, workspaceId);
+  const folder = isFolder(current);
+  if (
+    (expectedType === "file" && folder) ||
+    (expectedType === "folder" && !folder)
+  ) {
+    throw new AppError("Not found", 404);
+  }
   const keys = Object.keys(patch).filter(
     (k) => patch[k as keyof NodePatch] !== undefined,
   );
@@ -466,9 +520,6 @@ export async function updateNode(
       throw err;
     }
   }
-
-  const current = await getNode(ds, id);
-  const folder = isFolder(current);
 
   let moveTo: { parentId: string; fromParentId?: string } | undefined;
   if (patch.parentId !== undefined) {
@@ -507,8 +558,20 @@ export async function updateNode(
   });
 }
 
-export async function trashNode(ds: DriveService, id: string): Promise<void> {
-  await getNode(ds, id);
+export async function trashNode(
+  ds: DriveService,
+  workspaceId: string,
+  id: string,
+  expectedType?: "file" | "folder",
+): Promise<void> {
+  const entry = await getNode(ds, id);
+  await assertNodeInWorkspace(ds, entry, workspaceId);
+  if (
+    (expectedType === "file" && isFolder(entry)) ||
+    (expectedType === "folder" && !isFolder(entry))
+  ) {
+    throw new AppError("Not found", 404);
+  }
   await ds.trash(id);
 }
 

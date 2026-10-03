@@ -89,6 +89,8 @@ export function WorkspaceDropdown({
       return;
     }
 
+    useWorkspaceStore.getState().clearWorkspace();
+    useTabsStore.getState().resetSession();
     // Reload the workspace file tree for the newly active workspace
     try {
       const data = await treePromise;
@@ -98,7 +100,6 @@ export function WorkspaceDropdown({
     } catch {
       useWorkspaceStore.getState().clearWorkspace();
     }
-    useTabsStore.getState().resetSession();
   }
 
   if (status === "loading") {

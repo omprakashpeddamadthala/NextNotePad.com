@@ -33,7 +33,7 @@ function buildSearchRegex(query: string, options: SearchOptions): RegExp | null 
   let pattern = options.isRegex ? query : escapeRegExp(query);
   if (options.wholeWord) pattern = `\\b(?:${pattern})\\b`;
   try {
-    return new RegExp(pattern, options.caseSensitive ? "g" : "gi");
+    return new RegExp(pattern, options.caseSensitive ? "gm" : "gim");
   } catch {
     return null;
   }
@@ -110,15 +110,28 @@ export async function replaceInFiles(
     replacements += matches.length;
     filesChanged += 1;
     regex.lastIndex = 0;
-    const newContent = content.replace(regex, () => replacement);
+    const newContent = content.replace(regex, replacement);
 
     if (openModel) {
-      openModel.setValue(newContent);
-      modelRegistry.markSaved(file.id, newContent);
       const tab = useTabsStore.getState().tabForFile(file.id);
-      if (tab) useTabsStore.getState().setDirty(tab.id, false);
+      if (openModel.getValue() === content) {
+        openModel.pushEditOperations(
+          null,
+          [{ range: openModel.getFullModelRange(), text: newContent }],
+          () => null,
+        );
+        if (tab) useTabsStore.getState().setDirty(tab.id, true);
+      }
     }
     await getActiveRepository().writeFileContent(file.id, newContent);
+    if (openModel) {
+      modelRegistry.markSaved(file.id, newContent);
+      const tab = useTabsStore.getState().tabForFile(file.id);
+      if (tab)
+        useTabsStore
+          .getState()
+          .setDirty(tab.id, openModel.getValue() !== newContent);
+    }
     useWorkspaceStore.getState().updateNode(file.id, { size: newContent.length });
   }
 

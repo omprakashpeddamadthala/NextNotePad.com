@@ -21,7 +21,7 @@ interface TabsState {
 
 interface TabsActions {
   openTab: (fileId: string, opts?: { pinned?: boolean; readOnly?: boolean }) => string;
-  closeTab: (tabId: string) => void;
+  closeTab: (tabId: string, opts?: { force?: boolean }) => void;
   closeOthers: (tabId: string) => void;
   closeLeft: (tabId: string) => void;
   closeRight: (tabId: string) => void;
@@ -36,9 +36,41 @@ interface TabsActions {
   setSplitView: (split: SplitView | null) => void;
   resetSession: () => void;
   remapFileIds: (idMap: Record<string, string>) => void;
+  forgetClosedFiles: (fileIds: string[]) => void;
   nextTab: () => void;
   previousTab: () => void;
   tabForFile: (fileId: string) => Tab | undefined;
+}
+
+function confirmDirtyClose(
+  state: TabsState,
+  tabIds: string[],
+): boolean {
+  if (!tabIds.some((id) => state.dirtyTabIds[id])) return true;
+  if (typeof window === "undefined") return false;
+  return window.confirm(
+    "Discard unsaved changes in the selected tab(s)? This cannot be undone.",
+  );
+}
+
+function removeDirtyFlags(
+  dirtyTabIds: Record<string, boolean>,
+  removedIds: Set<string>,
+): Record<string, boolean> {
+  return Object.fromEntries(
+    Object.entries(dirtyTabIds).filter(([id]) => !removedIds.has(id)),
+  );
+}
+
+function keepValidSplit(
+  splitView: SplitView | null,
+  keptIds: Set<string>,
+): SplitView | null {
+  return splitView &&
+    keptIds.has(splitView.leftTabId) &&
+    keptIds.has(splitView.rightTabId)
+    ? splitView
+    : null;
 }
 
 export const useTabsStore = create<TabsState & TabsActions>()(
@@ -69,10 +101,11 @@ export const useTabsStore = create<TabsState & TabsActions>()(
         return tab.id;
       },
 
-      closeTab: (tabId) => {
+      closeTab: (tabId, opts) => {
         const state = get();
         const index = state.tabs.findIndex((t) => t.id === tabId);
         if (index === -1) return;
+        if (!opts?.force && !confirmDirtyClose(state, [tabId])) return;
         const closedTab = state.tabs[index];
         const remaining = state.tabs.filter((t) => t.id !== tabId);
         const { [tabId]: _removedDirty, ...restDirty } = state.dirtyTabIds;
@@ -97,37 +130,77 @@ export const useTabsStore = create<TabsState & TabsActions>()(
         });
       },
 
-      closeOthers: (tabId) =>
-        set((state) => {
-          const kept = state.tabs.filter((t) => t.id === tabId || t.pinned);
-          return { tabs: kept, activeTabId: tabId };
-        }),
+      closeOthers: (tabId) => {
+        const state = get();
+        const kept = state.tabs.filter((t) => t.id === tabId || t.pinned);
+        const keptIds = new Set(kept.map((t) => t.id));
+        const removedIds = new Set(
+          state.tabs.filter((t) => !keptIds.has(t.id)).map((t) => t.id),
+        );
+        if (!confirmDirtyClose(state, [...removedIds])) return;
+        set({
+          tabs: kept,
+          activeTabId: tabId,
+          dirtyTabIds: removeDirtyFlags(state.dirtyTabIds, removedIds),
+          splitView: keepValidSplit(state.splitView, keptIds),
+        });
+      },
 
-      closeLeft: (tabId) =>
-        set((state) => {
-          const index = state.tabs.findIndex((t) => t.id === tabId);
-          if (index === -1) return state;
-          const kept = state.tabs.filter((t, i) => i >= index || t.pinned);
-          return { tabs: kept };
-        }),
+      closeLeft: (tabId) => {
+        const state = get();
+        const index = state.tabs.findIndex((t) => t.id === tabId);
+        if (index === -1) return;
+        const kept = state.tabs.filter((t, i) => i >= index || t.pinned);
+        const keptIds = new Set(kept.map((t) => t.id));
+        const removedIds = new Set(
+          state.tabs.filter((t) => !keptIds.has(t.id)).map((t) => t.id),
+        );
+        if (!confirmDirtyClose(state, [...removedIds])) return;
+        set({
+          tabs: kept,
+          activeTabId: keptIds.has(state.activeTabId ?? "")
+            ? state.activeTabId
+            : tabId,
+          dirtyTabIds: removeDirtyFlags(state.dirtyTabIds, removedIds),
+          splitView: keepValidSplit(state.splitView, keptIds),
+        });
+      },
 
-      closeRight: (tabId) =>
-        set((state) => {
-          const index = state.tabs.findIndex((t) => t.id === tabId);
-          if (index === -1) return state;
-          const kept = state.tabs.filter((t, i) => i <= index || t.pinned);
-          return { tabs: kept };
-        }),
+      closeRight: (tabId) => {
+        const state = get();
+        const index = state.tabs.findIndex((t) => t.id === tabId);
+        if (index === -1) return;
+        const kept = state.tabs.filter((t, i) => i <= index || t.pinned);
+        const keptIds = new Set(kept.map((t) => t.id));
+        const removedIds = new Set(
+          state.tabs.filter((t) => !keptIds.has(t.id)).map((t) => t.id),
+        );
+        if (!confirmDirtyClose(state, [...removedIds])) return;
+        set({
+          tabs: kept,
+          activeTabId: keptIds.has(state.activeTabId ?? "")
+            ? state.activeTabId
+            : tabId,
+          dirtyTabIds: removeDirtyFlags(state.dirtyTabIds, removedIds),
+          splitView: keepValidSplit(state.splitView, keptIds),
+        });
+      },
 
-      closeAll: () =>
-        set((state) => {
-          const kept = state.tabs.filter((t) => t.pinned);
-          return {
-            tabs: kept,
-            activeTabId: kept[0]?.id ?? null,
-            splitView: null,
-          };
-        }),
+      closeAll: () => {
+        const state = get();
+        const kept = state.tabs.filter((t) => t.pinned);
+        const keptIds = new Set(kept.map((t) => t.id));
+        const removedIds = new Set(
+          state.tabs.filter((t) => !keptIds.has(t.id)).map((t) => t.id),
+        );
+        if (!confirmDirtyClose(state, [...removedIds])) return;
+        set({
+          tabs: kept,
+          activeTabId: kept[0]?.id ?? null,
+          dirtyTabIds: removeDirtyFlags(state.dirtyTabIds, removedIds),
+          splitView: null,
+        });
+      },
 
       pinTab: (tabId, pinned) =>
         set((state) => ({
@@ -198,6 +271,16 @@ export const useTabsStore = create<TabsState & TabsActions>()(
         set((state) => ({
           tabs: state.tabs.map((t) => (idMap[t.fileId] ? { ...t, fileId: idMap[t.fileId] } : t)),
         })),
+
+      forgetClosedFiles: (fileIds) =>
+        set((state) => {
+          const removed = new Set(fileIds);
+          return {
+            closedStack: state.closedStack.filter(
+              (tab) => !removed.has(tab.fileId),
+            ),
+          };
+        }),
     }),
     {
       name: "np-tabs",

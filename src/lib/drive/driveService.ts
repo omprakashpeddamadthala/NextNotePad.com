@@ -218,6 +218,25 @@ export class DriveService {
     return found[0] ?? null;
   }
 
+  async findChildByAppProperty(
+    parentId: string,
+    key: string,
+    value: string,
+    opts: { folder?: boolean } = {},
+  ): Promise<DriveEntry | null> {
+    const mime =
+      opts.folder === undefined
+        ? ""
+        : opts.folder
+          ? ` and mimeType = '${FOLDER_MIME}'`
+          : ` and mimeType != '${FOLDER_MIME}'`;
+    const found = await this.list(
+      `'${escapeQuery(parentId)}' in parents and trashed = false and appProperties has { key='${escapeQuery(key)}' and value='${escapeQuery(value)}' }${mime}`,
+      10,
+    );
+    return found[0] ?? null;
+  }
+
   async listChildren(parentId: string): Promise<DriveEntry[]> {
     return this.list(`'${parentId}' in parents and trashed = false`);
   }

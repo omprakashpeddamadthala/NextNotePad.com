@@ -39,9 +39,22 @@ function splitWords(input: string): string[] {
 export const caseConverters = {
   upper: (text: string) => text.toUpperCase(),
   lower: (text: string) => text.toLowerCase(),
-  title: (text: string) => text.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()),
+  title: (text: string) =>
+    text
+      .toLocaleLowerCase()
+      .replace(
+        /(^|[^\p{L}\p{N}])(\p{L})/gu,
+        (_match, prefix: string, letter: string) =>
+          `${prefix}${letter.toLocaleUpperCase()}`,
+      ),
   sentence: (text: string) =>
-    text.toLowerCase().replace(/(^\s*\w|[.!?]\s+\w)/g, (c) => c.toUpperCase()),
+    text
+      .toLocaleLowerCase()
+      .replace(
+        /(^\s*|[.!?]\s+)(\p{L})/gu,
+        (_match, prefix: string, letter: string) =>
+          `${prefix}${letter.toLocaleUpperCase()}`,
+      ),
   camel: (text: string) => {
     const words = splitWords(text);
     return words
@@ -87,28 +100,38 @@ export function minifyJson(text: string): string {
   return JSON.stringify(JSON.parse(text));
 }
 
+function transformLines(
+  text: string,
+  transform: (lines: string[]) => string[],
+): string {
+  const eol = text.includes("\r\n") ? "\r\n" : "\n";
+  return transform(text.split(/\r?\n/)).join(eol);
+}
+
 export function sortLinesAscending(text: string): string {
-  return text.split("\n").sort((a, b) => a.localeCompare(b)).join("\n");
+  return transformLines(text, (lines) =>
+    lines.sort((a, b) => a.localeCompare(b)),
+  );
 }
 
 export function sortLinesDescending(text: string): string {
-  return text.split("\n").sort((a, b) => b.localeCompare(a)).join("\n");
+  return transformLines(text, (lines) =>
+    lines.sort((a, b) => b.localeCompare(a)),
+  );
 }
 
 export function removeDuplicateLines(text: string): string {
-  return Array.from(new Set(text.split("\n"))).join("\n");
+  return transformLines(text, (lines) => Array.from(new Set(lines)));
 }
 
 export function trimTrailingWhitespace(text: string): string {
-  return text
-    .split("\n")
-    .map((line) => line.replace(/[ \t]+$/, ""))
-    .join("\n");
+  return text.replace(/[ \t]+(?=\r?$)/gm, "");
 }
 
 /** Collapses runs of 2+ consecutive blank lines down to a single blank line. */
 export function collapseBlankLines(text: string): string {
-  return text.replace(/\n{3,}/g, "\n\n");
+  const eol = text.includes("\r\n") ? "\r\n" : "\n";
+  return text.replace(/(?:\r?\n[ \t]*){3,}/g, `${eol}${eol}`);
 }
 
 const INDENT_WIDTH = 4;
@@ -142,13 +165,14 @@ export function generateUuid(): string {
   return uuidv4();
 }
 
-/** Accepts Unix time in seconds or milliseconds (10 vs 13+ digit input) and returns an ISO 8601
- *  string. Throws on non-numeric or out-of-range input so callers can surface an error toast. */
+/** Accepts Unix time in seconds or milliseconds. Values whose magnitude is at least 1e11 are
+ *  interpreted as milliseconds, covering contemporary and pre-2001 millisecond timestamps.
+ *  Throws on non-numeric or out-of-range input so callers can surface an error toast. */
 export function unixToIsoDate(text: string): string {
   const trimmed = text.trim();
   if (!/^-?\d+$/.test(trimmed)) throw new Error("Not a valid Unix timestamp");
   const n = Number(trimmed);
-  const ms = trimmed.replace("-", "").length >= 13 ? n : n * 1000;
+  const ms = Math.abs(n) >= 100_000_000_000 ? n : n * 1000;
   const date = new Date(ms);
   if (Number.isNaN(date.getTime())) throw new Error("Timestamp out of range");
   return date.toISOString();
@@ -211,26 +235,37 @@ export function unescapeJsonString(text: string): string {
   return JSON.parse(`"${text}"`);
 }
 
-function parseIntStrict(text: string, radix: number, pattern: RegExp): number {
-  const trimmed = text.trim().replace(/^0[xXbB]/, "");
-  if (!pattern.test(trimmed)) throw new Error(`Not a valid base-${radix} number`);
-  return parseInt(trimmed, radix);
+function parseBigIntStrict(
+  text: string,
+  radix: 2 | 10 | 16,
+  pattern: RegExp,
+): bigint {
+  let trimmed = text.trim();
+  const negative = trimmed.startsWith("-");
+  if (negative) trimmed = trimmed.slice(1);
+  if (radix === 16) trimmed = trimmed.replace(/^0[xX]/, "");
+  if (radix === 2) trimmed = trimmed.replace(/^0[bB]/, "");
+  if (!pattern.test(`${negative ? "-" : ""}${trimmed}`))
+    throw new Error(`Not a valid base-${radix} number`);
+  const prefix = radix === 16 ? "0x" : radix === 2 ? "0b" : "";
+  const value = BigInt(`${prefix}${trimmed}`);
+  return negative ? -value : value;
 }
 
 export function decimalToHex(text: string): string {
-  return parseIntStrict(text, 10, /^-?\d+$/).toString(16);
+  return parseBigIntStrict(text, 10, /^-?\d+$/).toString(16);
 }
 
 export function hexToDecimal(text: string): string {
-  return parseIntStrict(text, 16, /^-?[0-9a-fA-F]+$/).toString(10);
+  return parseBigIntStrict(text, 16, /^-?[0-9a-fA-F]+$/).toString(10);
 }
 
 export function decimalToBinary(text: string): string {
-  return parseIntStrict(text, 10, /^-?\d+$/).toString(2);
+  return parseBigIntStrict(text, 10, /^-?\d+$/).toString(2);
 }
 
 export function binaryToDecimal(text: string): string {
-  return parseIntStrict(text, 2, /^-?[01]+$/).toString(10);
+  return parseBigIntStrict(text, 2, /^-?[01]+$/).toString(10);
 }
 
 export function hexToRgb(text: string): string {

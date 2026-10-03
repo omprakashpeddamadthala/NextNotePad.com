@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+  getDriveSession,
   getDriveSessionWithWorkspace,
   driveErrorResponse,
 } from "@/lib/drive/session";
-import { nodeDto, trashNode, updateNode } from "@/lib/drive/workspaceService";
+import {
+  getWorkspace,
+  nodeDto,
+  trashNode,
+  updateNode,
+} from "@/lib/drive/workspaceService";
 import { updateFolderSchema } from "@/lib/validation/workspaceSchemas";
 import { unauthorized, badRequest } from "@/lib/api/respond";
 
@@ -13,13 +19,23 @@ interface RouteParams {
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
-    const session = await getDriveSessionWithWorkspace();
+    const requestedWorkspaceId =
+      request.nextUrl.searchParams.get("workspaceId");
+    const session = requestedWorkspaceId
+      ? await getDriveSession()
+      : await getDriveSessionWithWorkspace();
     if (!session) return unauthorized();
     const { id } = await params;
     const parsed = updateFolderSchema.safeParse(await request.json());
     if (!parsed.success) return badRequest(parsed.error);
-    const { ds, workspaceId } = session;
-    const entry = await updateNode(ds, workspaceId, id, parsed.data);
+    const { ds } = session;
+    const workspaceId =
+      requestedWorkspaceId ??
+      (session as { workspaceId?: string }).workspaceId ??
+      null;
+    if (!workspaceId) return unauthorized();
+    if (requestedWorkspaceId) await getWorkspace(ds, requestedWorkspaceId);
+    const entry = await updateNode(ds, workspaceId, id, parsed.data, "folder");
     return NextResponse.json(await nodeDto(ds, entry, workspaceId));
   } catch (err) {
     return driveErrorResponse(err, "Update folder");
@@ -27,12 +43,23 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 }
 
 /** Trashing a Drive folder trashes its whole subtree, so no per-descendant cascade is needed. */
-export async function DELETE(_request: NextRequest, { params }: RouteParams) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const session = await getDriveSessionWithWorkspace();
+    const requestedWorkspaceId =
+      request.nextUrl.searchParams.get("workspaceId");
+    const session = requestedWorkspaceId
+      ? await getDriveSession()
+      : await getDriveSessionWithWorkspace();
     if (!session) return unauthorized();
     const { id } = await params;
-    await trashNode(session.ds, id);
+    const workspaceId =
+      requestedWorkspaceId ??
+      (session as { workspaceId?: string }).workspaceId ??
+      null;
+    if (!workspaceId) return unauthorized();
+    if (requestedWorkspaceId)
+      await getWorkspace(session.ds, requestedWorkspaceId);
+    await trashNode(session.ds, workspaceId, id, "folder");
     return NextResponse.json({ ok: true });
   } catch (err) {
     return driveErrorResponse(err, "Delete folder");

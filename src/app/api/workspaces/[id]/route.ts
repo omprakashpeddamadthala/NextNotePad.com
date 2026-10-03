@@ -6,6 +6,7 @@ import {
   listWorkspaceEntries,
   renameWorkspace,
   setActiveWorkspace,
+  withWorkspaceMutationLock,
   workspaceToDto,
 } from "@/lib/drive/workspaceService";
 import { unauthorized, badRequest } from "@/lib/api/respond";
@@ -34,8 +35,10 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
     const { id } = await params;
     const parsed = updateWorkspaceSchema.safeParse(await request.json());
     if (!parsed.success) return badRequest(parsed.error);
-    return NextResponse.json(
-      workspaceToDto(await renameWorkspace(session.ds, id, parsed.data)),
+    return await withWorkspaceMutationLock(session.user.id, async () =>
+      NextResponse.json(
+        workspaceToDto(await renameWorkspace(session.ds, id, parsed.data)),
+      ),
     );
   } catch (err) {
     return driveErrorResponse(err, "Rename workspace");
@@ -48,21 +51,23 @@ export async function DELETE(_req: NextRequest, { params }: Ctx) {
     const session = await getDriveSession();
     if (!session) return unauthorized();
     const { id } = await params;
-    const { ds } = session;
-    await getWorkspace(ds, id);
-    const all = await listWorkspaceEntries(ds);
-    if (all.length <= 1) {
-      return NextResponse.json(
-        { error: "Cannot delete your only workspace." },
-        { status: 400 },
-      );
-    }
-    const config = await new AppConfigService(ds).load({ fresh: true });
-    if (config.activeWorkspaceId === id) {
-      await setActiveWorkspace(ds, all.find((w) => w.id !== id)!.id);
-    }
-    await ds.trash(id);
-    return NextResponse.json({ success: true });
+    const { ds, user } = session;
+    return await withWorkspaceMutationLock(user.id, async () => {
+      await getWorkspace(ds, id);
+      const all = await listWorkspaceEntries(ds);
+      if (all.length <= 1) {
+        return NextResponse.json(
+          { error: "Cannot delete your only workspace." },
+          { status: 400 },
+        );
+      }
+      const config = await new AppConfigService(ds).load({ fresh: true });
+      if (config.activeWorkspaceId === id) {
+        await setActiveWorkspace(ds, all.find((w) => w.id !== id)!.id);
+      }
+      await ds.trash(id);
+      return NextResponse.json({ success: true });
+    });
   } catch (err) {
     return driveErrorResponse(err, "Delete workspace");
   }

@@ -174,6 +174,8 @@ export function QuickOpenDialog() {
           });
           return;
         }
+        useWorkspaceStore.getState().clearWorkspace();
+        useTabsStore.getState().resetSession();
         const data = await treePromise;
         useWorkspaceStore
           .getState()

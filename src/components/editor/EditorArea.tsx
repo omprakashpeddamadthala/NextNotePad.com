@@ -80,6 +80,16 @@ export function EditorArea() {
     setSplitView({ leftTabId: activeTabId, rightTabId: other.id });
   }, [workspaceLoading, isSplitView, splitView, tabs, activeTabId, setSplitView]);
 
+  useEffect(() => {
+    if (!splitView || !activeTabId) return;
+    if (
+      splitView.leftTabId === activeTabId ||
+      splitView.rightTabId === activeTabId
+    )
+      return;
+    setSplitView({ leftTabId: activeTabId, rightTabId: splitView.rightTabId });
+  }, [activeTabId, splitView, setSplitView]);
+
   return (
     <div
       id="editor-main"
@@ -98,7 +108,8 @@ export function EditorArea() {
           </div>
         ) : diffView ? (
           <DiffTabView diff={diffView} />
-        ) : markdownFullPageFileId ? (
+        ) : markdownFullPageFileId &&
+          activeTab?.fileId === markdownFullPageFileId ? (
           <MarkdownFullPageView
             key={markdownFullPageFileId}
             fileId={markdownFullPageFileId}

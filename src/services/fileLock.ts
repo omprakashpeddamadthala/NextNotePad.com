@@ -11,7 +11,7 @@ import type { FileNode } from "@/types/file";
 
 function closeTabAndDisposeModel(fileId: string): void {
   const tab = useTabsStore.getState().tabForFile(fileId);
-  if (tab) useTabsStore.getState().closeTab(tab.id);
+  if (tab) useTabsStore.getState().closeTab(tab.id, { force: true });
   modelRegistry.disposeModel(fileId);
 }
 
@@ -27,12 +27,13 @@ async function lockSingleFile(id: string, passphrase: string): Promise<boolean> 
   const { ciphertext, salt, iv } = await encryptContent(plaintext, passphrase);
 
   if (isCloudMode()) {
-    await cloudRepo.patchCloudFile(id, {
+    const updated = (await cloudRepo.patchCloudFile(id, {
       content: ciphertext,
       locked: true,
       encryptionSalt: salt,
       encryptionIv: iv,
-    });
+    })) as FileNode;
+    useWorkspaceStore.getState().updateNode(id, updated);
   } else {
     await localRepo.writeFileContent(id, ciphertext);
   }
@@ -70,12 +71,13 @@ export async function unlockSingleFile(id: string, passphrase: string): Promise<
   }
 
   if (isCloudMode()) {
-    await cloudRepo.patchCloudFile(id, {
+    const updated = (await cloudRepo.patchCloudFile(id, {
       content: plaintext,
       locked: false,
       encryptionSalt: null,
       encryptionIv: null,
-    });
+    })) as FileNode;
+    useWorkspaceStore.getState().updateNode(id, updated);
   } else {
     await localRepo.writeFileContent(id, plaintext);
   }

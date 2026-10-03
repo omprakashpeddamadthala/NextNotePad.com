@@ -87,6 +87,29 @@ interface MonacoEditorWrapperProps {
   registerGlobalActions?: boolean;
 }
 
+function MonacoActionsRegistrar({
+  editorRef,
+  fileId,
+  tabId,
+  saveActiveFile,
+}: {
+  editorRef: React.RefObject<MonacoEditorNS.IStandaloneCodeEditor | null>;
+  fileId: string;
+  tabId: string;
+  saveActiveFile: () => Promise<boolean>;
+}) {
+  useMonacoGlobalActions({
+    registerGlobalActions: true,
+    editorRef,
+    fileId,
+    tabId,
+    saveActiveFile,
+  });
+  useMonacoTextToolActions({ registerGlobalActions: true, editorRef });
+  useMonacoAiActions({ registerGlobalActions: true, editorRef });
+  return null;
+}
+
 export function MonacoEditorWrapper({
   fileId,
   tabId,
@@ -96,6 +119,7 @@ export function MonacoEditorWrapper({
   const monacoRef = useRef<Parameters<OnMount>[1] | null>(null);
   const currentFileIdRef = useRef<string | null>(null);
   const currentTabIdRef = useRef<string | null>(null);
+  const loadRequestRef = useRef(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<unknown>(null);
   /** Bumped by the retry button to re-run the load effect after a failure. */
@@ -140,15 +164,16 @@ export function MonacoEditorWrapper({
     id: string,
     tid: string,
     opts?: { silent?: boolean },
-  ) {
+  ): Promise<boolean> {
     const model = modelRegistry.getModel(id);
-    if (!model) return;
+    if (!model) return false;
     const value = model.getValue();
     try {
       await getActiveRepository().writeFileContent(id, value);
       modelRegistry.markSaved(id, value);
-      setDirty(tid, false);
+      setDirty(tid, model.getValue() !== value);
       updateNode(id, { size: value.length });
+      return true;
     } catch (err) {
       const detail = err instanceof Error ? err.message : "Unknown error.";
       // Autosave failures still surface — silently dropping them is how you lose work — but as
@@ -159,6 +184,7 @@ export function MonacoEditorWrapper({
           ? `${detail} Your changes are still here — retry with Ctrl+S.`
           : detail,
       });
+      return false;
     }
   }
 
@@ -211,6 +237,7 @@ export function MonacoEditorWrapper({
     const editor = editorRef.current;
     if (!monaco || !editor) return;
 
+    const requestId = ++loadRequestRef.current;
     persistViewState(currentTabIdRef.current);
 
     const node = useWorkspaceStore.getState().nodes[id];
@@ -231,6 +258,7 @@ export function MonacoEditorWrapper({
       try {
         content = await getActiveRepository().readFileContent(id);
       } catch (err) {
+        if (requestId !== loadRequestRef.current) return;
         // Without this, a failed read rejected out of the effect entirely: the error surfaced as
         // an unhandled rejection and `setLoading(false)` never ran, leaving the pane stuck on
         // "Loading…" forever with no way to recover short of a page reload.
@@ -238,6 +266,7 @@ export function MonacoEditorWrapper({
         setLoading(false);
         return;
       }
+      if (requestId !== loadRequestRef.current) return;
       const loadedNode = useWorkspaceStore.getState().nodes[id];
       model = modelRegistry.getOrCreateModel(
         monaco,
@@ -246,6 +275,7 @@ export function MonacoEditorWrapper({
         loadedNode?.type === "file" ? loadedNode.language : "plaintext",
       );
     }
+    if (requestId !== loadRequestRef.current) return;
     // Must run on every path, not just the fresh-load one above: reopening a file whose model is
     // still cached from an earlier tab (models outlive tab-close, by design, to keep undo history)
     // skips that branch entirely, and `loading` starts `true` on every mount — leaving the skeleton
@@ -352,8 +382,11 @@ export function MonacoEditorWrapper({
     });
 
     editor.onDidFocusEditorText(() => {
-      const node = useWorkspaceStore.getState().nodes[fileId];
+      const id = currentFileIdRef.current;
+      const tid = currentTabIdRef.current;
+      const node = id ? useWorkspaceStore.getState().nodes[id] : undefined;
       if (node) setSelectedNodeId(node.id);
+      if (tid) useTabsStore.getState().setActiveTab(tid);
     });
 
     // Toggle find widget on Ctrl+F (opens if closed, closes if already revealed)
@@ -389,6 +422,10 @@ export function MonacoEditorWrapper({
 
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyD, () => {
       editor.getAction("editor.action.copyLinesDownAction")?.run();
+    });
+
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyL, () => {
+      editor.getAction("editor.action.deleteLines")?.run();
     });
 
     editor.addCommand(
@@ -492,23 +529,13 @@ export function MonacoEditorWrapper({
 
   useVoiceDictationTarget(editorRef, registerGlobalActions);
 
-  function saveActiveFile() {
+  function saveActiveFile(): Promise<boolean> {
     const id = currentFileIdRef.current;
     const tid = currentTabIdRef.current;
-    if (!id || !tid) return;
+    if (!id || !tid) return Promise.resolve(false);
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
-    void persistFile(id, tid);
+    return persistFile(id, tid);
   }
-
-  useMonacoGlobalActions({
-    registerGlobalActions,
-    editorRef,
-    fileId,
-    tabId,
-    saveActiveFile,
-  });
-  useMonacoTextToolActions({ registerGlobalActions, editorRef });
-  useMonacoAiActions({ registerGlobalActions, editorRef });
 
   const themeModule = THEME_MODULES[theme];
 
@@ -525,10 +552,17 @@ export function MonacoEditorWrapper({
 
   async function handleImageFile(imgFile: File) {
     const editor = editorRef.current;
-    if (!editor) return;
+    const targetFileId = currentFileIdRef.current;
+    const targetModel = editor?.getModel();
+    if (!editor || !targetFileId || !targetModel) return;
     if (!imgFile.type.startsWith("image/")) return;
     try {
       const dataUrl = await fileToDataUrl(imgFile);
+      if (
+        currentFileIdRef.current !== targetFileId ||
+        editorRef.current?.getModel() !== targetModel
+      )
+        return;
       const altText = imgFile.name.replace(/\.[^.]+$/, ""); // strip extension
       insertImageMarkdown(editor, altText, dataUrl);
     } catch {
@@ -615,6 +649,14 @@ export function MonacoEditorWrapper({
         void handleImageFile(imgFile);
       }}
     >
+      {registerGlobalActions && (
+        <MonacoActionsRegistrar
+          editorRef={editorRef}
+          fileId={fileId}
+          tabId={tabId}
+          saveActiveFile={saveActiveFile}
+        />
+      )}
       {isLocked && <LockedFileOverlay key={fileId} fileId={fileId} />}
       {loadError !== null && !isLocked && (
         <div className="bg-background absolute inset-0 z-10">

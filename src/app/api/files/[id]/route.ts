@@ -37,17 +37,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       null;
     if (!workspaceId) return unauthorized();
     if (requestedWorkspaceId) await getWorkspace(ds, requestedWorkspaceId);
-    let entry: Awaited<ReturnType<typeof getNode>>;
-    let content: string;
-    if (requestedWorkspaceId) {
-      entry = await getNode(ds, id);
-      if (isFolder(entry)) return notFound();
-      await assertNodeInWorkspace(ds, entry, workspaceId);
-      content = await ds.readText(id);
-    } else {
-      [entry, content] = await Promise.all([getNode(ds, id), ds.readText(id)]);
-      if (isFolder(entry)) return notFound();
-    }
+    const entry = await getNode(ds, id);
+    if (isFolder(entry)) return notFound();
+    await assertNodeInWorkspace(ds, entry, workspaceId);
+    const content = await ds.readText(id);
     return NextResponse.json({
       ...(await nodeDto(ds, entry, workspaceId)),
       content,
@@ -59,13 +52,23 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
-    const session = await getDriveSessionWithWorkspace();
+    const requestedWorkspaceId =
+      request.nextUrl.searchParams.get("workspaceId");
+    const session = requestedWorkspaceId
+      ? await getDriveSession()
+      : await getDriveSessionWithWorkspace();
     if (!session) return unauthorized();
     const { id } = await params;
     const parsed = updateFileSchema.safeParse(await request.json());
     if (!parsed.success) return badRequest(parsed.error);
-    const { ds, workspaceId } = session;
-    const entry = await updateNode(ds, workspaceId, id, parsed.data);
+    const { ds } = session;
+    const workspaceId =
+      requestedWorkspaceId ??
+      (session as { workspaceId?: string }).workspaceId ??
+      null;
+    if (!workspaceId) return unauthorized();
+    if (requestedWorkspaceId) await getWorkspace(ds, requestedWorkspaceId);
+    const entry = await updateNode(ds, workspaceId, id, parsed.data, "file");
     const moved =
       parsed.data.name !== undefined || parsed.data.parentId !== undefined;
     // Content-only saves (autosave) skip the parent walk — the client already knows the path.
@@ -82,12 +85,23 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-export async function DELETE(_request: NextRequest, { params }: RouteParams) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const session = await getDriveSessionWithWorkspace();
+    const requestedWorkspaceId =
+      request.nextUrl.searchParams.get("workspaceId");
+    const session = requestedWorkspaceId
+      ? await getDriveSession()
+      : await getDriveSessionWithWorkspace();
     if (!session) return unauthorized();
     const { id } = await params;
-    await trashNode(session.ds, id);
+    const workspaceId =
+      requestedWorkspaceId ??
+      (session as { workspaceId?: string }).workspaceId ??
+      null;
+    if (!workspaceId) return unauthorized();
+    if (requestedWorkspaceId)
+      await getWorkspace(session.ds, requestedWorkspaceId);
+    await trashNode(session.ds, workspaceId, id, "file");
     return NextResponse.json({ ok: true });
   } catch (err) {
     return driveErrorResponse(err, "Delete file");

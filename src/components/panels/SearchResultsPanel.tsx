@@ -50,22 +50,26 @@ export function SearchResultsPanel() {
   const [collapsedFiles, setCollapsedFiles] = useState<Set<string>>(new Set());
   const [searching, setSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const searchRequestRef = useRef(0);
 
   const options: SearchOptions = { isRegex, wholeWord, caseSensitive };
 
   const runSearch = useDebouncedCallback(async (q: string, opts: SearchOptions) => {
+    const requestId = ++searchRequestRef.current;
     if (!q) {
       setResults([]);
       setHasSearched(false);
+      setSearching(false);
       return;
     }
     setSearching(true);
     try {
       const r = await searchWorkspace(useWorkspaceStore.getState().nodes, q, opts);
+      if (requestId !== searchRequestRef.current) return;
       setResults(r);
       setHasSearched(true);
     } finally {
-      setSearching(false);
+      if (requestId === searchRequestRef.current) setSearching(false);
     }
   }, 300);
 
@@ -109,6 +113,8 @@ export function SearchResultsPanel() {
   }, [results, collapsedFiles]);
 
   const parentRef = useRef<HTMLDivElement>(null);
+  // TanStack Virtual returns imperative functions that React Compiler intentionally skips.
+  // eslint-disable-next-line react-hooks/incompatible-library
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => parentRef.current,

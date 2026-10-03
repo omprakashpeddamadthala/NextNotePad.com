@@ -135,7 +135,7 @@ export function DiffTabView({ diff }: { diff: DiffView }) {
             theme={themeModule.monacoThemeId}
             beforeMount={handleMonacoBeforeMount}
             options={{
-              readOnly: false,
+              readOnly: true,
               // Two panes don't fit on a phone — Monaco's inline mode stacks the diff instead.
               renderSideBySide: !isMobile,
               minimap: { enabled: false },

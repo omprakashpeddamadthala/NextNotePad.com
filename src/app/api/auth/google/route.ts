@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { buildGoogleAuthUrl, getAppOrigin, OAUTH_STATE_COOKIE_NAME } from "@/lib/auth/google";
+import {
+  buildGoogleAuthUrl,
+  getAppOrigin,
+  oauthStateCookieName,
+} from "@/lib/auth/google";
 
 export async function GET() {
   try {
@@ -20,7 +24,7 @@ export async function GET() {
     const isHttps = appOrigin.startsWith("https");
 
     const response = NextResponse.redirect(authUrl);
-    response.cookies.set(OAUTH_STATE_COOKIE_NAME, state, {
+    response.cookies.set(oauthStateCookieName(state), state, {
       httpOnly: true,
       secure: isHttps,
       sameSite: "lax",

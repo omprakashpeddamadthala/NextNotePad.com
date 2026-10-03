@@ -396,7 +396,7 @@ export function ToolsNavRail() {
               icon={Hash}
               iconColor="text-orange-400"
               title="Hash Generator"
-              subtitle="MD5, SHA-1, SHA-256..."
+              subtitle="SHA-1, SHA-256, SHA-384..."
               filter={q}
             >
               {HASH_ALGORITHMS.map((algo) => (

@@ -35,6 +35,23 @@ export function createFakeDrive() {
       if (!ids.some((id) => f.parents.includes(id))) return false;
       rest = orGroup[2];
     }
+    const appPropertyClauses = [
+      ...rest.matchAll(
+        /appProperties has \{ key='((?:[^'\\]|\\.)*)' and value='((?:[^'\\]|\\.)*)' \}/g,
+      ),
+    ];
+    for (const [, rawKey, rawValue] of appPropertyClauses) {
+      const key = rawKey.replace(/\\(.)/g, "$1");
+      const value = rawValue.replace(/\\(.)/g, "$1");
+      if (f.appProperties[key] !== value) return false;
+    }
+    rest = rest
+      .replace(
+        /(?: and )?appProperties has \{ key='((?:[^'\\]|\\.)*)' and value='((?:[^'\\]|\\.)*)' \}/g,
+        "",
+      )
+      .trim();
+    if (!rest) return true;
     for (const clause of rest.split(" and ")) {
       let m;
       if ((m = clause.match(/^name = '((?:[^'\\]|\\.)*)'$/))) {

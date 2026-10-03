@@ -3,7 +3,12 @@ import {
   getDriveSessionWithWorkspace,
   driveErrorResponse,
 } from "@/lib/drive/session";
-import { createNode } from "@/lib/drive/workspaceService";
+import {
+  AppError,
+  createNode,
+  GUEST_IMPORT_ID_PROPERTY,
+  updateNode,
+} from "@/lib/drive/workspaceService";
 import { importWorkspaceSchema } from "@/lib/validation/workspaceSchemas";
 import { unauthorized, badRequest } from "@/lib/api/respond";
 
@@ -33,14 +38,39 @@ export async function POST(request: NextRequest) {
       for (let i = 0; i < ready.length; i += CONCURRENCY) {
         await Promise.all(
           ready.slice(i, i + CONCURRENCY).map(async (node) => {
-            const entry = await createNode(ds, workspaceId, {
-              type: node.type,
-              parentId: node.parentId ? idMap.get(node.parentId)! : null,
-              name: node.name,
-              content: node.content,
-              language: node.language,
-              encoding: node.encoding,
-            });
+            const parentId = node.parentId
+              ? idMap.get(node.parentId)!
+              : workspaceId;
+            const existing = await ds.findChildByAppProperty(
+              parentId,
+              GUEST_IMPORT_ID_PROPERTY,
+              node.id,
+              { folder: node.type === "folder" },
+            );
+            const entry = existing
+              ? await updateNode(
+                  ds,
+                  workspaceId,
+                  existing.id,
+                  node.type === "file"
+                    ? {
+                        name: node.name,
+                        content: node.content,
+                        language: node.language,
+                        encoding: node.encoding,
+                      }
+                    : { name: node.name },
+                  node.type,
+                )
+              : await createNode(ds, workspaceId, {
+                  type: node.type,
+                  parentId: node.parentId ? idMap.get(node.parentId)! : null,
+                  name: node.name,
+                  content: node.content,
+                  language: node.language,
+                  encoding: node.encoding,
+                  importId: node.id,
+                });
             if (node.type === "file" && node.locked) {
               await ds.update(entry.id, {
                 appProperties: {
@@ -55,11 +85,14 @@ export async function POST(request: NextRequest) {
         );
       }
     }
+    if (pending.length > 0) {
+      throw new AppError("Import contains missing or cyclic parents.", 400);
+    }
 
     return NextResponse.json({
       idMap: Object.fromEntries(idMap),
       imported: idMap.size,
-      skipped: pending.length,
+      skipped: 0,
     });
   } catch (err) {
     return driveErrorResponse(err, "Import workspace");

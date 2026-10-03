@@ -9,6 +9,35 @@ import * as cloudRepo from "@/services/storage/cloudWorkspaceRepository";
 import type { WorkspaceNode } from "@/types/file";
 import type { NodeMap } from "@/lib/utils/treeUtils";
 import { prefetchFileContents } from "@/services/storage/driveDataClient";
+import { useAuthStore } from "@/store/authStore";
+
+const MIGRATION_PENDING_PREFIX = "np-guest-migration-pending:";
+
+function migrationPendingKey(): string | null {
+  const userId = useAuthStore.getState().user?.id;
+  return userId ? `${MIGRATION_PENDING_PREFIX}${userId}` : null;
+}
+
+function isMigrationPending(): boolean {
+  const key = migrationPendingKey();
+  if (!key || typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(key) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function setMigrationPending(pending: boolean): void {
+  const key = migrationPendingKey();
+  if (!key || typeof window === "undefined") return;
+  try {
+    if (pending) window.localStorage.setItem(key, "1");
+    else window.localStorage.removeItem(key);
+  } catch {
+    // The guest snapshot remains intact even if this retry hint cannot be persisted.
+  }
+}
 
 function toNodeMap(nodes: WorkspaceNode[]): NodeMap {
   return Object.fromEntries(nodes.map((n) => [n.id, n]));
@@ -31,6 +60,7 @@ export async function migrateOrLoadCloudWorkspace(): Promise<string | null> {
   let cloudNodes: WorkspaceNode[] = [];
   let hasAnyHistory = false;
   let loadedWorkspaceId: string | null = null;
+  const retryPendingMigration = isMigrationPending();
   const guestNodeList = Object.values(
     useWorkspaceStore.getState().nodes,
   ).filter((node) => !node.deleted);
@@ -56,7 +86,7 @@ export async function migrateOrLoadCloudWorkspace(): Promise<string | null> {
     return null;
   }
 
-  if (!hasAnyHistory && guestNodeList.length > 0) {
+  if ((!hasAnyHistory || retryPendingMigration) && guestNodeList.length > 0) {
     // Never make the one-time migration decision from a cached empty tree. A returning user may
     // have deleted every visible item, while `hasAnyHistory` still prevents resurrecting an old
     // guest snapshot.
@@ -69,12 +99,13 @@ export async function migrateOrLoadCloudWorkspace(): Promise<string | null> {
     loadedWorkspaceId = verified.workspaceId;
   }
 
-  if (!hasAnyHistory && guestNodeList.length > 0) {
+  if ((!hasAnyHistory || retryPendingMigration) && guestNodeList.length > 0) {
     const fileCount = guestNodeList.filter((n) => n.type === "file").length;
-    const accepted = await useMigrationPromptStore
-      .getState()
-      .request(fileCount);
+    const accepted =
+      retryPendingMigration ||
+      (await useMigrationPromptStore.getState().request(fileCount));
     if (!accepted) {
+      setMigrationPending(false);
       useWorkspaceStore.getState().replaceAll(toNodeMap(cloudNodes));
       useTabsStore.getState().resetSession();
       return loadedWorkspaceId;
@@ -100,12 +131,14 @@ export async function migrateOrLoadCloudWorkspace(): Promise<string | null> {
     );
 
     try {
+      setMigrationPending(true);
       const { idMap } = await cloudRepo.importWorkspace(payload);
       useTabsStore.getState().remapFileIds(idMap);
       const { nodes: freshNodes, workspaceId } =
         await cloudRepo.fetchWorkspaceTree();
       useWorkspaceStore.getState().replaceAll(toNodeMap(freshNodes));
       loadedWorkspaceId = workspaceId;
+      setMigrationPending(false);
       const count = Object.keys(idMap).length;
       toast.success(
         `Signed in — migrated ${count} item${count === 1 ? "" : "s"} to your cloud workspace.`,

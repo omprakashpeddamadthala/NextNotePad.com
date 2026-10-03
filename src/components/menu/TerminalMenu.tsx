@@ -50,7 +50,7 @@ export function TerminalMenu() {
         <Search className="size-4" /> Find in Files Panel
         <DropdownMenuShortcut>Ctrl+Shift+F</DropdownMenuShortcut>
       </DropdownMenuItem>
-      <DropdownMenuItem onSelect={() => runAction("tools.jsonPrettify")}>
+      <DropdownMenuItem onSelect={() => runAction("edit.formatDocument")}>
         <Play className="size-4" /> Run Formatter / Task
       </DropdownMenuItem>
       <DropdownMenuItem onSelect={() => runAction("tools.base64Encode")}>

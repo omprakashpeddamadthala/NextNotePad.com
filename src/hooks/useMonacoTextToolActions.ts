@@ -69,6 +69,41 @@ function transformActiveEditor(
   }
 }
 
+function transformSelectedLines(
+  editor: MonacoEditorNS.IStandaloneCodeEditor,
+  transform: (text: string) => string,
+  successMessage: string,
+  errorMessage: string,
+): void {
+  const model = editor.getModel();
+  const selection = editor.getSelection();
+  if (!model) return;
+  if (!selection || selection.isEmpty()) {
+    transformActiveEditor(editor, transform, successMessage, errorMessage);
+    return;
+  }
+  const endLine =
+    selection.endColumn === 1 &&
+    selection.endLineNumber > selection.startLineNumber
+      ? selection.endLineNumber - 1
+      : selection.endLineNumber;
+  const range = {
+    startLineNumber: selection.startLineNumber,
+    startColumn: 1,
+    endLineNumber: endLine,
+    endColumn: model.getLineMaxColumn(endLine),
+  };
+  try {
+    editor.executeEdits("tools", [
+      { range, text: transform(model.getValueInRange(range)) },
+    ]);
+    editor.pushUndoStop();
+    toast.success(successMessage);
+  } catch {
+    toast.error(errorMessage);
+  }
+}
+
 /** Reads the selection if one exists, otherwise the whole document — read-only counterpart to
  *  `transformActiveEditor`, used by the hash tool since hashing doesn't mutate the buffer. */
 function getActiveEditorSelectionOrDocument(editor: MonacoEditorNS.IStandaloneCodeEditor): string | null {
@@ -81,7 +116,7 @@ function getActiveEditorSelectionOrDocument(editor: MonacoEditorNS.IStandaloneCo
 
 async function hashActiveEditor(editor: MonacoEditorNS.IStandaloneCodeEditor, algorithm: HashAlgorithm): Promise<void> {
   const text = getActiveEditorSelectionOrDocument(editor);
-  if (!text) {
+  if (text === null) {
     toast.error("Open a file first to hash its content.");
     return;
   }
@@ -92,7 +127,7 @@ async function hashActiveEditor(editor: MonacoEditorNS.IStandaloneCodeEditor, al
 
 function reportTextStats(editor: MonacoEditorNS.IStandaloneCodeEditor): void {
   const text = getActiveEditorSelectionOrDocument(editor);
-  if (!text) {
+  if (text === null) {
     toast.error("Open a file first to count its content.");
     return;
   }
@@ -291,7 +326,7 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.lines.sortAsc",
     () => {
       if (registerGlobalActions && editorRef.current)
-        transformActiveEditor(editorRef.current, sortLinesAscending, "Lines sorted (A-Z).", "Couldn't sort lines.");
+        transformSelectedLines(editorRef.current, sortLinesAscending, "Lines sorted (A-Z).", "Couldn't sort lines.");
     },
     [registerGlobalActions],
   );
@@ -299,7 +334,7 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.lines.sortDesc",
     () => {
       if (registerGlobalActions && editorRef.current)
-        transformActiveEditor(editorRef.current, sortLinesDescending, "Lines sorted (Z-A).", "Couldn't sort lines.");
+        transformSelectedLines(editorRef.current, sortLinesDescending, "Lines sorted (Z-A).", "Couldn't sort lines.");
     },
     [registerGlobalActions],
   );
@@ -307,7 +342,7 @@ export function useMonacoTextToolActions({ registerGlobalActions, editorRef }: U
     "tools.lines.dedupe",
     () => {
       if (registerGlobalActions && editorRef.current)
-        transformActiveEditor(
+        transformSelectedLines(
           editorRef.current,
           removeDuplicateLines,
           "Duplicate lines removed.",

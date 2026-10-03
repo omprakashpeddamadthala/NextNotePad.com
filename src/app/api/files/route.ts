@@ -6,6 +6,7 @@ import {
 } from "@/lib/drive/session";
 import {
   createNode,
+  getWorkspace,
   listAllFiles,
   nodeDto,
 } from "@/lib/drive/workspaceService";
@@ -34,11 +35,21 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getDriveSessionWithWorkspace();
+    const requestedWorkspaceId =
+      request.nextUrl.searchParams.get("workspaceId");
+    const session = requestedWorkspaceId
+      ? await getDriveSession()
+      : await getDriveSessionWithWorkspace();
     if (!session) return unauthorized();
     const parsed = createFileSchema.safeParse(await request.json());
     if (!parsed.success) return badRequest(parsed.error);
-    const { ds, workspaceId } = session;
+    const { ds } = session;
+    const workspaceId =
+      requestedWorkspaceId ??
+      (session as { workspaceId?: string }).workspaceId ??
+      null;
+    if (!workspaceId) return unauthorized();
+    if (requestedWorkspaceId) await getWorkspace(ds, requestedWorkspaceId);
     const entry = await createNode(ds, workspaceId, {
       type: "file",
       ...parsed.data,

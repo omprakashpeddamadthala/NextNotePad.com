@@ -57,6 +57,7 @@ const POLICIES = {
 
 const memory = new Map<string, CacheRecord<unknown>>();
 const inFlight = new Map<string, Promise<unknown>>();
+const generations = new Map<string, number>();
 const fileWorkspaceIds = new Map<string, string>();
 let cacheStore: UseStore | undefined;
 let activeUserId: string | null = null;
@@ -115,9 +116,20 @@ function dedupe<T>(key: string, request: () => Promise<T>): Promise<T> {
     incrementDriveMetric("deduplicatedRequest");
     return existing;
   }
-  const next = request().finally(() => inFlight.delete(key));
+  const next = request().finally(() => {
+    if (inFlight.get(key) === next) inFlight.delete(key);
+  });
   inFlight.set(key, next);
   return next;
+}
+
+function generation(key: string): number {
+  return generations.get(key) ?? 0;
+}
+
+function invalidateKey(key: string): void {
+  generations.set(key, generation(key) + 1);
+  inFlight.delete(key);
 }
 
 async function cachedRequest<T>({
@@ -142,12 +154,15 @@ async function cachedRequest<T>({
 
   if (!force && cached && age(cached) <= policy.staleMs) {
     incrementDriveMetric("cacheStaleHit");
+    const requestGeneration = generation(key);
     void dedupe(key, async () => {
       try {
         incrementDriveMetric("apiRequest");
         const value = await request();
-        await writeRecord(key, value);
-        onFresh?.(value);
+        if (generation(key) === requestGeneration) {
+          await writeRecord(key, value);
+          onFresh?.(value);
+        }
         return value;
       } catch {
         return cached.value;
@@ -157,16 +172,19 @@ async function cachedRequest<T>({
   }
 
   incrementDriveMetric("cacheMiss");
+  const requestGeneration = generation(key);
   try {
     return await dedupe(key, async () => {
       incrementDriveMetric("apiRequest");
       const value = await request();
-      await writeRecord(key, value);
-      onFresh?.(value);
+      if (generation(key) === requestGeneration) {
+        await writeRecord(key, value);
+        onFresh?.(value);
+      }
       return value;
     });
   } catch (error) {
-    if (cached) return cached.value;
+    if (!force && cached) return cached.value;
     throw error;
   }
 }
@@ -337,6 +355,7 @@ export async function readDriveFileContent(
   }
 
   incrementDriveMetric("cacheMiss");
+  const requestGeneration = generation(key);
   return measureDriveTiming("file-content", () =>
     dedupe(key, async () => {
       incrementDriveMetric("apiRequest");
@@ -351,7 +370,9 @@ export async function readDriveFileContent(
           background: options.background,
         },
       );
-      await writeRecord(key, data.content ?? "", version);
+      if (generation(key) === requestGeneration) {
+        await writeRecord(key, data.content ?? "", version);
+      }
       return data.content ?? "";
     }),
   );
@@ -367,24 +388,32 @@ export async function writeCachedFileContent(
 
 export async function invalidateFileContent(fileId: string): Promise<void> {
   if (!activeUserId) return;
-  await deleteRecord(userKey(`content:${fileId}`));
+  const key = userKey(`content:${fileId}`);
+  invalidateKey(key);
+  await deleteRecord(key);
 }
 
 export async function invalidateWorkspaceTree(
   workspaceId: string,
 ): Promise<void> {
   if (!activeUserId) return;
-  await deleteRecord(userKey(`tree:${workspaceId}`));
+  const key = userKey(`tree:${workspaceId}`);
+  invalidateKey(key);
+  await deleteRecord(key);
 }
 
 export async function invalidateWorkspaceList(): Promise<void> {
   if (!activeUserId) return;
-  await deleteRecord(userKey("workspaces"));
+  const key = userKey("workspaces");
+  invalidateKey(key);
+  await deleteRecord(key);
 }
 
 export async function invalidateDriveFileIndex(): Promise<void> {
   if (!activeUserId) return;
-  await deleteRecord(userKey("files"));
+  const key = userKey("files");
+  invalidateKey(key);
+  await deleteRecord(key);
 }
 
 async function mapConcurrent<T>(
