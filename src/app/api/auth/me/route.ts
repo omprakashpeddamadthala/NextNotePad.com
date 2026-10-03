@@ -5,14 +5,25 @@ import { signSessionToken, SESSION_COOKIE_NAME, SESSION_TTL_SECONDS } from "@/li
 
 export async function GET() {
   const user = await getSessionUser();
-  if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  if (!user) {
+    return NextResponse.json(
+      { authenticated: false, user: null },
+      { status: 200 },
+    );
+  }
 
-  const response = NextResponse.json({
+  const authUser = {
     id: user.id,
     email: user.email,
     name: user.name,
     avatarUrl: user.avatarUrl,
     isAdmin: user.isAdmin || isBootstrapAdmin(user.email),
+  };
+
+  const response = NextResponse.json({
+    authenticated: true,
+    user: authUser,
+    ...authUser,
   });
 
   // Rolling session: renew session cookie for 1 year so user stays permanently logged in
