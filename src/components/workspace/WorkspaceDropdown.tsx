@@ -69,11 +69,29 @@ export function WorkspaceDropdown({
 
   async function handleSwitch(id: string) {
     if (id === activeWorkspaceId || switchingWorkspace) return;
-    await switchWorkspace(id);
+    const treePromise = cloudRepo.fetchWorkspaceTree(id, {
+      onFresh: (fresh) => {
+        if (
+          useMultiWorkspaceStore.getState().activeWorkspaceId ===
+          fresh.workspaceId
+        ) {
+          useWorkspaceStore
+            .getState()
+            .replaceAll(
+              Object.fromEntries(fresh.nodes.map((node) => [node.id, node])),
+            );
+        }
+      },
+    });
+    void treePromise.catch(() => undefined);
+    const switched = await switchWorkspace(id);
+    if (!switched) {
+      return;
+    }
 
     // Reload the workspace file tree for the newly active workspace
     try {
-      const data = await cloudRepo.fetchWorkspaceTree();
+      const data = await treePromise;
       useWorkspaceStore
         .getState()
         .replaceAll(Object.fromEntries(data.nodes.map((n) => [n.id, n])));
@@ -102,7 +120,7 @@ export function WorkspaceDropdown({
             variant === "toolbar" &&
               "border-input bg-background/80 hover:bg-accent hover:text-accent-foreground h-7 border px-2 shadow-xs",
             variant === "sidebar" &&
-              "h-7 w-full rounded-md border-border/50 bg-muted/40 px-2 text-[11.5px] font-medium text-foreground hover:bg-accent",
+              "border-border/50 bg-muted/40 text-foreground hover:bg-accent h-7 w-full rounded-md px-2 text-[11.5px] font-medium",
             className,
           )}
           aria-label="Workspace: Guest Mode"

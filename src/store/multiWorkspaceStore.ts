@@ -13,6 +13,11 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { zustandLocalStorage } from "@/services/storage/localStorageService";
 import { fetchJson, jsonBody } from "@/lib/api/fetchJson";
 import { toast } from "sonner";
+import {
+  cacheWorkspaceList,
+  loadWorkspaceList,
+  type WorkspaceListResponse,
+} from "@/services/storage/driveDataClient";
 
 export interface WorkspaceRecord {
   id: string;
@@ -52,13 +57,17 @@ interface MultiWorkspaceState {
 
 interface MultiWorkspaceActions {
   /** Load the workspace list from the server. Call on app startup (authenticated users only). */
-  loadWorkspaces: () => Promise<void>;
+  loadWorkspaces: (options?: {
+    force?: boolean;
+    background?: boolean;
+  }) => Promise<void>;
+  hydrateWorkspaceList: (data: WorkspaceListResponse) => void;
   /**
    * Switch to a different workspace.
    * This persists the choice server-side and updates local state.
    * Callers should reset the workspace file tree after this completes.
    */
-  switchWorkspace: (workspaceId: string) => Promise<void>;
+  switchWorkspace: (workspaceId: string) => Promise<boolean>;
   /**
    * Create a new workspace (including its Drive folder).
    * On success, automatically switches to the new workspace.
@@ -111,13 +120,22 @@ export const useMultiWorkspaceStore = create<
     (set, get) => ({
       ...initialState,
 
-      loadWorkspaces: async () => {
-        set({ loadingWorkspaces: true, loadError: null });
+      hydrateWorkspaceList: (data) =>
+        set({
+          workspaces: data.workspaces,
+          activeWorkspaceId: data.activeWorkspaceId,
+          loadingWorkspaces: false,
+          loadError: null,
+        }),
+
+      loadWorkspaces: async (options = {}) => {
+        if (get().workspaces.length === 0)
+          set({ loadingWorkspaces: true, loadError: null });
         try {
-          const data = await fetchJson<{
-            workspaces: WorkspaceRecord[];
-            activeWorkspaceId: string | null;
-          }>("/api/workspaces", { action: "Load workspaces" });
+          const data = await loadWorkspaceList({
+            ...options,
+            onFresh: (fresh) => get().hydrateWorkspaceList(fresh),
+          });
           set({
             workspaces: data.workspaces,
             activeWorkspaceId: data.activeWorkspaceId,
@@ -132,20 +150,29 @@ export const useMultiWorkspaceStore = create<
 
       switchWorkspace: async (workspaceId: string) => {
         const { activeWorkspaceId } = get();
-        if (activeWorkspaceId === workspaceId) return;
+        if (activeWorkspaceId === workspaceId) return true;
 
-        set({ switchingWorkspace: true });
+        set({ activeWorkspaceId: workspaceId, switchingWorkspace: true });
         try {
           const workspace = await fetchJson<WorkspaceRecord>(
             `/api/workspaces/${workspaceId}/switch`,
             { method: "POST", action: "Switch workspace" },
           );
           set({ activeWorkspaceId: workspace.id, switchingWorkspace: false });
+          void cacheWorkspaceList({
+            workspaces: get().workspaces,
+            activeWorkspaceId: workspace.id,
+          });
+          return true;
         } catch (err) {
           const message =
             err instanceof Error ? err.message : "Failed to switch workspace.";
           toast.error(message);
-          set({ switchingWorkspace: false });
+          set({
+            activeWorkspaceId,
+            switchingWorkspace: false,
+          });
+          return false;
         }
       },
 
@@ -166,6 +193,10 @@ export const useMultiWorkspaceStore = create<
             creatingWorkspace: false,
             createModalOpen: false,
           }));
+          void cacheWorkspaceList({
+            workspaces: get().workspaces,
+            activeWorkspaceId: workspace.id,
+          });
 
           toast.success(`Workspace "${workspace.name}" created successfully.`);
           return workspace;
@@ -201,6 +232,10 @@ export const useMultiWorkspaceStore = create<
             renameModalOpen: false,
             targetWorkspaceId: null,
           }));
+          void cacheWorkspaceList({
+            workspaces: get().workspaces,
+            activeWorkspaceId: get().activeWorkspaceId,
+          });
 
           toast.success(`Workspace renamed to "${updated.name}".`);
           return true;
@@ -234,6 +269,10 @@ export const useMultiWorkspaceStore = create<
             deletingWorkspace: false,
             deleteModalOpen: false,
             targetWorkspaceId: null,
+          });
+          void cacheWorkspaceList({
+            workspaces: remaining,
+            activeWorkspaceId: nextActiveId,
           });
 
           toast.success("Workspace deleted successfully.");

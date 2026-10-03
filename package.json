@@ -12,7 +12,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "postinstall": "prisma generate",
-    "test:drive": "tsx scripts/drive-test/run.ts"
+    "test:drive": "tsx scripts/drive-test/run.ts",
+    "test:drive-cache": "tsx scripts/drive-cache-test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.18.0",

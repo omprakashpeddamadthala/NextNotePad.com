@@ -179,6 +179,26 @@ async function main() {
     );
   });
 
+  await test("identical list requests are deduplicated, briefly cached, and invalidated on writes", async () => {
+    const fake = createFakeDrive();
+    const ds = service(fake, "list-cache");
+    const workspaceId = (await ws.listWorkspaces(ds))[0].id;
+    fake.calls.list = 0;
+
+    await Promise.all([ds.listAllAppEntries(), ds.listAllAppEntries()]);
+    assert.equal(fake.calls.list, 1);
+    await ds.listAllAppEntries();
+    assert.equal(fake.calls.list, 1);
+
+    await ws.createNode(ds, workspaceId, {
+      type: "file",
+      parentId: null,
+      name: "invalidates.txt",
+    });
+    await ds.listAllAppEntries();
+    assert.equal(fake.calls.list, 2);
+  });
+
   await test("content-only save is a single Drive update (no metadata read)", async () => {
     const fake = createFakeDrive();
     const ds = service(fake, "hot");
@@ -229,6 +249,7 @@ async function main() {
       "My Workspace:/one.txt",
       "Renamed:/two.txt",
     ]);
+    assert.ok(all.every((file) => file.version > 0));
     await assert.rejects(
       ws.getWorkspace(ds, await ds.ensureRootFolder()),
       /not found/i,

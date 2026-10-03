@@ -16,8 +16,11 @@ import { useRecentFilesStore } from "@/store/recentFilesStore";
 import { useTabsStore } from "@/store/tabsStore";
 import { useAuthStore } from "@/store/authStore";
 import { useMultiWorkspaceStore } from "@/store/multiWorkspaceStore";
-import { fetchJson } from "@/lib/api/fetchJson";
 import * as cloudRepo from "@/services/storage/cloudWorkspaceRepository";
+import {
+  loadDriveFileIndex,
+  prefetchFileContents,
+} from "@/services/storage/driveDataClient";
 import { toast } from "sonner";
 import { FolderGit2 } from "lucide-react";
 import type { FileNode } from "@/types/file";
@@ -26,6 +29,8 @@ export interface SearchableFile {
   id: string;
   name: string;
   path: string;
+  size?: number;
+  version?: number;
   workspaceId?: string;
   workspaceName?: string;
 }
@@ -55,11 +60,25 @@ export function QuickOpenDialog() {
 
     void (async () => {
       try {
-        const data = await fetchJson<{ files: SearchableFile[] }>("/api/files", {
-          action: "Search all workspaces",
+        const files = await loadDriveFileIndex({
+          onFresh: (fresh) => {
+            if (!cancelled) setCloudFiles(fresh);
+          },
         });
-        if (!cancelled && data?.files) {
-          setCloudFiles(data.files);
+        if (!cancelled) {
+          setCloudFiles(files);
+          const recentIds = new Set(
+            recent.slice(0, 8).map((item) => item.fileId),
+          );
+          void prefetchFileContents(
+            files
+              .filter((file) => recentIds.has(file.id))
+              .map((file) => ({
+                id: file.id,
+                version: file.version,
+                size: file.size,
+              })),
+          );
         }
       } catch (err) {
         console.error("Failed to fetch cross-workspace files:", err);
@@ -69,7 +88,7 @@ export function QuickOpenDialog() {
     return () => {
       cancelled = true;
     };
-  }, [open, status]);
+  }, [open, status, recent]);
 
   // Combine and sort files
   const files = useMemo(() => {
@@ -124,20 +143,51 @@ export function QuickOpenDialog() {
     setOpen(false);
 
     // If file is from a different workspace, switch workspace first
-    if (file.workspaceId && activeWorkspaceId && file.workspaceId !== activeWorkspaceId) {
+    if (
+      file.workspaceId &&
+      activeWorkspaceId &&
+      file.workspaceId !== activeWorkspaceId
+    ) {
       const toastId = toast.loading(`Switching to "${file.workspaceName}"...`);
       try {
-        await switchWorkspace(file.workspaceId);
-        const data = await cloudRepo.fetchWorkspaceTree();
+        const treePromise = cloudRepo.fetchWorkspaceTree(file.workspaceId, {
+          onFresh: (fresh) => {
+            if (
+              useMultiWorkspaceStore.getState().activeWorkspaceId ===
+              fresh.workspaceId
+            ) {
+              useWorkspaceStore
+                .getState()
+                .replaceAll(
+                  Object.fromEntries(
+                    fresh.nodes.map((node) => [node.id, node]),
+                  ),
+                );
+            }
+          },
+        });
+        void treePromise.catch(() => undefined);
+        const switched = await switchWorkspace(file.workspaceId);
+        if (!switched) {
+          toast.error(`Could not switch workspace: ${file.workspaceName}`, {
+            id: toastId,
+          });
+          return;
+        }
+        const data = await treePromise;
         useWorkspaceStore
           .getState()
           .replaceAll(Object.fromEntries(data.nodes.map((n) => [n.id, n])));
         openTab(file.id);
         addRecent(file.id);
-        toast.success(`Opened ${file.name} in "${file.workspaceName}"`, { id: toastId });
+        toast.success(`Opened ${file.name} in "${file.workspaceName}"`, {
+          id: toastId,
+        });
       } catch (err) {
         console.error("Error opening cross-workspace file:", err);
-        toast.error(`Could not switch workspace: ${file.workspaceName}`, { id: toastId });
+        toast.error(`Could not switch workspace: ${file.workspaceName}`, {
+          id: toastId,
+        });
       }
       return;
     }
@@ -161,35 +211,39 @@ export function QuickOpenDialog() {
           {files.map((file) => {
             const Icon = getFileIcon(file.name);
             const isAnotherWorkspace =
-              file.workspaceId && activeWorkspaceId && file.workspaceId !== activeWorkspaceId;
+              file.workspaceId &&
+              activeWorkspaceId &&
+              file.workspaceId !== activeWorkspaceId;
 
             return (
               <CommandItem
                 key={`${file.workspaceId || "ws"}-${file.id}`}
                 value={`${file.name} ${file.path} ${file.workspaceName || ""}`}
                 onSelect={() => void handleSelect(file)}
-                className="flex items-center gap-2.5 py-2 cursor-pointer"
+                className="flex cursor-pointer items-center gap-2.5 py-2"
               >
                 <Icon className="size-4 shrink-0" />
                 <div className="flex min-w-0 flex-1 items-center gap-2">
-                  <span className="font-medium text-foreground text-xs truncate">
+                  <span className="text-foreground truncate text-xs font-medium">
                     {file.name}
                   </span>
                   {file.workspaceName && (
                     <span
-                      className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium shrink-0 ${
+                      className={`inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium ${
                         isAnotherWorkspace
-                          ? "bg-amber-500/10 text-amber-500 border border-amber-500/20"
-                          : "bg-muted/70 text-muted-foreground border border-border/40"
+                          ? "border border-amber-500/20 bg-amber-500/10 text-amber-500"
+                          : "bg-muted/70 text-muted-foreground border-border/40 border"
                       }`}
                       title={`Workspace: ${file.workspaceName}`}
                     >
                       <FolderGit2 className="size-2.5 opacity-70" />
-                      <span className="truncate max-w-[120px]">{file.workspaceName}</span>
+                      <span className="max-w-[120px] truncate">
+                        {file.workspaceName}
+                      </span>
                     </span>
                   )}
                 </div>
-                <span className="ml-auto truncate text-[11px] text-muted-foreground/60 max-w-[160px]">
+                <span className="text-muted-foreground/60 ml-auto max-w-[160px] truncate text-[11px]">
                   {file.path}
                 </span>
               </CommandItem>
