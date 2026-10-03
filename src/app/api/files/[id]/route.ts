@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+  getDriveSession,
   getDriveSessionWithWorkspace,
   driveErrorResponse,
 } from "@/lib/drive/session";
 import {
+  assertNodeInWorkspace,
   entryToNodeDto,
+  getWorkspace,
   getNode,
   isFolder,
   nodeDto,
@@ -18,17 +21,33 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-export async function GET(_request: NextRequest, { params }: RouteParams) {
+export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const session = await getDriveSessionWithWorkspace();
+    const requestedWorkspaceId =
+      request.nextUrl.searchParams.get("workspaceId");
+    const session = requestedWorkspaceId
+      ? await getDriveSession()
+      : await getDriveSessionWithWorkspace();
     if (!session) return unauthorized();
     const { id } = await params;
-    const { ds, workspaceId } = session;
-    const [entry, content] = await Promise.all([
-      getNode(ds, id),
-      ds.readText(id),
-    ]);
-    if (isFolder(entry)) return notFound();
+    const { ds } = session;
+    const workspaceId =
+      requestedWorkspaceId ??
+      (session as { workspaceId?: string }).workspaceId ??
+      null;
+    if (!workspaceId) return unauthorized();
+    if (requestedWorkspaceId) await getWorkspace(ds, requestedWorkspaceId);
+    let entry: Awaited<ReturnType<typeof getNode>>;
+    let content: string;
+    if (requestedWorkspaceId) {
+      entry = await getNode(ds, id);
+      if (isFolder(entry)) return notFound();
+      await assertNodeInWorkspace(ds, entry, workspaceId);
+      content = await ds.readText(id);
+    } else {
+      [entry, content] = await Promise.all([getNode(ds, id), ds.readText(id)]);
+      if (isFolder(entry)) return notFound();
+    }
     return NextResponse.json({
       ...(await nodeDto(ds, entry, workspaceId)),
       content,

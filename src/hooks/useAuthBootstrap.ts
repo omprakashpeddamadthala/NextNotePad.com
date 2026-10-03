@@ -5,6 +5,9 @@ import { useMultiWorkspaceStore } from "@/store/multiWorkspaceStore";
 import { fetchJson, ApiError } from "@/lib/api/fetchJson";
 import { migrateOrLoadCloudWorkspace } from "@/services/auth/migrateGuestWorkspace";
 import { syncSettingsOnLogin } from "@/services/settingsSync";
+import { configureDriveDataClient } from "@/services/storage/driveDataClient";
+import * as cloudRepo from "@/services/storage/cloudWorkspaceRepository";
+import { useWorkspaceStore } from "@/store/workspaceStore";
 
 /** Runs once on mount: checks for an existing session and, if found, loads the cloud workspace. */
 export function useAuthBootstrap(): void {
@@ -28,7 +31,10 @@ export function useAuthBootstrap(): void {
           message = "Google OAuth authentication failed. Please try again.";
         }
         const authReason = params.get("authReason");
-        toast.error(message, authReason ? { description: `Reason: ${authReason}` } : undefined);
+        toast.error(
+          message,
+          authReason ? { description: `Reason: ${authReason}` } : undefined,
+        );
         if (authReason) console.error("[auth] Sign-in failed:", authReason);
         const url = new URL(window.location.href);
         url.searchParams.delete("authError");
@@ -44,7 +50,11 @@ export function useAuthBootstrap(): void {
     (async () => {
       try {
         const data = await fetchJson<
-          ({ authenticated?: boolean; user?: AuthUser | null } & Partial<AuthUser>) | null
+          | ({
+              authenticated?: boolean;
+              user?: AuthUser | null;
+            } & Partial<AuthUser>)
+          | null
         >("/api/auth/me", {
           action: "Check session",
         });
@@ -58,9 +68,27 @@ export function useAuthBootstrap(): void {
         }
 
         useAuthStore.getState().setAuthenticated(user);
-        await migrateOrLoadCloudWorkspace();
-        await useMultiWorkspaceStore.getState().loadWorkspaces();
-        await syncSettingsOnLogin();
+        configureDriveDataClient(user.id);
+        const [loadedWorkspaceId] = await Promise.all([
+          migrateOrLoadCloudWorkspace(),
+          useMultiWorkspaceStore.getState().loadWorkspaces(),
+          syncSettingsOnLogin(),
+        ]);
+        const activeWorkspaceId =
+          useMultiWorkspaceStore.getState().activeWorkspaceId;
+        if (
+          activeWorkspaceId &&
+          loadedWorkspaceId &&
+          activeWorkspaceId !== loadedWorkspaceId
+        ) {
+          const { nodes } =
+            await cloudRepo.fetchWorkspaceTree(activeWorkspaceId);
+          useWorkspaceStore
+            .getState()
+            .replaceAll(
+              Object.fromEntries(nodes.map((node) => [node.id, node])),
+            );
+        }
         // The tree and settings above were read straight from Drive (the source of truth), so
         // there is no separate "pull from Drive" step anymore.
         useAuthStore.getState().setWorkspaceReady();

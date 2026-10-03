@@ -23,33 +23,60 @@ export class ApiError extends Error {
 
 /** True for the errors worth offering a "Retry" on — the request never got a real answer. */
 export function isOfflineError(error: unknown): boolean {
-  return error instanceof ApiError && (error.status === 0 || error.status === 408);
+  return (
+    error instanceof ApiError && (error.status === 0 || error.status === 408)
+  );
 }
 
-interface RequestOptions extends RequestInit {
+export interface RequestOptions extends RequestInit {
   /** What the user was trying to do, used to build the error message ("Save file failed"). */
   action: string;
   timeoutMs?: number;
+  /** Background refreshes and prefetches should not trigger global loading indicators. */
+  background?: boolean;
 }
 
-async function request(url: string, { action, timeoutMs = DEFAULT_TIMEOUT_MS, ...init }: RequestOptions) {
+async function request(
+  url: string,
+  {
+    action,
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+    background = false,
+    signal,
+    ...init
+  }: RequestOptions,
+) {
   // Every internal API call passes through here, so this is also where the shared progress
   // indicator is driven from — no call site has to remember to report itself.
   const activity = useApiActivityStore.getState();
-  activity.begin(action);
+  if (!background) activity.begin(action);
 
   let res: Response;
   try {
-    res = await fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
+    const timeoutSignal = AbortSignal.timeout(timeoutMs);
+    res = await fetch(url, {
+      ...init,
+      signal: signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal,
+    });
   } catch (err) {
     // fetch only rejects for network-level failures (server down, offline, DNS, abort) — never
     // for a 4xx/5xx, which is why the res.ok check below has to exist separately.
-    if (err instanceof DOMException && err.name === "TimeoutError") {
-      throw new ApiError(`${action} timed out — the server took too long to respond.`, 408);
+    if (
+      err instanceof DOMException &&
+      (err.name === "TimeoutError" || err.name === "AbortError")
+    ) {
+      if (signal?.aborted) throw err;
+      throw new ApiError(
+        `${action} timed out — the server took too long to respond.`,
+        408,
+      );
     }
-    throw new ApiError(`${action} failed — can't reach the server. Check your connection.`, 0);
+    throw new ApiError(
+      `${action} failed — can't reach the server. Check your connection.`,
+      0,
+    );
   } finally {
-    activity.end(action);
+    if (!background) activity.end(action);
   }
 
   if (!res.ok) {
@@ -59,25 +86,37 @@ async function request(url: string, { action, timeoutMs = DEFAULT_TIMEOUT_MS, ..
 }
 
 /** Performs the request and parses the JSON body. */
-export async function fetchJson<T>(url: string, options: RequestOptions): Promise<T> {
+export async function fetchJson<T>(
+  url: string,
+  options: RequestOptions,
+): Promise<T> {
   const res = await request(url, options);
   return res.json() as Promise<T>;
 }
 
 /** Performs the request purely for its side effect, ignoring any response body. */
-export async function fetchOk(url: string, options: RequestOptions): Promise<void> {
+export async function fetchOk(
+  url: string,
+  options: RequestOptions,
+): Promise<void> {
   await request(url, options);
 }
 
 /** Performs the request and returns the raw Response for the caller to stream from — same
  *  timeout/offline-error handling as fetchJson, but for endpoints that stream a body instead
  *  of returning one JSON blob. */
-export async function fetchStream(url: string, options: RequestOptions): Promise<Response> {
+export async function fetchStream(
+  url: string,
+  options: RequestOptions,
+): Promise<Response> {
   return request(url, options);
 }
 
 /** Shorthand for the JSON-body-in, JSON-body-out calls that make up most of the repository. */
-export function jsonBody(method: "POST" | "PATCH" | "PUT", body: unknown): RequestInit {
+export function jsonBody(
+  method: "POST" | "PATCH" | "PUT",
+  body: unknown,
+): RequestInit {
   return {
     method,
     headers: { "Content-Type": "application/json" },

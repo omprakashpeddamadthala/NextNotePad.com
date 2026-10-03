@@ -419,6 +419,20 @@ export async function getNode(
   return entry;
 }
 
+export async function assertNodeInWorkspace(
+  ds: DriveService,
+  entry: DriveEntry,
+  workspaceId: string,
+): Promise<void> {
+  let parentId = entry.parents[0];
+  for (let depth = 0; parentId && depth < 64; depth++) {
+    if (parentId === workspaceId) return;
+    const parent = await getNode(ds, parentId);
+    parentId = parent.parents[0];
+  }
+  throw new AppError("Not found", 404);
+}
+
 export interface NodePatch {
   name?: string;
   parentId?: string | null;
@@ -551,6 +565,7 @@ export async function listAllFiles(ds: DriveService) {
       language:
         e.appProperties[P.language] ?? detectLanguageFromFilename(e.name),
       size: e.size,
+      version: e.version,
       workspaceId: loc.workspace.id,
       workspaceName: loc.workspace.name,
       updatedAt: new Date(e.modifiedTime).toISOString(),

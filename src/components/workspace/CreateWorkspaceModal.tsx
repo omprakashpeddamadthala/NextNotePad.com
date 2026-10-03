@@ -16,7 +16,6 @@ import { Label } from "@/components/ui/label";
 import { useMultiWorkspaceStore } from "@/store/multiWorkspaceStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useTabsStore } from "@/store/tabsStore";
-import * as cloudRepo from "@/services/storage/cloudWorkspaceRepository";
 
 export function CreateWorkspaceModal() {
   const open = useMultiWorkspaceStore((s) => s.createModalOpen);
@@ -48,17 +47,13 @@ export function CreateWorkspaceModal() {
     }
     setNameError("");
 
-    const workspace = await createWorkspace(trimmedName, description.trim() || undefined);
+    const workspace = await createWorkspace(
+      trimmedName,
+      description.trim() || undefined,
+    );
     if (workspace) {
-      // After creating a new workspace, reload its (empty) file tree
-      try {
-        const data = await cloudRepo.fetchWorkspaceTree();
-        useWorkspaceStore.getState().replaceAll(
-          Object.fromEntries(data.nodes.map((n) => [n.id, n])),
-        );
-      } catch {
-        useWorkspaceStore.getState().clearWorkspace();
-      }
+      // A newly-created Drive workspace only contains internal metadata.
+      useWorkspaceStore.getState().clearWorkspace();
       useTabsStore.getState().resetSession();
       setName("");
       setDescription("");
@@ -66,12 +61,17 @@ export function CreateWorkspaceModal() {
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) handleClose();
+      }}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center gap-2">
-            <div className="flex size-8 items-center justify-center rounded-md bg-primary/10">
-              <FolderPlus className="size-4 text-primary" />
+            <div className="bg-primary/10 flex size-8 items-center justify-center rounded-md">
+              <FolderPlus className="text-primary size-4" />
             </div>
             <DialogTitle>Create Google Drive Workspace</DialogTitle>
           </div>
@@ -81,16 +81,24 @@ export function CreateWorkspaceModal() {
         </DialogHeader>
 
         <div className="flex flex-col gap-4 py-1">
-          <div className="rounded-md border bg-muted/40 p-2.5 text-xs text-muted-foreground">
-            <p className="font-medium text-foreground">Google Drive Integration</p>
+          <div className="bg-muted/40 text-muted-foreground rounded-md border p-2.5 text-xs">
+            <p className="text-foreground font-medium">
+              Google Drive Integration
+            </p>
             <p className="mt-0.5">
-              Each workspace corresponds to a dedicated folder inside your Google Drive under <code className="rounded bg-muted px-1 py-0.5 text-[11px]">NextNotePad.com/</code>.
+              Each workspace corresponds to a dedicated folder inside your
+              Google Drive under{" "}
+              <code className="bg-muted rounded px-1 py-0.5 text-[11px]">
+                NextNotePad.com/
+              </code>
+              .
             </p>
           </div>
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="workspace-name">
-              Workspace / Folder Name <span className="text-destructive">*</span>
+              Workspace / Folder Name{" "}
+              <span className="text-destructive">*</span>
             </Label>
             <Input
               id="workspace-name"
@@ -101,7 +109,8 @@ export function CreateWorkspaceModal() {
                 if (nameError) setNameError("");
               }}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !creatingWorkspace) void handleCreate();
+                if (e.key === "Enter" && !creatingWorkspace)
+                  void handleCreate();
               }}
               maxLength={100}
               autoFocus
@@ -109,7 +118,7 @@ export function CreateWorkspaceModal() {
               aria-describedby={nameError ? "workspace-name-error" : undefined}
             />
             {nameError && (
-              <p id="workspace-name-error" className="text-xs text-destructive">
+              <p id="workspace-name-error" className="text-destructive text-xs">
                 {nameError}
               </p>
             )}
@@ -117,7 +126,8 @@ export function CreateWorkspaceModal() {
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="workspace-description">
-              Description <span className="text-xs text-muted-foreground">(optional)</span>
+              Description{" "}
+              <span className="text-muted-foreground text-xs">(optional)</span>
             </Label>
             <Input
               id="workspace-description"
@@ -131,10 +141,17 @@ export function CreateWorkspaceModal() {
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose} disabled={creatingWorkspace}>
+          <Button
+            variant="outline"
+            onClick={handleClose}
+            disabled={creatingWorkspace}
+          >
             Cancel
           </Button>
-          <Button onClick={() => void handleCreate()} disabled={creatingWorkspace || !name.trim()}>
+          <Button
+            onClick={() => void handleCreate()}
+            disabled={creatingWorkspace || !name.trim()}
+          >
             {creatingWorkspace ? (
               <>
                 <Loader2 className="animate-spin" />

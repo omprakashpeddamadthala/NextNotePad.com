@@ -100,6 +100,24 @@ interface LayoutIds {
 }
 const layoutCache = new Map<string, LayoutIds>();
 const inFlight = new Map<string, Promise<string>>();
+const LIST_CACHE_TTL_MS = 3_000;
+const listCache = new Map<
+  string,
+  { entries: DriveEntry[]; expiresAt: number }
+>();
+const listInFlight = new Map<string, Promise<DriveEntry[]>>();
+const listGeneration = new Map<string, number>();
+
+function invalidateUserLists(userId: string): void {
+  listGeneration.set(userId, (listGeneration.get(userId) ?? 0) + 1);
+  const prefix = `${userId}:`;
+  for (const key of listCache.keys()) {
+    if (key.startsWith(prefix)) listCache.delete(key);
+  }
+  for (const key of listInFlight.keys()) {
+    if (key.startsWith(prefix)) listInFlight.delete(key);
+  }
+}
 
 /** Collapses concurrent identical lookups/creates (e.g. two requests both ensuring the root
  *  folder) into one Drive call, so they can't race into creating duplicates. */
@@ -133,27 +151,53 @@ export class DriveService {
   }
 
   static clearCache(userId?: string) {
-    if (userId) layoutCache.delete(userId);
-    else layoutCache.clear();
+    if (userId) {
+      layoutCache.delete(userId);
+      invalidateUserLists(userId);
+    } else {
+      layoutCache.clear();
+      listCache.clear();
+      listInFlight.clear();
+      listGeneration.clear();
+    }
   }
 
   async list(q: string, pageSize = 1000): Promise<DriveEntry[]> {
-    const out: DriveEntry[] = [];
-    let pageToken: string | undefined;
-    do {
-      const res = await withRetry(() =>
-        this.drive.files.list({
-          q,
-          pageSize,
-          pageToken,
-          spaces: "drive",
-          fields: `nextPageToken, files(${ENTRY_FIELDS})`,
-        }),
-      );
-      for (const f of res.data.files ?? []) out.push(toEntry(f));
-      pageToken = res.data.nextPageToken ?? undefined;
-    } while (pageToken);
-    return out;
+    const key = `${this.userId}:${pageSize}:${q}`;
+    const cached = listCache.get(key);
+    if (cached && cached.expiresAt > Date.now()) return cached.entries;
+    const pending = listInFlight.get(key);
+    if (pending) return pending;
+
+    const generation = listGeneration.get(this.userId) ?? 0;
+    const request = (async () => {
+      const out: DriveEntry[] = [];
+      let pageToken: string | undefined;
+      do {
+        const res = await withRetry(() =>
+          this.drive.files.list({
+            q,
+            pageSize,
+            pageToken,
+            spaces: "drive",
+            fields: `nextPageToken, files(${ENTRY_FIELDS})`,
+          }),
+        );
+        for (const f of res.data.files ?? []) out.push(toEntry(f));
+        pageToken = res.data.nextPageToken ?? undefined;
+      } while (pageToken);
+      if ((listGeneration.get(this.userId) ?? 0) === generation) {
+        listCache.set(key, {
+          entries: out,
+          expiresAt: Date.now() + LIST_CACHE_TTL_MS,
+        });
+      }
+      return out;
+    })().finally(() => {
+      if (listInFlight.get(key) === request) listInFlight.delete(key);
+    });
+    listInFlight.set(key, request);
+    return request;
   }
 
   async findChild(
@@ -246,6 +290,7 @@ export class DriveService {
         fields: ENTRY_FIELDS,
       }),
     );
+    invalidateUserLists(this.userId);
     return toEntry(res.data);
   }
 
@@ -268,6 +313,7 @@ export class DriveService {
         fields: ENTRY_FIELDS,
       }),
     );
+    invalidateUserLists(this.userId);
     return toEntry(res.data);
   }
 
@@ -318,6 +364,7 @@ export class DriveService {
           fields: ENTRY_FIELDS,
         }),
       );
+      invalidateUserLists(this.userId);
       return toEntry(res.data);
     } catch (err) {
       if (isNotFound(err)) throw new DriveNotFoundError(id);
@@ -335,6 +382,7 @@ export class DriveService {
           fields: "id",
         }),
       );
+      invalidateUserLists(this.userId);
     } catch (err) {
       if (!isNotFound(err)) throw err;
     }
