@@ -27,9 +27,12 @@ export function useAuthBootstrap(): void {
         } else if (authError === "oauth_failed") {
           message = "Google OAuth authentication failed. Please try again.";
         }
-        toast.error(message);
+        const authReason = params.get("authReason");
+        toast.error(message, authReason ? { description: `Reason: ${authReason}` } : undefined);
+        if (authReason) console.error("[auth] Sign-in failed:", authReason);
         const url = new URL(window.location.href);
         url.searchParams.delete("authError");
+        url.searchParams.delete("authReason");
         window.history.replaceState(
           {},
           document.title,
