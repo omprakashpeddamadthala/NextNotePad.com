@@ -7,7 +7,6 @@ import {
 } from "@/lib/drive/workspaceService";
 import { unauthorized } from "@/lib/api/respond";
 
-/** POST /api/workspaces/[id]/switch — records the active workspace in `.appConfig.json`. */
 export async function POST(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },

@@ -14,19 +14,6 @@ import {
   stripNulls,
 } from "./workspaceService";
 
-/**
- * One-time, idempotent copy of a user's pre-Drive-first data (the legacy `Workspace` / `Folder` /
- * `File` / `UserSettings` tables, no longer part of the Prisma schema) into their Drive.
- *
- * - Read via raw SQL so it works whether or not the tables still exist (fresh installs skip it).
- * - Progress is recorded as the legacy rows' `driveFileId` / `driveWorkspaceFolderId`, so a run
- *   interrupted half-way resumes without creating duplicates.
- * - Entries the old push-sync already created in Drive are reused (moved into place, content
- *   overwritten from the DB copy, which was always the authoritative one before this change).
- * - Completion is stamped into `.appConfig.json` (`migrations.legacyDatabase`); the legacy rows
- *   are left untouched so they can be verified before being dropped in a follow-up migration.
- */
-
 interface LegacyWorkspace {
   id: string;
   name: string;
@@ -131,12 +118,11 @@ export async function migrateLegacyData(
       `SELECT "id","workspaceId","parentId","name","path","collapsed","hidden","driveFileId" FROM "Folder" WHERE "workspaceId" = $1 AND "deletedAt" IS NULL`,
       ws.id,
     );
-    // Parents before children: a folder's path always has fewer segments than its descendants'.
     folders.sort((a, b) => a.path.split("/").length - b.path.split("/").length);
     const folderMap = new Map<string, string>();
     for (const f of folders) {
       const parent = f.parentId ? folderMap.get(f.parentId) : folder.id;
-      if (!parent) continue; // parent was soft-deleted; the subtree is effectively deleted too
+      if (!parent) continue;
       const props = folderProps({ collapsed: f.collapsed, hidden: f.hidden });
       const live = await liveEntry(ds, f.driveFileId);
       const entry =
@@ -219,8 +205,6 @@ export async function migrateLegacyData(
   return counts;
 }
 
-/** Runs the legacy migration at most once per user (and once concurrently per process). Cheap
- *  after the first call: the in-process flag, then the cached `.appConfig.json` stamp. */
 export async function ensureLegacyMigrated(ds: DriveService): Promise<void> {
   const userId = ds.userId;
   if (done.has(userId)) return;

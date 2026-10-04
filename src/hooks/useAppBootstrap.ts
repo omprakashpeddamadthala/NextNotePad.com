@@ -21,12 +21,6 @@ Try it out:
 Delete this file whenever you like — it won't come back.
 `;
 
-/**
- * Seeds a welcome file for brand-new guest workspaces, and honors the "Restore Session"
- * setting. Waits for auth status to resolve to "guest" — `useAuthBootstrap` handles the
- * authenticated path (loading/migrating the cloud workspace) separately, and this must not
- * race it (e.g. seeding a local welcome file into what's about to become a cloud workspace).
- */
 export function useAppBootstrap(): void {
   const status = useAuthStore((s) => s.status);
   const ranRef = useRef(false);

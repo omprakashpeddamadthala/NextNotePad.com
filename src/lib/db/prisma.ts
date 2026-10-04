@@ -18,7 +18,6 @@ function getDatabaseUrl(): string {
     throw new Error("DATABASE_URL is not set. Please configure PostgreSQL credentials.");
   }
 
-  // Normalize JDBC format if provided: jdbc:postgresql://host:port/database
   if (url.startsWith("jdbc:")) {
     url = url.replace(/^jdbc:/, "");
     if (!url.includes("@") && process.env.DATABASE_USERNAME && process.env.DATABASE_PASSWORD) {

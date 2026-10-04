@@ -20,18 +20,12 @@ interface MarkdownFullPageViewProps {
   showClose?: boolean;
 }
 
-/** Reads a file's current content for read-only display: the live (possibly-unsaved) Monaco
- *  model if one's still registered, otherwise the last-saved content from storage. */
 async function readCurrentContent(fileId: string): Promise<string> {
   const existing = modelRegistry.getModel(fileId);
   if (existing) return existing.getValue();
   return getActiveRepository().readFileContent(fileId);
 }
 
-/** Full-page, read-only rendering of a markdown file.
- *  This is the default landing view for all markdown files.
- *  The Edit button opens the normal editor tab for anyone who wants to type.
- *  Printing isolates the `.np-print-target` content via the print stylesheet. */
 export function MarkdownFullPageView({
   fileId,
   onEdit,
@@ -118,7 +112,6 @@ export function MarkdownFullPageView({
 
   return (
     <div className="flex h-full w-full flex-col select-text overflow-hidden bg-background">
-      {/* ── Sub-header: document info & view controls ─────────────────── */}
       <div className="flex h-9 shrink-0 items-center justify-between border-b bg-[var(--np-toolbar-bg)] px-3 text-xs">
         <div className="flex items-center gap-2 min-w-0">
           <FileText className="size-3.5 shrink-0 text-primary" />
@@ -185,7 +178,6 @@ export function MarkdownFullPageView({
         </div>
       </div>
 
-      {/* ── Full Page Document Canvas ─────────────────────────────────── */}
       <div className="np-scrollbar min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 w-full">
         <MarkdownRenderPane
           state={error ? "error" : content === null ? "loading" : "ready"}

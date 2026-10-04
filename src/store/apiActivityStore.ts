@@ -1,30 +1,19 @@
 import { create } from "zustand";
 
-/** Requests faster than this never show the top bar at all — a local API call that returns in 20ms
- *  would otherwise make it strobe on every keystroke-triggered autosave. */
 const SHOW_DELAY_MS = 150;
 
-/** Requests taking longer than 2 seconds trigger a subtle non-blocking loading indicator.
- *  Fast backend calls complete silently without any pop-ups. */
 const SLOW_DELAY_MS = 2000;
 
 interface ApiActivityState {
-  /** Number of internal API requests currently in flight. */
   pending: number;
-  /** Whether the top bar should be on screen — `pending > 0` for longer than SHOW_DELAY_MS. */
   visible: boolean;
-  /** Whether the center animation should be displayed — `pending > 0` for longer than SLOW_DELAY_MS. */
   isSlowLoading: boolean;
-  /** Currently active action description (e.g. "Saving file", "Syncing workspace"). */
   currentAction: string | null;
-  /** List of all in-flight action descriptions. */
   actions: string[];
   begin: (action?: string) => void;
   end: (action?: string) => void;
 }
 
-/** Tracks in-flight calls to the app's own `/api/*` routes so the UI can show one shared
- *  progress indicator and center loading animation when slow. Driven from `lib/api/fetchJson`. */
 export const useApiActivityStore = create<ApiActivityState>((set, get) => {
   let showTimer: ReturnType<typeof setTimeout> | null = null;
   let slowTimer: ReturnType<typeof setTimeout> | null = null;
@@ -95,7 +84,6 @@ export const useApiActivityStore = create<ApiActivityState>((set, get) => {
   };
 });
 
-// Expose testing hook for dev / browser validation
 if (typeof window !== "undefined") {
   (window as unknown as { __simulateSlowApiCall?: (action?: string, durationMs?: number) => void }).__simulateSlowApiCall = (
     action = "Syncing with backend...",

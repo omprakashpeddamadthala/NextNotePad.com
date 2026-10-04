@@ -8,19 +8,14 @@ function getSpeechRecognitionCtor(): (new () => SpeechRecognition) | null {
 }
 
 interface UseSpeechDictationOptions {
-  /** Called once per finalized phrase — only final results are committed, for accuracy. */
   onResult: (text: string) => void;
   onError?: (message: string) => void;
 }
 
-/** Continuous browser speech-to-text (Web Speech API — Chromium only). Auto-restarts on the
- *  engine's own silence timeout so a single mic toggle keeps dictating until stopped by hand. */
 export function useSpeechDictation({ onResult, onError }: UseSpeechDictationOptions) {
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const wantListeningRef = useRef(false);
-  // Holds the latest `start` so `onend`'s auto-restart can call it without directly
-  // self-referencing the `const start` binding (which the React Compiler rejects).
   const startRef = useRef<() => void>(() => {});
   const isSupported = getSpeechRecognitionCtor() !== null;
 
@@ -39,7 +34,7 @@ export function useSpeechDictation({ onResult, onError }: UseSpeechDictationOpti
   const start = useCallback(() => {
     const Ctor = getSpeechRecognitionCtor();
     if (!Ctor) return;
-    if (recognitionRef.current) return; // already running
+    if (recognitionRef.current) return;
 
     const recognition = new Ctor();
     recognition.lang = typeof navigator !== "undefined" ? navigator.language : "en-US";
@@ -65,8 +60,6 @@ export function useSpeechDictation({ onResult, onError }: UseSpeechDictationOpti
 
     recognition.onend = () => {
       recognitionRef.current = null;
-      // Chrome silently ends the session after a period of silence — restart transparently
-      // if the user hasn't explicitly stopped, so dictation feels continuous.
       if (wantListeningRef.current) {
         startRef.current();
       } else {

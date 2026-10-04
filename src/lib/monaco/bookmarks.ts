@@ -1,7 +1,6 @@
 import type { Monaco } from "@monaco-editor/react";
 import type { editor as MonacoEditorNS } from "monaco-editor";
 
-/** In-memory only (not persisted across reloads) — bookmarks live for the session, per file. */
 const bookmarkLines = new Map<string, Set<number>>();
 const decorationIds = new Map<string, string[]>();
 

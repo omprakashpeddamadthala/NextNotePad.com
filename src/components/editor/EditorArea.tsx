@@ -17,7 +17,6 @@ import { useAdminViewStore } from "@/store/adminViewStore";
 import { useAuthStore } from "@/store/authStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 
-// DOMPurify (used to sanitize the rendered markdown) needs `window`
 const MarkdownPreview = dynamic(() => import("./MarkdownPreview").then((m) => m.MarkdownPreview), {
   ssr: false,
   loading: () => (
@@ -107,7 +106,6 @@ export function EditorArea() {
         ) : tabs.length === 0 || !activeTab ? (
           <EditorWelcome />
         ) : isMarkdown && !isEditingMarkdown ? (
-          /* All MD files show directly in the MD viewer with the full page */
           <MarkdownFullPageView
             key={activeTab.fileId}
             fileId={activeTab.fileId}

@@ -6,9 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { unlockSingleFile } from "@/services/fileLock";
 
-/** Covers the editor area for a locked file — nothing is decrypted or readable until the correct
- *  passphrase is entered. Keyed by fileId in the parent so switching between locked tabs never
- *  carries over a stale passphrase/error from a different file. */
 export function LockedFileOverlay({ fileId }: { fileId: string }) {
   const [passphrase, setPassphrase] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +18,6 @@ export function LockedFileOverlay({ fileId }: { fileId: string }) {
     try {
       const result = await unlockSingleFile(fileId, passphrase);
       if (result.status === "wrong-passphrase") setError("Incorrect passphrase.");
-      // On success, the workspace node's `locked` flips to false, which the parent reacts to.
     } finally {
       setBusy(false);
     }

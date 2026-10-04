@@ -57,7 +57,6 @@ export function QuickOpenDialog() {
     () => getCachedDriveFileIndexSync() ?? [],
   );
 
-  // Fetch all files across all user workspaces when dialog opens in authenticated mode
   useEffect(() => {
     if (!open || status !== "authenticated") return;
     let cancelled = false;
@@ -94,7 +93,6 @@ export function QuickOpenDialog() {
     };
   }, [open, status, recent]);
 
-  // Combine and sort files
   const files = useMemo(() => {
     const recentOrder = new Map(recent.map((r, i) => [r.fileId, i]));
     const effectiveCloudFiles =
@@ -103,12 +101,10 @@ export function QuickOpenDialog() {
         : (getCachedDriveFileIndexSync() ?? []);
 
     if (status === "authenticated" && effectiveCloudFiles.length > 0) {
-      // De-duplicate by id, prioritizing latest
       const fileMap = new Map<string, SearchableFile>();
       for (const cf of effectiveCloudFiles) {
         fileMap.set(cf.id, cf);
       }
-      // Also ensure any local unsaved/just created nodes in active workspace are present
       for (const n of Object.values(nodes)) {
         if (n.type === "file" && !n.deleted && !fileMap.has(n.id)) {
           fileMap.set(n.id, {
@@ -129,7 +125,6 @@ export function QuickOpenDialog() {
       });
     }
 
-    // Guest mode: local workspace nodes
     const localFiles: SearchableFile[] = Object.values(nodes)
       .filter((n): n is FileNode => n.type === "file" && !n.deleted)
       .map((n) => ({
@@ -150,7 +145,6 @@ export function QuickOpenDialog() {
   async function handleSelect(file: SearchableFile) {
     setOpen(false);
 
-    // If file is from a different workspace, switch workspace first
     if (
       file.workspaceId &&
       activeWorkspaceId &&
@@ -158,7 +152,6 @@ export function QuickOpenDialog() {
     ) {
       const cachedTree = getCachedWorkspaceTreeSync(file.workspaceId);
       if (cachedTree) {
-        // Instant switch with zero delay!
         useWorkspaceStore
           .getState()
           .replaceAll(
@@ -231,7 +224,6 @@ export function QuickOpenDialog() {
       return;
     }
 
-    // Same workspace or guest
     openTab(file.id);
     addRecent(file.id);
   }

@@ -5,6 +5,7 @@ import { useExplorerSelectionStore } from "@/store/explorerSelectionStore";
 import { duplicateNode } from "@/services/fileOperations";
 import { formatActiveEditor } from "@/services/formatting/formatActiveEditor";
 import { useRegisterAction } from "@/hooks/useRegisterAction";
+import { toggleFindWidget } from "@/lib/monaco/findWidget";
 
 interface UseMonacoGlobalActionsParams {
   registerGlobalActions: boolean | undefined;
@@ -14,11 +15,6 @@ interface UseMonacoGlobalActionsParams {
   saveActiveFile: () => void;
 }
 
-/** Wires every menu/shortcut command that maps to a built-in Monaco editor action (cut, copy,
- *  paste, undo, redo, find, replace, format, ...) into the shared action registry. Split out of
- *  `MonacoEditorWrapper` since it's pure "menu command -> Monaco API call" glue, not editor
- *  lifecycle management — every mounted pane calls this hook, but only the one with
- *  `registerGlobalActions` set actually runs anything (a split-view secondary pane is a no-op). */
 export function useMonacoGlobalActions({
   registerGlobalActions,
   editorRef,
@@ -115,14 +111,7 @@ export function useMonacoGlobalActions({
     "search.find",
     () => {
       if (!registerGlobalActions || !editorRef.current) return;
-      const editor = editorRef.current;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const findController = (editor as any).getContribution?.("editor.contrib.findController");
-      if (findController?.getState?.()?.isRevealed) {
-        findController.closeFindWidget();
-      } else {
-        editor.getAction("actions.find")?.run();
-      }
+      toggleFindWidget(editorRef.current);
     },
     [registerGlobalActions],
   );

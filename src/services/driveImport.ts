@@ -8,9 +8,6 @@ function toNodeMap(nodes: WorkspaceNode[]): NodeMap {
   return Object.fromEntries(nodes.map((n) => [n.id, n]));
 }
 
-/** Re-reads the active workspace tree from Drive (the source of truth) — picks up changes made
- *  from another device/tab since this page loaded. Nodes already in memory keep their local
- *  state (open tabs, unsaved edits live in the editor models, not in the tree). */
 export async function syncFromDrive(): Promise<void> {
   try {
     const before = Object.keys(useWorkspaceStore.getState().nodes).length;

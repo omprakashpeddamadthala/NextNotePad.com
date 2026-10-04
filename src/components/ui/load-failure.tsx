@@ -5,9 +5,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { isOfflineError } from "@/lib/api/fetchJson";
 
-/** Shown wherever a fetch failed, in place of a spinner that would otherwise never resolve.
- *  Every async view in the app funnels its failure here so a dropped connection reads the same
- *  way everywhere — and always offers a way out instead of a dead end. */
 export function LoadFailure({
   error,
   onRetry,

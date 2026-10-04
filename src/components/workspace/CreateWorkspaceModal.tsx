@@ -52,7 +52,6 @@ export function CreateWorkspaceModal() {
       description.trim() || undefined,
     );
     if (workspace) {
-      // A newly-created Drive workspace only contains internal metadata.
       useWorkspaceStore.getState().clearWorkspace();
       useTabsStore.getState().resetSession();
       setName("");

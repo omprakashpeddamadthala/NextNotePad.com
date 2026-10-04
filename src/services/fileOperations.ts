@@ -55,12 +55,7 @@ export function nextUntitledFolderName(nodes: NodeMap, parentId: string | null):
   return `New Folder ${counter}`;
 }
 
-/** Opens (or focuses) a file's tab and jumps the editor to a specific line/column. */
 export function openFileAtLocation(fileId: string, line: number, column = 1): void {
-  // Markdown Full Page View (and diff view) render in place of the tab content and are checked
-  // before the active tab in EditorArea, so without this a stale special view for another file
-  // would keep showing even after this tab opens underneath it — e.g. jumping to a search match
-  // while a different markdown file is open in its full-page view.
   closeAllSpecialViews();
   useTabsStore.getState().openTab(fileId);
   useRecentFilesStore.getState().addRecent(fileId);
@@ -170,8 +165,6 @@ export function renameNode(id: string, newName: string): void {
   }
 }
 
-/** Explicit language override (e.g. from the Language menu) — separate from a rename, since the
- *  user is deliberately picking something other than what the filename would otherwise imply. */
 export function setFileLanguage(id: string, language: string): void {
   const workspace = useWorkspaceStore.getState();
   const node = workspace.nodes[id];
@@ -186,9 +179,6 @@ export function setFileLanguage(id: string, language: string): void {
   }
 }
 
-/** Hides/unhides a file or folder from the explorer's default view (still fully usable — open,
- *  search, etc. — just not shown unless "Show Hidden Items" is on). Mirrors `renameNode`'s
- *  local-update-then-sync shape. */
 export function toggleNodeHidden(id: string): void {
   const workspace = useWorkspaceStore.getState();
   const node = workspace.nodes[id];
@@ -202,10 +192,6 @@ export function toggleNodeHidden(id: string): void {
   }
 }
 
-/** Expands/collapses a folder in the explorer tree. Mirrors `toggleNodeHidden`'s
- *  local-update-then-sync shape — without the cloud sync, this state only lived in the in-memory
- *  Zustand store (`guestOnlyLocalStorage` deliberately skips persisting it for signed-in users),
- *  so it silently reverted to the database's value on every reload/refetch. */
 export function setFolderCollapsed(id: string, collapsed: boolean): void {
   const workspace = useWorkspaceStore.getState();
   const node = workspace.nodes[id];
@@ -244,9 +230,6 @@ export function moveNode(id: string, newParentId: string | null): void {
   }
 }
 
-/** Duplicates one cloud file, preserving its lock state — a locked source stays locked in the
- *  copy (same ciphertext/salt/iv, so the same passphrase still unlocks it), matching how
- *  guest-mode duplication carries lock state over via its plain object spread. */
 async function duplicateCloudFile(source: FileNode, parentId: string | null, newName: string): Promise<FileNode> {
   const content = await cloudRepo.readFileContent(source.id);
   const created = (await cloudRepo.createCloudFile(parentId, newName, content)) as FileNode;
@@ -358,10 +341,6 @@ export async function duplicateNode(id: string): Promise<string | null> {
   return newId;
 }
 
-/**
- * Guest mode soft-deletes into the local Recycle Bin (restorable). Cloud mode soft-deletes
- * server-side directly — Phase 2a has no restore UI for cloud deletes yet (Phase 2b/3 territory).
- */
 export function moveToTrash(id: string): void {
   const workspace = useWorkspaceStore.getState();
   const tabs = useTabsStore.getState();
@@ -414,8 +393,6 @@ export async function permanentlyDelete(nodeId: string): Promise<void> {
   await Promise.all(allFiles.map((f) => getActiveRepository().deleteFileContent(f.id)));
 }
 
-/** Imports OS files dropped onto the explorer (flat — no folder structure). Used directly for the
- *  "Open" file-input flow, and as `importNativeDrop`'s fallback when entries aren't available. */
 export async function importNativeFiles(files: FileList | File[], parentId: string | null): Promise<void> {
   for (const file of Array.from(files)) {
     const workspace = useWorkspaceStore.getState();
@@ -425,9 +402,6 @@ export async function importNativeFiles(files: FileList | File[], parentId: stri
   }
 }
 
-/** A directory's entries must be paged via repeated `readEntries()` calls — a single call isn't
- *  guaranteed to return everything in a large folder, per the (non-standard but universally
- *  implemented) File and Directory Entries API. */
 function readAllDirectoryEntries(reader: FileSystemDirectoryReader): Promise<FileSystemEntry[]> {
   return new Promise((resolve, reject) => {
     const all: FileSystemEntry[] = [];
@@ -467,9 +441,6 @@ async function importEntry(entry: FileSystemEntry, parentId: string | null): Pro
   await createFile(parentId, name, content);
 }
 
-/** Imports whatever the OS drag-and-drop payload contains — files and folders alike, preserving
- *  directory structure — by walking `DataTransferItem.webkitGetAsEntry()`. Falls back to a flat
- *  file-only import if the browser doesn't expose entries (e.g. a synthetic DataTransfer). */
 export async function importNativeDrop(dataTransfer: DataTransfer, parentId: string | null): Promise<void> {
   const items = dataTransfer.items ? Array.from(dataTransfer.items) : [];
   const entries = items

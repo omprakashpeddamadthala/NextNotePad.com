@@ -1,8 +1,3 @@
-/**
- * Central branding constants for NextNotePad.
- * Defines the canonical brand name, domain, titles, taglines, and descriptions
- * used across UI components, meta tags, PWA manifests, and dialogs.
- */
 export const APP_BRAND = {
   name: "NextNotePad",
   domain: "NextNotePad.com",

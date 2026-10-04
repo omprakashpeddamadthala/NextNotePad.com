@@ -11,7 +11,6 @@ import { useNewNodeTargetParentId } from "@/hooks/useNewNodeTargetParentId";
 import { importNativeFiles } from "@/services/fileOperations";
 import { openDiffCheckerForActiveTab } from "@/services/diffChecker";
 
-/** Headless component: wires the app-level (non-Monaco) actions into the shared action registry. */
 export function GlobalActionsRegistrar() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { createFileAndRename, createFolderAndRename } = useCreateAndRename();

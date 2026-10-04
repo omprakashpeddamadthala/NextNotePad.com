@@ -90,7 +90,6 @@ def calculate_metrics(items: list[dict]) -> float:
 
   return (
     <div className="space-y-6">
-      {/* Live Interactive Preview Card */}
       <div className="rounded-xl border border-border/80 bg-card/70 p-4 sm:p-5 shadow-xs backdrop-blur-xs">
         <div className="flex items-center justify-between pb-3 border-b border-border/60 mb-3">
           <div className="flex items-center gap-2">
@@ -130,7 +129,6 @@ def calculate_metrics(items: list[dict]) -> float:
           </div>
         </div>
 
-        {/* Mock Editor Canvas */}
         <div
           className="relative rounded-lg border border-border bg-[#181a1f] p-4 text-foreground overflow-hidden shadow-inner font-mono select-none"
           style={{
@@ -140,7 +138,6 @@ def calculate_metrics(items: list[dict]) -> float:
             tabSize: settings.tabWidth,
           }}
         >
-          {/* Header dots */}
           <div className="flex items-center gap-1.5 pb-2 mb-2 border-b border-white/5 opacity-60 text-[10px]">
             <span className="size-2 rounded-full bg-rose-500/80" />
             <span className="size-2 rounded-full bg-amber-500/80" />
@@ -151,7 +148,6 @@ def calculate_metrics(items: list[dict]) -> float:
           </div>
 
           <div className="flex">
-            {/* Gutter / Line Numbers */}
             {settings.showLineNumbers && (
               <div className="pr-3 text-right text-white/30 select-none border-r border-white/10 mr-3 text-xs">
                 <div>1</div>
@@ -160,7 +156,6 @@ def calculate_metrics(items: list[dict]) -> float:
               </div>
             )}
 
-            {/* Code Body */}
             <div className="flex-1 whitespace-pre overflow-x-auto text-emerald-400/90 text-xs">
               {sampleCode[sampleLang].split("\n").map((line, i) => (
                 <div key={i} className="flex items-center">
@@ -180,7 +175,6 @@ def calculate_metrics(items: list[dict]) -> float:
               ))}
             </div>
 
-            {/* Mock Minimap */}
             {settings.showMinimap && (
               <div className="w-8 ml-3 border-l border-white/10 pl-1.5 opacity-30 flex flex-col gap-1 text-[4px]">
                 <div className="h-1 bg-white/40 rounded-xs w-full" />
@@ -192,7 +186,6 @@ def calculate_metrics(items: list[dict]) -> float:
         </div>
       </div>
 
-      {/* Typography & Sizing */}
       <div className="rounded-xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs backdrop-blur-xs">
         <div className="mb-4 flex items-center gap-2.5 pb-3 border-b border-border/60">
           <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -205,7 +198,6 @@ def calculate_metrics(items: list[dict]) -> float:
         </div>
 
         <div className="space-y-4">
-          {/* Font Family Quick Presets */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="text-sm font-medium">Font Family</Label>
@@ -244,9 +236,7 @@ def calculate_metrics(items: list[dict]) -> float:
             />
           </div>
 
-          {/* Font Size & Tab Width */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-            {/* Font Size Stepper */}
             <div className="space-y-2 rounded-lg border border-border/50 bg-background/50 p-3.5">
               <div className="flex items-center justify-between">
                 <Label htmlFor="fontSize" className="text-sm font-medium">Font Size</Label>
@@ -300,7 +290,6 @@ def calculate_metrics(items: list[dict]) -> float:
               </div>
             </div>
 
-            {/* Tab Width */}
             <div className="space-y-2 rounded-lg border border-border/50 bg-background/50 p-3.5">
               <div className="flex items-center justify-between">
                 <Label htmlFor="tabWidth" className="text-sm font-medium">Tab Indentation</Label>
@@ -323,7 +312,6 @@ def calculate_metrics(items: list[dict]) -> float:
             </div>
           </div>
 
-          {/* Cursor Style */}
           <div className="space-y-2 rounded-lg border border-border/50 bg-background/50 p-3.5">
             <div className="flex items-center gap-2">
               <MousePointer2 className="size-3.5 text-muted-foreground" />
@@ -351,7 +339,6 @@ def calculate_metrics(items: list[dict]) -> float:
         </div>
       </div>
 
-      {/* Editor Features & Display Toggles */}
       <div className="rounded-xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs backdrop-blur-xs">
         <div className="mb-4 flex items-center gap-2.5 pb-3 border-b border-border/60">
           <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">

@@ -2,13 +2,6 @@ import { useEffect } from "react";
 import { SHORTCUTS, type ActionId } from "@/lib/constants/shortcuts";
 import { runAction } from "@/services/shortcuts/actionRegistry";
 
-/**
- * Actions that make sense natively inside *any* text-editing context (a plain
- * `<input>`/`<textarea>` — e.g. the explorer's inline rename box — or Monaco,
- * which additionally has its own default keybinding or an `editor.addCommand`
- * override for these). Skipping global dispatch while such a context is
- * focused avoids stomping on native text editing and avoids double-firing.
- */
 const TEXT_EDITING_NATIVE_ACTIONS: ActionId[] = [
   "edit.undo",
   "edit.redo",

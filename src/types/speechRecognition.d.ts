@@ -1,6 +1,3 @@
-// Minimal ambient types for the (non-standard, Chromium-only) Web Speech API —
-// not part of TypeScript's "dom" lib, so declared here rather than pulling in a package.
-
 interface SpeechRecognitionAlternative {
   readonly transcript: string;
   readonly confidence: number;

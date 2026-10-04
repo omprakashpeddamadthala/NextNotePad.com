@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  getDriveSession,
-  getDriveSessionWithWorkspace,
   driveErrorResponse,
+  getDriveSession,
+  getDriveSessionForRequest,
 } from "@/lib/drive/session";
 import {
   createNode,
@@ -14,8 +14,6 @@ import { unauthorized, badRequest } from "@/lib/api/respond";
 
 const MAX_RESULTS = 2000;
 
-/** Cross-workspace file index for Quick Open. Fetched once per dialog open (the client filters
- *  in memory per keystroke) — one paginated Drive listing, no per-query Drive search. */
 export async function GET(request: NextRequest) {
   try {
     const session = await getDriveSession();
@@ -34,20 +32,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const requestedWorkspaceId =
-      request.nextUrl.searchParams.get("workspaceId");
-    const session = requestedWorkspaceId
-      ? await getDriveSession()
-      : await getDriveSessionWithWorkspace();
+    const session = await getDriveSessionForRequest(request);
     if (!session) return unauthorized();
     const parsed = createFileSchema.safeParse(await request.json());
     if (!parsed.success) return badRequest(parsed.error);
-    const { ds } = session;
-    const workspaceId = requestedWorkspaceId
-      ? (await ds.get(requestedWorkspaceId)).id
-      : ("workspaceId" in session
-          ? (session as unknown as { workspaceId: string }).workspaceId
-          : "");
+    const { ds, workspaceId } = session;
     const entry = await createNode(ds, workspaceId, {
       type: "file",
       ...parsed.data,

@@ -1,14 +1,3 @@
-// App-shell caching only — deliberately never touches /api/* requests. This app's cloud mode
-// (signed in) needs live, correct server data; pretending that works offline without a real
-// sync/conflict-resolution layer (not built yet) would risk silently editing stale content.
-// Guest mode already stores everything in localStorage/IndexedDB and needs no network at all,
-// so caching just the shell (HTML/JS/CSS/icons) is enough to make guest mode fully offline-capable.
-//
-// `?dev=1` (see ServiceWorkerRegistration.tsx) marks a dev-server registration: Chrome requires
-// an active service worker with a fetch handler before it'll ever fire `beforeinstallprompt`
-// (which is what the "Install App" button needs), but actually caching anything here would fight
-// Next.js's own Fast Refresh and serve stale code after edits. So in dev we still register and
-// activate — satisfying the installability check — but every fetch is a deliberate no-op.
 const IS_DEV = new URL(self.location.href).searchParams.get("dev") === "1";
 const CACHE_NAME = "notepad-web-shell-v1";
 const APP_SHELL = ["/", "/manifest.webmanifest"];
@@ -36,7 +25,7 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  if (IS_DEV) return; // let the browser handle every request exactly as if no SW existed
+  if (IS_DEV) return;
 
   const { request } = event;
   if (request.method !== "GET") return;
@@ -45,8 +34,6 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith("/api/")) return;
 
-  // Next.js's hashed build assets never change content under the same URL — cache-first is safe
-  // and skips the network entirely on repeat visits.
   if (url.pathname.startsWith("/_next/static/")) {
     event.respondWith(
       caches.open(CACHE_NAME).then(async (cache) => {
@@ -60,8 +47,6 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Navigations and everything else in the shell: prefer the network (freshest), fall back to
-  // the cache when offline.
   event.respondWith(
     fetch(request)
       .then((response) => {

@@ -8,9 +8,6 @@ export type CursorStyle =
 
 export type AutoSaveMode = "off" | "2s" | "5s" | "10s" | "manual";
 
-/** Which backend the "Fix Grammar & Spelling (AI)" feature calls — Gemini directly, or Claude via
- *  the AgentRouter gateway. Both are optional server-side integrations; either can be left
- *  unconfigured without affecting the other. */
 export type AiProvider = "gemini" | "claude";
 
 export type EncodingName =

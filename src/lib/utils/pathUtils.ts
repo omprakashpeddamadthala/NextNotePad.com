@@ -3,7 +3,6 @@ export function joinPath(parentPath: string, name: string): string {
   return `${parentPath}/${name}`;
 }
 
-/** Windows/mac/linux reserved characters, kept conservative for cross-platform export/import safety. */
 const INVALID_NAME_CHARS = /[/\\:*?"<>|]/;
 
 export function isValidNodeName(name: string): boolean {

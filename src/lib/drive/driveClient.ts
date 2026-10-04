@@ -8,10 +8,6 @@ function getEnv(name: string): string {
   return value;
 }
 
-/**
- * Builds an authenticated Drive client for a user. Persists any access-token refresh the
- * underlying OAuth2 client performs automatically, so future requests don't need to re-prompt.
- */
 export function getDriveClientForUser(user: UserModel): drive_v3.Drive {
   const oauth2Client = new google.auth.OAuth2(
     getEnv("GOOGLE_CLIENT_ID"),

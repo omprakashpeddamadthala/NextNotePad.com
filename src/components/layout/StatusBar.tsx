@@ -90,7 +90,6 @@ export function StatusBar() {
       aria-label="Status bar"
       className="np-statusbar-gradient flex h-6.5 shrink-0 items-center border-t border-white/8 text-[11px] text-[var(--np-statusbar-fg)] select-none"
     >
-      {/* Left side: workspace stats */}
       <Segment
         onClick={() => openDialog("workspaceStats")}
         title="Workspace statistics"
@@ -100,7 +99,6 @@ export function StatusBar() {
         {stats.folders} folder{stats.folders === 1 ? "" : "s"}
       </Segment>
 
-      {/* Right side: file-specific info */}
       <div className="flex h-full flex-1 items-center justify-end">
         <ApiActivitySegment />
         {file && (

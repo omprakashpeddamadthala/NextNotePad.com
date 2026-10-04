@@ -7,7 +7,6 @@ import { useSpeechDictation } from "@/hooks/useSpeechDictation";
 import { useEditorInsertStore } from "@/store/editorInsertStore";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 
-/** Toggles continuous voice-to-text dictation into the active editor pane. */
 export function VoiceDictationButton({
   variant = "toolbar",
 }: {

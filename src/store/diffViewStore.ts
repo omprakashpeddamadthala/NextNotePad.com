@@ -6,9 +6,6 @@ export interface DiffView {
 }
 
 interface DiffViewState {
-  /** When set, `EditorArea` renders `DiffTabView` (two open tabs side by side on Monaco's diff
-   *  editor) in place of the normal tab content — deliberately not persisted, since a comparison
-   *  is a transient view, not workspace state. */
   diffView: DiffView | null;
   openDiff: (leftTabId: string, rightTabId: string) => void;
   closeDiff: () => void;

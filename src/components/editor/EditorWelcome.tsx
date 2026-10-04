@@ -77,7 +77,6 @@ function QuickAction({
   );
 }
 
-/** Shown when no file is open. Full-bleed responsive dashboard without empty whitespace. */
 export function EditorWelcome() {
   const recent = useRecentFilesStore((s) => s.recent);
   const nodes = useWorkspaceStore((s) => s.nodes);
@@ -167,7 +166,6 @@ export function EditorWelcome() {
   return (
     <div className="socratix-bg np-scrollbar h-full w-full overflow-y-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col justify-between select-none">
       <div className="animate-in fade-in w-full max-w-7xl mx-auto flex-1 flex flex-col justify-between gap-4">
-        {/* Header Bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-border/60">
           <div className="flex items-center gap-3">
             <AppLogo
@@ -195,7 +193,6 @@ export function EditorWelcome() {
             </div>
           </div>
 
-          {/* Status badges */}
           <div className="flex items-center gap-2 text-xs">
             <div className="flex items-center gap-1.5 rounded-md border border-border/70 bg-card px-2.5 py-1 shadow-xs">
               <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -210,11 +207,8 @@ export function EditorWelcome() {
           </div>
         </div>
 
-        {/* Dashboard Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4.5 flex-1 items-stretch">
-          {/* Left Column: Actions, Recent, and Local Workspace Info */}
           <div className="lg:col-span-4 flex flex-col justify-between gap-3">
-            {/* Quick Actions */}
             <div>
               <h2 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Quick Actions
@@ -249,7 +243,6 @@ export function EditorWelcome() {
               </div>
             </div>
 
-            {/* Recent Files or Starter Guide */}
             <div className="flex-1 flex flex-col">
               <h2 className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 <Clock className="size-3 text-[#007492] dark:text-[#00e5cc]" />
@@ -289,7 +282,6 @@ export function EditorWelcome() {
               )}
             </div>
 
-            {/* Local Storage & Security Card */}
             <div className="rounded-xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#12131a] p-3 flex items-center gap-3 shadow-2xs">
               <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/20">
                 <ShieldCheck className="size-4" />
@@ -306,7 +298,6 @@ export function EditorWelcome() {
             </div>
           </div>
 
-          {/* Right Column: Features & Capabilities (3x3 grid) */}
           <div className="lg:col-span-8 flex flex-col justify-between">
             <div className="mb-2 flex items-center justify-between">
               <h2 className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -353,7 +344,6 @@ export function EditorWelcome() {
           </div>
         </div>
 
-        {/* Bottom Full-Width Strip */}
         <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-slate-200/80 dark:border-white/10 text-[11px] text-slate-500 dark:text-slate-400 font-mono">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-slate-800 dark:text-slate-200">{APP_BRAND.domain}</span>

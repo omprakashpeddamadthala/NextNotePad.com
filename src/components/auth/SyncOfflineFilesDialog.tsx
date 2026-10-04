@@ -5,7 +5,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { useMigrationPromptStore } from "@/store/migrationPromptStore";
 
-/** Shown once, right after a first-ever sign-in with existing guest/offline files — asks before pushing them to Drive. */
 export function SyncOfflineFilesDialog() {
   const open = useMigrationPromptStore((s) => s.open);
   const fileCount = useMigrationPromptStore((s) => s.fileCount);

@@ -6,7 +6,7 @@ import {
 } from "@/lib/performance/driveMetrics";
 import type { WorkspaceNode } from "@/types/file";
 
-export interface CachedWorkspaceRecord {
+interface CachedWorkspaceRecord {
   id: string;
   name: string;
   description: string | null;
@@ -184,15 +184,6 @@ export function configureDriveDataClient(userId: string): void {
   fileWorkspaceIds.clear();
 }
 
-export function currentDriveCacheUserId(): string | null {
-  return activeUserId;
-}
-
-/**
- * Rapidly warm up the in-memory cache from IndexedDB on startup.
- * Populates memory map with workspaces, trees, and file index so initial renders
- * have zero skeleton flicker and zero wait.
- */
 export async function warmDriveCacheFromIndexedDB(userId: string): Promise<void> {
   const db = store();
   if (!db) return;
@@ -221,7 +212,6 @@ export async function warmDriveCacheFromIndexedDB(userId: string): Promise<void>
   }
 }
 
-/** Synchronously retrieve cached workspace list if available in memory */
 export function getCachedWorkspaceListSync(): WorkspaceListResponse | undefined {
   if (!activeUserId) return undefined;
   return (
@@ -231,7 +221,6 @@ export function getCachedWorkspaceListSync(): WorkspaceListResponse | undefined 
   )?.value;
 }
 
-/** Synchronously retrieve cached workspace tree if available in memory */
 export function getCachedWorkspaceTreeSync(
   workspaceId: string,
 ): WorkspaceTreeResponse | undefined {
@@ -246,7 +235,6 @@ export function getCachedWorkspaceTreeSync(
   return undefined;
 }
 
-/** Synchronously retrieve cached file index if available in memory */
 export function getCachedDriveFileIndexSync(): SearchableDriveFile[] | undefined {
   if (!activeUserId) return undefined;
   return (
@@ -256,18 +244,9 @@ export function getCachedDriveFileIndexSync(): SearchableDriveFile[] | undefined
   )?.value?.files;
 }
 
-/** Check if a workspace tree is already cached in memory */
 export function hasCachedWorkspaceTreeSync(workspaceId: string): boolean {
   if (!activeUserId) return false;
   return memory.has(userKey(`tree:${workspaceId}`));
-}
-
-export async function getCachedWorkspaceList(): Promise<
-  WorkspaceListResponse | undefined
-> {
-  if (!activeUserId) return undefined;
-  return (await readRecord<WorkspaceListResponse>(userKey("workspaces")))
-    ?.value;
 }
 
 export async function cacheWorkspaceList(
@@ -295,17 +274,6 @@ export function loadWorkspaceList(
         }),
     }),
   );
-}
-
-export async function getCachedWorkspaceTree(
-  workspaceId: string,
-): Promise<WorkspaceTreeResponse | undefined> {
-  if (!activeUserId) return undefined;
-  const cached = (
-    await readRecord<WorkspaceTreeResponse>(userKey(`tree:${workspaceId}`))
-  )?.value;
-  if (cached) rememberTree(cached);
-  return cached;
 }
 
 export function loadWorkspaceTree(
@@ -354,17 +322,6 @@ export function loadActiveWorkspaceTree(
   });
 }
 
-export async function cacheWorkspaceTree(
-  tree: WorkspaceTreeResponse,
-): Promise<void> {
-  rememberTree(tree);
-  await writeRecord(userKey(`tree:${tree.workspaceId}`), tree);
-}
-
-/**
- * Loads all workspace trees in a single roundtrip via /api/workspaces/trees.
- * Caches workspace list, individual trees, and builds the full file index.
- */
 export function loadAllWorkspaceTrees(
   options: {
     force?: boolean;
@@ -374,13 +331,11 @@ export function loadAllWorkspaceTrees(
 ): Promise<AllWorkspaceTreesResponse> {
   return measureDriveTiming("all-workspace-trees", async () => {
     const handleData = async (data: AllWorkspaceTreesResponse) => {
-      // 1. Cache workspace list
       await writeRecord(userKey("workspaces"), {
         workspaces: data.workspaces,
         activeWorkspaceId: data.activeWorkspaceId,
       });
 
-      // 2. Cache each workspace tree and index files
       const allFiles: SearchableDriveFile[] = [];
       const wsMap = new Map(data.workspaces.map((w) => [w.id, w.name]));
 
@@ -405,7 +360,6 @@ export function loadAllWorkspaceTrees(
         }
       }
 
-      // 3. Cache searchable files index
       await writeRecord(userKey("files"), { files: allFiles });
     };
 
@@ -455,7 +409,7 @@ export function loadDriveFileIndex(
   });
 }
 
-export async function readCachedFileContent(
+async function readCachedFileContent(
   fileId: string,
   version?: number,
 ): Promise<string | undefined> {
@@ -514,7 +468,6 @@ export async function writeCachedFileContent(
   await writeRecord(userKey(`content:${fileId}`), content, version);
 }
 
-/** Immediately update a node in the local memory & IDB cache after mutation */
 export async function updateCachedTreeNode(
   workspaceId: string,
   node: WorkspaceNode,
@@ -573,7 +526,6 @@ export async function updateCachedTreeNode(
   }
 }
 
-/** Immediately remove a node from the local memory & IDB cache after deletion */
 export async function removeCachedTreeNode(
   workspaceId: string,
   nodeId: string,
@@ -610,11 +562,6 @@ export async function invalidateWorkspaceTree(
 ): Promise<void> {
   if (!activeUserId) return;
   await deleteRecord(userKey(`tree:${workspaceId}`));
-}
-
-export async function invalidateWorkspaceList(): Promise<void> {
-  if (!activeUserId) return;
-  await deleteRecord(userKey("workspaces"));
 }
 
 export async function invalidateDriveFileIndex(): Promise<void> {
@@ -663,10 +610,6 @@ export async function prefetchFileContents(
 
 let prefetchScheduled = false;
 
-/**
- * Triggers background prefetching when browser is idle.
- * Loads all workspace trees and warms cache for files in the active workspace.
- */
 export function triggerIdleDrivePrefetch(): void {
   if (prefetchScheduled || typeof window === "undefined" || !activeUserId)
     return;
@@ -675,10 +618,8 @@ export function triggerIdleDrivePrefetch(): void {
   const run = async () => {
     prefetchScheduled = false;
     try {
-      // 1. Fetch all workspace trees in background
       await loadAllWorkspaceTrees({ background: true });
 
-      // 2. Prefetch content of all files in active workspace
       const currentList = getCachedWorkspaceListSync();
       const activeWsId =
         currentList?.activeWorkspaceId ?? currentList?.workspaces[0]?.id;
@@ -694,7 +635,6 @@ export function triggerIdleDrivePrefetch(): void {
         }
       }
     } catch {
-      // Background idle prefetch failure is non-fatal
     }
   };
 

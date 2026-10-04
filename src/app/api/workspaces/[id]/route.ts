@@ -26,7 +26,6 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
   }
 }
 
-/** PATCH /api/workspaces/[id] — renames the Drive folder itself and rewrites `.workspace.json`. */
 export async function PATCH(request: NextRequest, { params }: Ctx) {
   try {
     const session = await getDriveSession();
@@ -42,7 +41,6 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
   }
 }
 
-/** DELETE /api/workspaces/[id] — moves the workspace folder (and everything in it) to Drive's trash. */
 export async function DELETE(_req: NextRequest, { params }: Ctx) {
   try {
     const session = await getDriveSession();

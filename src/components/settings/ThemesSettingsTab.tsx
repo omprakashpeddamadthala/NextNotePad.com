@@ -24,7 +24,6 @@ export function ThemesSettingsTab() {
 
   return (
     <div className="space-y-6">
-      {/* Header Info & Active Banner */}
       <div className="rounded-xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs backdrop-blur-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/60">
           <div className="flex items-center gap-2.5">
@@ -37,7 +36,6 @@ export function ThemesSettingsTab() {
             </div>
           </div>
 
-          {/* Filter Pills */}
           <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg border border-border/50 text-xs">
             <button
               type="button"
@@ -72,7 +70,6 @@ export function ThemesSettingsTab() {
           </div>
         </div>
 
-        {/* Current Active Theme Highlight */}
         <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
             <span>Active theme:</span>
@@ -85,7 +82,6 @@ export function ThemesSettingsTab() {
         </div>
       </div>
 
-      {/* Theme Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
         {filteredThemes.map((id) => {
           const t = THEME_MODULES[id];
@@ -103,7 +99,6 @@ export function ThemesSettingsTab() {
                   : "border-border/70 bg-card/50 hover:border-primary/40 hover:bg-card hover:shadow-xs",
               )}
             >
-              {/* Theme Mockup Screen */}
               <div
                 className="flex h-24 flex-col overflow-hidden rounded-lg border shadow-xs text-[10px] select-none transition-transform group-hover:scale-[1.01]"
                 style={{
@@ -111,7 +106,6 @@ export function ThemesSettingsTab() {
                   borderColor: t.chrome.panelBorder,
                 }}
               >
-                {/* Window Chrome Title / Tab Bar */}
                 <div
                   className="flex h-5 items-center justify-between border-b px-2"
                   style={{
@@ -141,9 +135,7 @@ export function ThemesSettingsTab() {
                   </span>
                 </div>
 
-                {/* Editor Content Area */}
                 <div className="flex-1 flex p-2 font-mono text-[9px]">
-                  {/* Left Gutter */}
                   <div
                     className="w-4 border-r pr-1 flex flex-col gap-1 text-[8px] opacity-40 select-none"
                     style={{
@@ -156,7 +148,6 @@ export function ThemesSettingsTab() {
                     <span>3</span>
                   </div>
 
-                  {/* Syntax Highlighted Lines */}
                   <div className="flex-1 pl-2 space-y-1">
                     <div className="flex items-center gap-1">
                       <span
@@ -188,7 +179,6 @@ export function ThemesSettingsTab() {
                   </div>
                 </div>
 
-                {/* Status Bar */}
                 <div
                   className="flex h-3.5 items-center justify-between px-2 text-[7px] font-mono"
                   style={{
@@ -201,7 +191,6 @@ export function ThemesSettingsTab() {
                 </div>
               </div>
 
-              {/* Theme Details Footer */}
               <div className="flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-1.5">
@@ -225,7 +214,6 @@ export function ThemesSettingsTab() {
                     </span>
                   </div>
 
-                  {/* Color Swatch Dots */}
                   <div className="flex items-center gap-1.5 mt-1.5">
                     <span
                       className="size-2.5 rounded-full border border-black/20 shadow-xs"
@@ -250,7 +238,6 @@ export function ThemesSettingsTab() {
                   </div>
                 </div>
 
-                {/* Active Checkmark Pill */}
                 {isActive ? (
                   <div className="flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-[11px] font-medium text-primary-foreground shadow-xs">
                     <Check className="size-3 stroke-[3]" /> Active

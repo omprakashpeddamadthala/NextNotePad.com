@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { registerAction } from "@/services/shortcuts/actionRegistry";
 
-/** Declaratively registers an action handler for the lifetime of the component. */
 export function useRegisterAction(
   id: string,
   handler: () => void,

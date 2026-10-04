@@ -1,13 +1,3 @@
-/**
- * Multi-workspace Zustand store.
- *
- * Manages the list of workspaces and which one is currently active.
- * The active workspace drives what the sidebar shows and what API routes target.
- *
- * Persistence: activeWorkspaceId is persisted in localStorage as a fast hint for the
- * initial render. The authoritative source of truth is `.appConfig.json` in the user's Drive.
- */
-
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { zustandLocalStorage } from "@/services/storage/localStorageService";
@@ -30,75 +20,45 @@ export interface WorkspaceRecord {
 }
 
 interface MultiWorkspaceState {
-  /** All workspaces for the current user. Empty until loaded. */
   workspaces: WorkspaceRecord[];
-  /** ID of the currently active workspace. */
   activeWorkspaceId: string | null;
-  /** True while the workspace list is being fetched. */
   loadingWorkspaces: boolean;
-  /** True while a new workspace is being created. */
   creatingWorkspace: boolean;
-  /** True while a workspace is being renamed. */
   renamingWorkspace: boolean;
-  /** True while a workspace is being deleted. */
   deletingWorkspace: boolean;
-  /** True while switching between workspaces. */
   switchingWorkspace: boolean;
-  /** Controls the Create Workspace modal. */
   createModalOpen: boolean;
-  /** Controls the Rename Workspace modal. */
   renameModalOpen: boolean;
-  /** Controls the Delete Workspace modal. */
   deleteModalOpen: boolean;
-  /** Target workspace ID for rename or delete operations. */
   targetWorkspaceId: string | null;
-  /** Any error loading workspaces. */
   loadError: string | null;
 }
 
 interface MultiWorkspaceActions {
-  /** Load the workspace list from the server. Call on app startup (authenticated users only). */
   loadWorkspaces: (options?: {
     force?: boolean;
     background?: boolean;
   }) => Promise<void>;
   hydrateWorkspaceList: (data: WorkspaceListResponse) => void;
-  /**
-   * Switch to a different workspace.
-   * This persists the choice server-side and updates local state.
-   * Callers should reset the workspace file tree after this completes.
-   */
   switchWorkspace: (
     workspaceId: string,
     options?: { background?: boolean },
   ) => Promise<boolean>;
-  /**
-   * Create a new workspace (including its Drive folder).
-   * On success, automatically switches to the new workspace.
-   */
   createWorkspace: (
     name: string,
     description?: string,
   ) => Promise<WorkspaceRecord | null>;
-  /** Rename an existing workspace. */
   renameWorkspace: (
     id: string,
     name: string,
     description?: string,
   ) => Promise<boolean>;
-  /** Delete a workspace. */
   deleteWorkspace: (id: string) => Promise<boolean>;
-  /** Open/close the Create Workspace modal. */
   setCreateModalOpen: (open: boolean) => void;
-  /** Open/close the Rename Workspace modal. */
   setRenameModalOpen: (open: boolean, workspaceId?: string) => void;
-  /** Open/close the Delete Workspace modal. */
   setDeleteModalOpen: (open: boolean, workspaceId?: string) => void;
-  /** Update a workspace name/description in local state after a PATCH. */
   updateWorkspaceLocally: (id: string, patch: Partial<WorkspaceRecord>) => void;
-  /** Remove a workspace from local state after a DELETE. */
   removeWorkspaceLocally: (id: string) => void;
-  /** Reset store to initial state (called on sign out). */
   reset: () => void;
 }
 
@@ -341,8 +301,6 @@ export const useMultiWorkspaceStore = create<
     {
       name: "np-multi-workspace",
       storage: createJSONStorage(() => zustandLocalStorage),
-      // Only persist the active workspace ID as a fast-load hint.
-      // The actual list is always fetched fresh from the server.
       partialize: (state) => ({ activeWorkspaceId: state.activeWorkspaceId }),
     },
   ),

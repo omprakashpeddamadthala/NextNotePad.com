@@ -1,11 +1,8 @@
-import { ApiError as GenAiApiError } from "@google/genai";
+import { ApiError as GenAiApiError, GoogleGenAI } from "@google/genai";
 import type { GenerateContentResponse } from "@google/genai";
-import { createGeminiClient } from "./geminiClient";
 import { getEffectiveAiConfig } from "./appConfig";
 import { AiProviderError } from "./AiProviderError";
 
-// Falls back to the model this app has always used, so leaving GEMINI_MODEL/AppConfig.geminiModel
-// unset behaves exactly like it did before either of those existed.
 const DEFAULT_MODEL = "gemini-3.6-flash";
 
 function mapGenAiError(err: unknown): AiProviderError {
@@ -21,11 +18,7 @@ function mapGenAiError(err: unknown): AiProviderError {
   return new AiProviderError("Couldn't reach Gemini.", 502);
 }
 
-/** Streams a grammar-correction completion from Gemini, normalized to plain text deltas so the
- *  route can treat this identically to the Claude/AgentRouter provider. Throws AiProviderError
- *  (never the raw @google/genai error) before yielding anything if setup or the initial request
- *  fails, so the caller can map that to the right HTTP status before the streamed Response commits. */
-export async function* streamGeminiCorrection(params: {
+export async function* streamGeminiText(params: {
   text: string;
   systemInstruction: string;
 }): AsyncGenerator<string> {
@@ -33,7 +26,7 @@ export async function* streamGeminiCorrection(params: {
   if (!config.geminiApiKey) {
     throw new AiProviderError("Gemini isn't configured on this server.", 503);
   }
-  const client = createGeminiClient(config.geminiApiKey);
+  const client = new GoogleGenAI({ apiKey: config.geminiApiKey });
 
   let stream: AsyncGenerator<GenerateContentResponse>;
   try {
@@ -44,10 +37,6 @@ export async function* streamGeminiCorrection(params: {
         systemInstruction: params.systemInstruction,
         temperature: 0.2,
         maxOutputTokens: 8192,
-        // Flash defaults to "thinking" mode on, which burns several seconds of hidden reasoning
-        // tokens a straight proofread never needs. gemini-3.6-flash rejects budget 0 outright
-        // (400 INVALID_ARGUMENT); 1 is the smallest budget the API accepts and still collapses
-        // thinking to effectively nothing.
         thinkingConfig: { thinkingBudget: 1 },
       },
     });

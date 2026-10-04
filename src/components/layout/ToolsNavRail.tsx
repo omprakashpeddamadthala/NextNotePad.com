@@ -94,7 +94,6 @@ export function ToolsNavRail() {
         borderLeftColor: "var(--np-sidebar-border)",
       }}
     >
-      {/* ── Header ──────────────────────────────────────────────────────── */}
       <div
         className="flex h-10 shrink-0 items-center justify-between border-b px-3"
         style={{ borderBottomColor: "var(--np-sidebar-border)" }}
@@ -117,7 +116,6 @@ export function ToolsNavRail() {
         </button>
       </div>
 
-      {/* ── Search input ────────────────────────────────────────────────── */}
       <div
         className="border-b px-2.5 py-2 shrink-0"
         style={{ borderBottomColor: "var(--np-sidebar-border)" }}
@@ -143,7 +141,6 @@ export function ToolsNavRail() {
           )}
         </div>
 
-        {/* Category chips */}
         <div className="mt-2 flex items-center gap-1 overflow-x-auto pb-0.5 no-scrollbar">
           {(
             [
@@ -171,9 +168,7 @@ export function ToolsNavRail() {
         </div>
       </div>
 
-      {/* ── Tool Cards List ──────────────────────────────────────────────── */}
       <div className="np-scrollbar min-h-0 flex-1 overflow-y-auto p-2 space-y-3">
-        {/* Markdown & AI Tools */}
         {(category === "all" || category === "code") && (
           <ToolSection title="Preview & AI">
             <ToolButton
@@ -239,7 +234,6 @@ export function ToolsNavRail() {
           </ToolSection>
         )}
 
-        {/* Code & JSON */}
         {(category === "all" || category === "code") && (
           <ToolSection title="Code & Formatting">
             <ToolDropdown
@@ -289,7 +283,6 @@ export function ToolsNavRail() {
           </ToolSection>
         )}
 
-        {/* Text Transformations */}
         {(category === "all" || category === "text") && (
           <ToolSection title="Text Transformations">
             <ToolDropdown
@@ -359,7 +352,6 @@ export function ToolsNavRail() {
           </ToolSection>
         )}
 
-        {/* Cryptography & Encoders */}
         {(category === "all" || category === "crypto") && (
           <ToolSection title="Crypto & Encoders">
             <ToolDropdown
@@ -420,7 +412,6 @@ export function ToolsNavRail() {
           </ToolSection>
         )}
 
-        {/* Utilities & Converters */}
         {(category === "all" || category === "utils") && (
           <ToolSection title="Productivity Utilities">
             <ToolButton

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type DialogName = "commandPalette" | "quickOpen" | "settings" | "about" | "exportImport" | "workspaceStats";
+type DialogName = "commandPalette" | "quickOpen" | "settings" | "about" | "exportImport" | "workspaceStats";
 
 interface DialogState {
   open: Record<DialogName, boolean>;
@@ -21,10 +21,6 @@ const initialOpen: Record<DialogName, boolean> = {
   workspaceStats: false,
 };
 
-/** Single home for "is this dialog open" — one boolean per dialog under `open`, rather than a
- *  separate top-level flag + setter pair per dialog (as these used to live in uiStore). Adding a
- *  new dialog means adding one key to DialogName instead of a field, an initial value, a setter
- *  type, and a setter implementation. */
 export const useDialogStore = create<DialogState & DialogActions>()((set) => ({
   open: initialOpen,
   openDialog: (name) => set((s) => ({ open: { ...s.open, [name]: true } })),

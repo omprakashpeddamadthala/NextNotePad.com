@@ -31,8 +31,6 @@ type ResultRow =
   | { kind: "file"; fileResult: FileSearchResult }
   | { kind: "match"; fileId: string; match: FileSearchResult["matches"][number]; index: number };
 
-// Must stay in sync with the row markup below (file header row vs. match row) — the virtualizer
-// positions rows absolutely at this pitch, so a mismatch clips or overlaps them.
 const ROW_HEIGHT_FILE = 28;
 const ROW_HEIGHT_MATCH = 20;
 

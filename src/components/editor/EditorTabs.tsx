@@ -81,7 +81,6 @@ export function EditorTabs() {
         ))}
       </div>
 
-      {/* ── Quick Editor Actions on tab bar ──────────────────────────────── */}
       <div
         className="flex shrink-0 items-center border-l px-1.5 gap-0.5"
         style={{ borderColor: "var(--np-tab-border)" }}

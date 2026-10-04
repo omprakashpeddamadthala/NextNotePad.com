@@ -4,11 +4,6 @@ export interface LanguageDef {
   extensions: string[];
 }
 
-/**
- * Monaco's bundled `basic-languages` set already covers nearly everything
- * in the spec. Extensions map to Monaco language ids; anything unmapped
- * falls back to "plaintext".
- */
 export const LANGUAGES: LanguageDef[] = [
   { id: "plaintext", label: "Plain Text", extensions: ["txt", "log"] },
   { id: "java", label: "Java", extensions: ["java"] },
@@ -50,7 +45,6 @@ const EXTENSION_TO_LANGUAGE: Record<string, string> = LANGUAGES.reduce(
   {} as Record<string, string>,
 );
 
-/** Filenames without a "normal" extension that still map to a language. */
 const FILENAME_TO_LANGUAGE: Record<string, string> = {
   dockerfile: "dockerfile",
   makefile: "shell",

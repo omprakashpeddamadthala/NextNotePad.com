@@ -14,12 +14,6 @@ function isIOS(): boolean {
   );
 }
 
-/**
- * Shown until the app is actually installed. Uses the native one-click prompt when the browser
- * has already offered one; otherwise falls back to pointing the user at their browser's own
- * install UI — `beforeinstallprompt` firing at all is gated by undocumented Chrome engagement
- * heuristics, so waiting for it before showing anything can mean the button never appears at all.
- */
 export function InstallAppButton({ iconOnly = false }: { iconOnly?: boolean }) {
   const { installed, hasNativePrompt, promptInstall } = useInstallPrompt();
 

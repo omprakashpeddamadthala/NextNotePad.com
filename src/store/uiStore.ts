@@ -6,23 +6,14 @@ type BottomPanelTab = "search" | "console";
 
 interface UIState {
   sidebarVisible: boolean;
-  /** Mobile's slide-over explorer sheet — deliberately separate from `sidebarVisible` (which
-   *  drives the desktop inline panel and persists) so a persisted "open" from desktop doesn't
-   *  make the sheet cover the whole screen the moment a phone loads the app. Always starts
-   *  closed. */
   mobileSidebarOpen: boolean;
-  /** Mobile's bottom-sheet stand-in for the desktop MenuBar + Toolbar. Also transient. */
   mobileMenuSheetOpen: boolean;
   bottomPanelVisible: boolean;
   activeBottomTab: BottomPanelTab;
   isSplitView: boolean;
   markdownPreviewVisible: boolean;
-  /** Explorer's "Show Hidden Items" toggle — hidden files/folders stay out of the tree until this
-   *  is on, same idea as a Finder/Explorer dotfile toggle. */
   showHiddenFiles: boolean;
-  /** Right rail (VS Code secondary tools rail) visibility */
   toolsRailVisible: boolean;
-  /** Explicit raw markdown edit mode per file — if false/unset, MD files show directly in the full-page MD viewer */
   markdownEditingFileIds: Record<string, boolean>;
 }
 

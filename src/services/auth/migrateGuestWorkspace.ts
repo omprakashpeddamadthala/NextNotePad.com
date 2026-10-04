@@ -14,19 +14,6 @@ function toNodeMap(nodes: WorkspaceNode[]): NodeMap {
   return Object.fromEntries(nodes.map((n) => [n.id, n]));
 }
 
-/**
- * Called right after `authStore` flips to "authenticated". First-ever login with existing
- * guest files migrates them into the new cloud workspace (guest data in localStorage is left
- * untouched — see `guestOnlyLocalStorage`). Returning users just get their cloud tree loaded.
- *
- * Migration is gated on `hasAnyHistory` (has this workspace ever had a row, even a since-deleted
- * one) rather than "current cloud tree is empty" — a returning user who deletes everything and
- * reloads would otherwise look identical to a brand-new account, re-triggering migration and
- * resurrecting the guest snapshot's (stale, frozen) files that were already deleted from the cloud.
- *
- * Before migrating, asks the user via `SyncOfflineFilesDialog` (rendered in `AppShell`) — signing
- * in shouldn't silently push local-only content to Drive without consent.
- */
 export async function migrateOrLoadCloudWorkspace(): Promise<string | null> {
   let cloudNodes: WorkspaceNode[] = [];
   let hasAnyHistory = false;
@@ -57,9 +44,6 @@ export async function migrateOrLoadCloudWorkspace(): Promise<string | null> {
   }
 
   if (!hasAnyHistory && guestNodeList.length > 0) {
-    // Never make the one-time migration decision from a cached empty tree. A returning user may
-    // have deleted every visible item, while `hasAnyHistory` still prevents resurrecting an old
-    // guest snapshot.
     const verified = await cloudRepo.fetchWorkspaceTree(undefined, {
       force: true,
       background: true,
@@ -115,8 +99,6 @@ export async function migrateOrLoadCloudWorkspace(): Promise<string | null> {
       toast.error(
         "Couldn't migrate your local files to the cloud. They're still safe in this browser.",
       );
-      // Leave the (still-empty) cloud tree as the source of truth and drop any tabs referencing
-      // guest ids — status is already "authenticated", so leaving them would 404 against the cloud repo.
       useWorkspaceStore.getState().replaceAll(toNodeMap(cloudNodes));
       useTabsStore.getState().resetSession();
     }

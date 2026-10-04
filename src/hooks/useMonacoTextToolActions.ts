@@ -42,10 +42,6 @@ interface UseMonacoTextToolActionsParams {
   editorRef: RefObject<MonacoEditorNS.IStandaloneCodeEditor | null>;
 }
 
-/** Applies a pure text transform to the selection if one exists, otherwise the whole document —
- *  the same "selection-or-document" convention `formatActiveEditor` uses. Backs every Tools-menu
- *  action (Base64, URL, case conversion): they act on the tab you already have open instead of a
- *  separate copy/paste dialog. */
 function transformActiveEditor(
   editor: MonacoEditorNS.IStandaloneCodeEditor,
   transform: (text: string) => string,
@@ -89,8 +85,6 @@ function transformActiveEditor(
   }
 }
 
-/** Reads the selection if one exists, otherwise the whole document — read-only counterpart to
- *  `transformActiveEditor`, used by the hash tool since hashing doesn't mutate the buffer. */
 function getActiveEditorSelectionOrDocument(
   editor: MonacoEditorNS.IStandaloneCodeEditor,
 ): string | null {
@@ -130,9 +124,6 @@ function reportTextStats(editor: MonacoEditorNS.IStandaloneCodeEditor): void {
   );
 }
 
-/** Inserts text at the cursor, or replaces the selection if one exists — the "insert" counterpart
- *  to `transformActiveEditor`'s "selection-or-document" convention, used by tools (like UUID
- *  generation) that produce new content rather than transform existing content. */
 function insertAtCursorOrSelection(
   editor: MonacoEditorNS.IStandaloneCodeEditor,
   text: string,
@@ -150,10 +141,6 @@ function insertAtCursorOrSelection(
   toast.success(successMessage);
 }
 
-/** Wires every Tools-menu action (Base64/URL encode-decode, case conversion, hashing) into the
- *  shared action registry. Split out of `MonacoEditorWrapper` for the same reason
- *  `useMonacoGlobalActions` is: this is "menu command -> text transform" glue, not editor
- *  lifecycle management. */
 export function useMonacoTextToolActions({
   registerGlobalActions,
   editorRef,

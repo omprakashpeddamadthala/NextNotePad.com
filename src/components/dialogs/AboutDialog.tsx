@@ -14,9 +14,7 @@ export function AboutDialog() {
   return (
     <Dialog open={open} onOpenChange={(v) => setDialogOpen("about", v)}>
       <DialogContent className="sm:max-w-sm overflow-hidden p-0 gap-0">
-        {/* Hero banner */}
         <div className="relative flex flex-col items-center justify-center gap-3 bg-gradient-to-b from-[#0a0d1a] to-[#111525] px-6 pt-8 pb-6">
-          {/* Ambient glow */}
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.15),transparent_65%)]" />
 
           <AppLogo
@@ -43,7 +41,6 @@ export function AboutDialog() {
           </div>
         </div>
 
-        {/* Body */}
         <div className="px-5 py-4 space-y-3">
           <p className="text-[12.5px] text-muted-foreground leading-relaxed">
             A fast, modern browser text editor with offline-first storage, multi-tabs, syntax highlighting
@@ -62,7 +59,6 @@ export function AboutDialog() {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-between border-t px-5 py-3 text-[10.5px] text-muted-foreground/60 font-mono bg-muted/20">
           <span>Build #{APP_VERSION.buildNumber}{APP_VERSION.commitSha ? ` · ${APP_VERSION.commitSha}` : ""}</span>
           <a

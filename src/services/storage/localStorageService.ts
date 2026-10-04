@@ -28,11 +28,9 @@ function safeRemoveItem(key: string): void {
   try {
     window.localStorage.removeItem(key);
   } catch {
-    // ignore
   }
 }
 
-/** Zustand `persist` storage engine backed by the safe wrappers above. */
 export const zustandLocalStorage: StateStorage = {
   getItem: (name) => safeGetItem(name),
   setItem: (name, value) => {
@@ -41,11 +39,6 @@ export const zustandLocalStorage: StateStorage = {
   removeItem: (name) => safeRemoveItem(name),
 };
 
-/**
- * Same as `zustandLocalStorage`, but skips writes while a cloud session is active — the
- * in-memory store switches to holding cloud data after login, and this keeps the guest
- * snapshot in localStorage frozen/untouched underneath it (restored on sign-out via reload).
- */
 export const guestOnlyLocalStorage: StateStorage = {
   getItem: (name) => safeGetItem(name),
   setItem: (name, value) => {

@@ -3,19 +3,15 @@ import { getAdminUser, isBootstrapAdmin } from "@/lib/auth/admin";
 import { prisma } from "@/lib/db/prisma";
 import { updateUserSchema } from "@/lib/validation/adminSchemas";
 import { userToDto } from "@/lib/dto/userDto";
-import { badRequest, notFound } from "@/lib/api/respond";
+import { badRequest, notFound, forbidden } from "@/lib/api/respond";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-/** Promote/demote or block/unblock a user — admin-only (see src/lib/auth/admin.ts). Two guard
- *  rails keep this from ever locking every admin out of the deployment: an admin can't block
- *  themselves, and nobody can block the bootstrap ADMIN_EMAIL account (it's always admin
- *  regardless of the isAdmin flag, so demoting it is harmless and left unguarded). */
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const admin = await getAdminUser();
-  if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!admin) return forbidden();
   const { id } = await params;
 
   const parsed = updateUserSchema.safeParse(await request.json());

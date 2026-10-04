@@ -1,5 +1,3 @@
-/* Exercises the Drive-first services against an in-memory Drive and a real Postgres holding
- * legacy (pre-Drive-first) rows. Run: DATABASE_URL=... npx tsx scripts/drive-test/run.ts */
 import assert from "node:assert/strict";
 import type { drive_v3 } from "googleapis";
 import { prisma } from "@/lib/db/prisma";
@@ -262,7 +260,6 @@ async function main() {
     await new AppConfigService(a).update((c) => {
       c.settings.theme = "dracula";
     });
-    // simulate another device writing favorites directly
     const cfg = [...fake.files.values()].find(
       (f) => f.name === APP_CONFIG_FILE_NAME,
     )!;
@@ -360,7 +357,6 @@ async function main() {
     const ds = service(fake, "legacy2");
     await migrateLegacyData(ds);
     const countAfterFirst = fake.files.size;
-    // pretend the first run died before stamping .appConfig.json
     AppConfigService.clearCache("legacy2");
     await migrateLegacyData(ds);
     assert.equal(fake.files.size, countAfterFirst);
@@ -374,7 +370,6 @@ async function main() {
     await seedLegacyUser("legacy3");
     const fake = createFakeDrive();
     const ds = service(fake, "legacy3");
-    // old layout: NextNotePad.com/My Workspace/readme.md, with stale Drive content
     const rootId = await ds.ensureRootFolder();
     const oldWs = await ds.createFolder("My Workspace", rootId);
     const oldFile = await ds.createFile("readme.md", oldWs.id, "stale");

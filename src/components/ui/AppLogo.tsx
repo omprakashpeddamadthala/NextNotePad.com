@@ -35,7 +35,6 @@ const PIXEL_MAP: Record<string, number> = {
   "2xl": 80,
 };
 
-/** Application logo — rendered as the icon PNG with optional text/tagline. */
 export function AppLogo({
   size = "sm",
   showText = false,
@@ -69,7 +68,6 @@ export function AppLogo({
         className,
       )}
     >
-      {/* Icon container — the new logo has its own dark background baked in */}
       <div
         className={cn(
           "relative shrink-0 overflow-hidden transition-all duration-200",
@@ -80,7 +78,7 @@ export function AppLogo({
         style={style}
       >
         <Image
-          src="/logo.png"
+          src="/icon-512.png"
           alt={`${APP_BRAND.name} logo`}
           width={px}
           height={px}
@@ -94,7 +92,6 @@ export function AppLogo({
         />
       </div>
 
-      {/* Text area */}
       {(showText || showTagline || badge) && (
         <div
           className={cn(
@@ -132,45 +129,3 @@ export function AppLogo({
   );
 }
 
-/**
- * Full horizontal wordmark — icon + brand name + optional tagline.
- * Designed for splash screens, about dialogs, and onboarding flows.
- */
-export function AppWordmark({
-  size = "md",
-  showTagline = true,
-  className,
-}: {
-  size?: "sm" | "md" | "lg";
-  showTagline?: boolean;
-  className?: string;
-}) {
-  const iconSize = size === "sm" ? "sm" : size === "lg" ? "lg" : "md";
-  const titleSize =
-    size === "sm"
-      ? "text-base font-semibold"
-      : size === "lg"
-        ? "text-2xl font-bold"
-        : "text-lg font-bold";
-
-  return (
-    <div className={cn("inline-flex items-center gap-3 select-none", className)}>
-      <AppLogo size={iconSize} priority />
-      <div className="flex flex-col items-start">
-        <span
-          className={cn(
-            "font-heading tracking-tight leading-none text-foreground",
-            titleSize,
-          )}
-        >
-          {APP_BRAND.name}
-        </span>
-        {showTagline && (
-          <span className="text-[11px] text-muted-foreground/70 leading-tight mt-0.5">
-            {APP_BRAND.shortTagline}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}

@@ -61,7 +61,6 @@ export function MenuBar() {
           background: "var(--np-rail-bg)",
         }}
       >
-        {/* ── Left section: Brand logo + Menus ── */}
         <div className="flex shrink-0 items-center gap-1">
           <button
             type="button"
@@ -93,7 +92,6 @@ export function MenuBar() {
           </nav>
         </div>
 
-        {/* ── Center section: Pill-shaped search bar — signature design ── */}
         <div className="mx-3 flex min-w-0 flex-1 items-center justify-center">
           <button
             type="button"
@@ -116,9 +114,7 @@ export function MenuBar() {
           </button>
         </div>
 
-        {/* ── Right section: Layout Controls, Account ── */}
         <div className="flex shrink-0 items-center gap-1.5">
-          {/* Sidebar toggle */}
           <Tooltip delayDuration={300}>
             <TooltipTrigger asChild>
               <button
@@ -141,7 +137,6 @@ export function MenuBar() {
             </TooltipContent>
           </Tooltip>
 
-          {/* Developer Toolkit Toggle */}
           <Tooltip delayDuration={300}>
             <TooltipTrigger asChild>
               <button

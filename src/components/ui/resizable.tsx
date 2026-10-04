@@ -36,9 +36,7 @@ function ResizableHandle({
       data-slot="resizable-handle"
       className={cn(
         "bg-border/60 focus-visible:ring-ring/30 group relative z-10 flex items-center justify-center transition-colors focus-visible:ring-2 focus-visible:outline-none",
-        // Vertical handle (horizontal layout)
         "aria-[orientation=vertical]:hover:bg-primary/50 aria-[orientation=vertical]:active:bg-primary aria-[orientation=vertical]:h-full aria-[orientation=vertical]:w-px aria-[orientation=vertical]:cursor-col-resize",
-        // Horizontal handle (vertical layout)
         "aria-[orientation=horizontal]:hover:bg-primary/50 aria-[orientation=horizontal]:active:bg-primary aria-[orientation=horizontal]:h-px aria-[orientation=horizontal]:w-full aria-[orientation=horizontal]:cursor-row-resize",
         className,
       )}

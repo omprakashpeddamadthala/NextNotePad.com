@@ -16,7 +16,6 @@ function toResponse(config: AppConfig) {
   });
 }
 
-/** Settings, recents and favorites all live in `NextNotePad.com/.appConfig.json`. */
 export async function GET() {
   try {
     const session = await getDriveSession();
@@ -29,8 +28,6 @@ export async function GET() {
   }
 }
 
-/** Partial update: only the fields present are changed, merged into a fresh read of the file so
- *  concurrent writes from another device to *other* fields are preserved. */
 export async function PUT(request: NextRequest) {
   try {
     const session = await getDriveSession();

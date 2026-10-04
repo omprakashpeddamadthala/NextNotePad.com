@@ -53,9 +53,6 @@ function formatJoined(ts: number): string {
 
 const PAGE_SIZE = 10;
 
-/** Admin-only view — mirrors MarkdownFullPageView's header/body shape as the established
- *  "full view replaces the editor" pattern (see EditorArea's view-switch). Contains dedicated
- *  sections for User Management and AI Intelligence Configuration. */
 export function AdminView() {
   const close = useAdminViewStore((s) => s.close);
   const activeSection = useAdminViewStore((s) => s.section);

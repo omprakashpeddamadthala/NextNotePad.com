@@ -1,8 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
-import { streamAiCorrection, isProviderConfigured } from "@/lib/ai/aiProvider";
-import { AiProviderError } from "@/lib/ai/AiProviderError";
-import { correctTextSchema } from "@/lib/validation/aiSchemas";
-import { badRequest } from "@/lib/api/respond";
+import { createAiTextRoute } from "@/lib/ai/aiTextRoute";
 
 const SYSTEM_INSTRUCTION =
   "You are a precise proofreading engine embedded in a text editor. Fix grammar, spelling, and " +
@@ -12,64 +8,4 @@ const SYSTEM_INSTRUCTION =
   "Respond with only the corrected text and nothing else: no preamble, no explanation, no quotes " +
   "around it, no markdown code fence wrapping the whole answer.";
 
-function respondToProviderError(err: unknown): NextResponse {
-  if (err instanceof AiProviderError) {
-    return NextResponse.json({ error: err.message }, { status: err.status });
-  }
-  throw err;
-}
-
-/** No auth gate — the app's guest mode (no account, local-only storage) is the default way
- *  people use NextNotePad, and this is the one feature that needs a server round-trip. Abuse
- *  exposure is bounded by each provider's own per-key rate limit, not by this route.
- *
- *  Streams the correction back as plain text as it's generated, from whichever provider the
- *  client asked for (Gemini or Claude via AgentRouter) — free-tier/latency here can run into the
- *  tens of seconds, and showing corrected text arrive progressively reads as far more responsive
- *  than a single multi-second blocking wait. */
-export async function POST(request: NextRequest) {
-  const parsed = correctTextSchema.safeParse(await request.json());
-  if (!parsed.success) return badRequest(parsed.error);
-  const { text, provider } = parsed.data;
-
-  if (!(await isProviderConfigured(provider))) {
-    const label = provider === "claude" ? "Claude (AgentRouter)" : "Gemini";
-    return NextResponse.json({ error: `${label} isn't configured on this server.` }, { status: 503 });
-  }
-
-  const stream = streamAiCorrection({ provider, text, systemInstruction: SYSTEM_INSTRUCTION });
-
-  // Once the Response below is returned, the status code is committed — a mid-stream failure can
-  // no longer become a 429/502/etc. Priming the first chunk here keeps setup-time failures (bad
-  // key, invalid model, rate limit) mapped to their real status instead of degrading into a 200
-  // stream that immediately errors out.
-  let first: IteratorResult<string>;
-  try {
-    first = await stream.next();
-  } catch (err) {
-    return respondToProviderError(err);
-  }
-
-  const encoder = new TextEncoder();
-
-  const body = new ReadableStream<Uint8Array>({
-    async start(controller) {
-      try {
-        if (!first.done) controller.enqueue(encoder.encode(first.value));
-        while (true) {
-          const next = await stream.next();
-          if (next.done) break;
-          controller.enqueue(encoder.encode(next.value));
-        }
-        controller.close();
-      } catch (err) {
-        controller.error(err);
-      }
-    },
-  });
-
-  return new Response(body, {
-    status: 200,
-    headers: { "Content-Type": "text/plain; charset=utf-8" },
-  });
-}
+export const POST = createAiTextRoute(SYSTEM_INSTRUCTION);

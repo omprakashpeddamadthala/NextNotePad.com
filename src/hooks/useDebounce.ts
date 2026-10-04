@@ -1,6 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 
-/** Returns a debounced version of `fn` that's stable across renders and auto-cancels on unmount. */
 export function useDebouncedCallback<Args extends unknown[]>(
   fn: (...args: Args) => void,
   delayMs: number,

@@ -18,7 +18,6 @@ import * as cloudRepo from "@/services/storage/cloudWorkspaceRepository";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import type { WorkspaceNode } from "@/types/file";
 
-/** Runs once on mount: checks for an existing session and, if found, loads the cloud workspace. */
 export function useAuthBootstrap(): void {
   const ranRef = useRef(false);
 
@@ -79,11 +78,8 @@ export function useAuthBootstrap(): void {
         useAuthStore.getState().setAuthenticated(user);
         configureDriveDataClient(user.id);
 
-        // Rapid warm-up of in-memory cache from IndexedDB
         await warmDriveCacheFromIndexedDB(user.id);
 
-        // Instant UI Hydration: if user has a cached workspace tree in IndexedDB,
-        // render immediately to eliminate blank screen / skeleton flicker!
         const cachedWs = getCachedWorkspaceListSync();
         const activeWsId =
           cachedWs?.activeWorkspaceId || cachedWs?.workspaces[0]?.id;
@@ -101,7 +97,6 @@ export function useAuthBootstrap(): void {
               useAuthStore.getState().setWorkspaceReady();
               hydratedFromCache = true;
 
-              // Immediately prefetch all files in this workspace in background
               const files = cachedTree.nodes.filter(
                 (n): n is Extract<WorkspaceNode, { type: "file" }> =>
                   n.type === "file" && !n.deleted && !n.locked,
@@ -120,10 +115,6 @@ export function useAuthBootstrap(): void {
           }
         }
 
-        // Parallel background bootstrap:
-        // - migrateOrLoadCloudWorkspace handles guest migration or initial active tree
-        // - syncSettingsOnLogin syncs user settings
-        // - loadAllWorkspaceTrees prefetches all workspace trees in one unified Drive roundtrip
         const [loadedWorkspaceId] = await Promise.all([
           migrateOrLoadCloudWorkspace(),
           syncSettingsOnLogin(),
@@ -158,10 +149,8 @@ export function useAuthBootstrap(): void {
           useAuthStore.getState().setWorkspaceReady();
         }
 
-        // Schedule idle background prefetching for file contents
         triggerIdleDrivePrefetch();
       } catch (err) {
-        // A 401 is the normal signed-out path, so only surface the genuinely unexpected ones.
         if (!(err instanceof ApiError) || err.status !== 401) {
           console.error("Auth check failed:", err);
         }

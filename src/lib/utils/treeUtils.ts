@@ -21,8 +21,6 @@ export interface FlatTreeRow {
   depth: number;
 }
 
-/** Depth-first flattening of the tree, skipping children of collapsed folders — what the virtualizer
- *  renders. Hidden nodes (and everything under a hidden folder) are skipped unless `showHidden`. */
 export function flattenVisibleTree(nodes: NodeMap, filterQuery = "", showHidden = false): FlatTreeRow[] {
   const rows: FlatTreeRow[] = [];
   const query = filterQuery.trim().toLowerCase();
@@ -60,7 +58,6 @@ export function isDescendant(nodes: NodeMap, ancestorId: string, candidateId: st
   return false;
 }
 
-/** Returns id -> new path for the node and every descendant, after a rename or move. */
 export function recomputeSubtreePaths(
   nodes: NodeMap,
   nodeId: string,

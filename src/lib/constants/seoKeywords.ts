@@ -1,10 +1,3 @@
-/**
- * Comprehensive SEO Keywords Matrix for NextNotePad.com.
- * Contains over 3718 high-intent search queries covering:
- * - Online Notepad, Browser Notepad, Notepad++, Online Note Pad
- * - Notepad++ alternatives and web ports
- * - Multi-tab, syntax highlighting, offline-first, and cloud sync search terms
- */
 export const SEO_KEYWORDS: string[] = [
   "online notepad",
   "Browser NotePad",
