@@ -388,6 +388,26 @@ async function main() {
     assert.equal((await ws.listWorkspaceEntries(ds)).length, 2);
   });
 
+  await test("migration tolerates a database without the UserSettings table", async () => {
+    await seedLegacyUser("legacy4");
+    await prisma.$executeRawUnsafe(
+      `ALTER TABLE "UserSettings" RENAME TO "UserSettings_hidden"`,
+    );
+    try {
+      const fake = createFakeDrive();
+      const ds = service(fake, "legacy4");
+      const counts = await migrateLegacyData(ds);
+      assert.deepEqual(counts, { workspaces: 2, folders: 2, files: 3 });
+      const config = await new AppConfigService(ds).load();
+      assert.ok(config.migrations.legacyDatabase);
+      assert.equal(config.settings.theme ?? null, null);
+    } finally {
+      await prisma.$executeRawUnsafe(
+        `ALTER TABLE "UserSettings_hidden" RENAME TO "UserSettings"`,
+      );
+    }
+  });
+
   console.log(`\n${passed} passed`);
 }
 

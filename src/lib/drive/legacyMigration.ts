@@ -48,11 +48,19 @@ interface LegacyFile {
 const done = new Set<string>();
 const running = new Map<string, Promise<void>>();
 
-async function legacyTablesExist(): Promise<boolean> {
-  const rows = await prisma.$queryRawUnsafe<{ t: string | null }[]>(
-    `SELECT to_regclass('"Workspace"')::text AS t`,
+const LEGACY_TABLES = ["Workspace", "Folder", "File", "UserSettings"] as const;
+type LegacyTable = (typeof LEGACY_TABLES)[number];
+
+// Deployed databases don't all have every legacy table, so each one is checked individually.
+async function existingLegacyTables(): Promise<Set<LegacyTable>> {
+  const rows = await prisma.$queryRawUnsafe<
+    { name: LegacyTable; t: string | null }[]
+  >(
+    LEGACY_TABLES.map(
+      (name) => `SELECT '${name}' AS name, to_regclass('"${name}"')::text AS t`,
+    ).join(" UNION ALL "),
   );
-  return Boolean(rows[0]?.t);
+  return new Set(rows.filter((r) => r.t).map((r) => r.name));
 }
 
 async function liveEntry(
@@ -86,10 +94,13 @@ export async function migrateLegacyData(
 ): Promise<{ workspaces: number; folders: number; files: number }> {
   const userId = ds.userId;
   const counts = { workspaces: 0, folders: 0, files: 0 };
-  const workspaces = await prisma.$queryRawUnsafe<LegacyWorkspace[]>(
-    `SELECT "id","name","description","driveWorkspaceFolderId" FROM "Workspace" WHERE "userId" = $1 ORDER BY "createdAt" ASC`,
-    userId,
-  );
+  const tables = await existingLegacyTables();
+  const workspaces = tables.has("Workspace")
+    ? await prisma.$queryRawUnsafe<LegacyWorkspace[]>(
+        `SELECT "id","name","description","driveWorkspaceFolderId" FROM "Workspace" WHERE "userId" = $1 ORDER BY "createdAt" ASC`,
+        userId,
+      )
+    : [];
   const wsParent = await ds.ensureWorkspacesFolder();
   const existingDriveWorkspaces = await listWorkspaceEntries(ds);
   const wsMap = new Map<string, string>();
@@ -114,10 +125,12 @@ export async function migrateLegacyData(
     wsMap.set(ws.id, folder.id);
     counts.workspaces++;
 
-    const folders = await prisma.$queryRawUnsafe<LegacyFolder[]>(
-      `SELECT "id","workspaceId","parentId","name","path","collapsed","hidden","driveFileId" FROM "Folder" WHERE "workspaceId" = $1 AND "deletedAt" IS NULL`,
-      ws.id,
-    );
+    const folders = tables.has("Folder")
+      ? await prisma.$queryRawUnsafe<LegacyFolder[]>(
+          `SELECT "id","workspaceId","parentId","name","path","collapsed","hidden","driveFileId" FROM "Folder" WHERE "workspaceId" = $1 AND "deletedAt" IS NULL`,
+          ws.id,
+        )
+      : [];
     folders.sort((a, b) => a.path.split("/").length - b.path.split("/").length);
     const folderMap = new Map<string, string>();
     for (const f of folders) {
@@ -143,10 +156,12 @@ export async function migrateLegacyData(
       counts.folders++;
     }
 
-    const files = await prisma.$queryRawUnsafe<LegacyFile[]>(
-      `SELECT "id","workspaceId","parentId","name","content","language","encoding","hidden","locked","encryptionSalt","encryptionIv","driveFileId" FROM "File" WHERE "workspaceId" = $1 AND "deletedAt" IS NULL`,
-      ws.id,
-    );
+    const files = tables.has("File")
+      ? await prisma.$queryRawUnsafe<LegacyFile[]>(
+          `SELECT "id","workspaceId","parentId","name","content","language","encoding","hidden","locked","encryptionSalt","encryptionIv","driveFileId" FROM "File" WHERE "workspaceId" = $1 AND "deletedAt" IS NULL`,
+          ws.id,
+        )
+      : [];
     for (const f of files) {
       const parent = f.parentId ? folderMap.get(f.parentId) : folder.id;
       if (!parent) continue;
@@ -173,9 +188,12 @@ export async function migrateLegacyData(
     }
   }
 
-  const [settings] = await prisma.$queryRawUnsafe<
-    { theme: string; json: string }[]
-  >(`SELECT "theme","json" FROM "UserSettings" WHERE "userId" = $1`, userId);
+  const [settings] = tables.has("UserSettings")
+    ? await prisma.$queryRawUnsafe<{ theme: string; json: string }[]>(
+        `SELECT "theme","json" FROM "UserSettings" WHERE "userId" = $1`,
+        userId,
+      )
+    : [];
   const [userRow] = await prisma
     .$queryRawUnsafe<{ activeWorkspaceId: string | null }[]>(
       `SELECT "activeWorkspaceId" FROM "User" WHERE "id" = $1`,
@@ -213,7 +231,10 @@ export async function ensureLegacyMigrated(ds: DriveService): Promise<void> {
 
   const run = (async () => {
     const config = await new AppConfigService(ds).load();
-    if (config.migrations.legacyDatabase || !(await legacyTablesExist())) {
+    if (
+      config.migrations.legacyDatabase ||
+      (await existingLegacyTables()).size === 0
+    ) {
       done.add(userId);
       return;
     }
