@@ -24,6 +24,7 @@ import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useTabsStore } from "@/store/tabsStore";
 import { useAuthStore } from "@/store/authStore";
 import * as cloudRepo from "@/services/storage/cloudWorkspaceRepository";
+import type { FileNode } from "@/types/file";
 import { cn } from "@/lib/utils";
 
 interface WorkspaceDropdownProps {
@@ -69,6 +70,49 @@ export function WorkspaceDropdown({
 
   async function handleSwitch(id: string) {
     if (id === activeWorkspaceId || switchingWorkspace) return;
+
+    // Instant switch if target workspace tree is cached in memory
+    const cachedTree = cloudRepo.getCachedWorkspaceTreeSync(id);
+    if (cachedTree) {
+      useWorkspaceStore
+        .getState()
+        .replaceAll(
+          Object.fromEntries(cachedTree.nodes.map((node) => [node.id, node])),
+        );
+      useTabsStore.getState().resetSession();
+
+      // Immediately pre-load all files in target workspace
+      const files = cachedTree.nodes.filter(
+        (n): n is FileNode => n.type === "file" && !n.deleted && !n.locked,
+      );
+      if (files.length > 0) {
+        void cloudRepo.prefetchFileContents(
+          files.map((f) => ({ id: f.id, version: f.version, size: f.size })),
+          { limit: 100, concurrency: 5 },
+        );
+      }
+
+      // Background persist & background SWR freshness check
+      void (async () => {
+        try {
+          await switchWorkspace(id, { background: true });
+          const fresh = await cloudRepo.fetchWorkspaceTree(id, {
+            background: true,
+          });
+          if (useMultiWorkspaceStore.getState().activeWorkspaceId === id) {
+            useWorkspaceStore
+              .getState()
+              .replaceAll(
+                Object.fromEntries(fresh.nodes.map((node) => [node.id, node])),
+              );
+          }
+        } catch {
+          // Silent background refresh failure
+        }
+      })();
+      return;
+    }
+
     const treePromise = cloudRepo.fetchWorkspaceTree(id, {
       onFresh: (fresh) => {
         if (

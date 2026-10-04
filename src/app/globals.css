@@ -51,7 +51,7 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* ── IntelliJ IDEA Ultimate Light Mode ───────────────────────────────────── */
+/* ── Light Mode ──────────────────────────────────────────────────────────── */
 :root {
   --background: #ffffff;
   --foreground: #1e1f22;
@@ -90,7 +90,7 @@
   --sidebar-ring: #3574f0;
 }
 
-/* ── IntelliJ IDEA Ultimate Dark Mode (New UI) ───────────────────────────── */
+/* ── Dark Mode (New UI) ──────────────────────────────────────────────────── */
 .dark {
   --background: #1e1f22;
   --foreground: #bcbec4;

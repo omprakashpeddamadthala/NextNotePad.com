@@ -2,7 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ShieldCheck, X, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  ShieldCheck,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Users as UsersIcon,
+  Bot,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -22,6 +29,8 @@ import {
 import { useAdminViewStore } from "@/store/adminViewStore";
 import { useAuthStore } from "@/store/authStore";
 import { fetchJson, jsonBody } from "@/lib/api/fetchJson";
+import { cn } from "@/lib/utils";
+import { AdminAiConfigSection } from "./AdminAiConfigSection";
 
 interface AdminUserDto {
   id: string;
@@ -44,13 +53,13 @@ function formatJoined(ts: number): string {
 
 const PAGE_SIZE = 10;
 
-/** Admin-only user list — mirrors MarkdownFullPageView's header/body shape as the established
- *  "full view replaces the editor" pattern (see EditorArea's view-switch). The real access
- *  control is server-side on every /api/admin/* route (getAdminUser()); this view is only
- *  reachable via a menu item that's itself hidden for non-admins, so a non-admin who somehow
- *  opens it just sees every request 403. */
+/** Admin-only view — mirrors MarkdownFullPageView's header/body shape as the established
+ *  "full view replaces the editor" pattern (see EditorArea's view-switch). Contains dedicated
+ *  sections for User Management and AI Intelligence Configuration. */
 export function AdminView() {
   const close = useAdminViewStore((s) => s.close);
+  const activeSection = useAdminViewStore((s) => s.section);
+  const setSection = useAdminViewStore((s) => s.setSection);
   const currentUserId = useAuthStore((s) => s.user?.id);
 
   const [users, setUsers] = useState<AdminUserDto[] | null>(null);
@@ -105,11 +114,56 @@ export function AdminView() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-9 shrink-0 items-center gap-2 border-b bg-[var(--np-toolbar-bg)] px-2.5 text-sm">
-        <ShieldCheck className="text-muted-foreground size-3.5 shrink-0" />
-        <span className="truncate font-medium">Admin Panel</span>
+      <div className="flex h-10 shrink-0 items-center gap-2 border-b bg-[var(--np-toolbar-bg)] px-3 text-sm">
+        <div className="flex items-center gap-2 pr-2 border-r border-border/60">
+          <ShieldCheck className="text-primary size-4 shrink-0" />
+          <span className="font-semibold text-xs tracking-tight">Admin Panel</span>
+        </div>
+
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setSection("users")}
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer",
+              activeSection === "users"
+                ? "bg-primary text-primary-foreground shadow-xs font-semibold"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+            )}
+          >
+            <UsersIcon className="size-3.5" />
+            <span>Users</span>
+            {users && (
+              <span
+                className={cn(
+                  "text-[10px] px-1.5 py-0.2 rounded-full",
+                  activeSection === "users"
+                    ? "bg-primary-foreground/20 text-primary-foreground"
+                    : "bg-muted text-muted-foreground",
+                )}
+              >
+                {users.length}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSection("ai-config")}
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer",
+              activeSection === "ai-config"
+                ? "bg-primary text-primary-foreground shadow-xs font-semibold"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+            )}
+          >
+            <Bot className="size-3.5" />
+            <span>AI Configuration</span>
+          </button>
+        </div>
+
         <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-1">
-          <Button size="sm" variant="ghost" onClick={close} title="Close">
+          <Button size="sm" variant="ghost" onClick={close} title="Close" className="h-7 text-xs gap-1 cursor-pointer">
             <X className="size-3.5" />
             <span className="hidden sm:inline">Close</span>
           </Button>
@@ -117,8 +171,11 @@ export function AdminView() {
       </div>
 
       <div className="np-scrollbar bg-background h-full overflow-auto px-6 py-4">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between gap-3">
+        {activeSection === "ai-config" ? (
+          <AdminAiConfigSection />
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3">
             <div>
               <h1 className="text-lg font-semibold">Users</h1>
               <p className="text-muted-foreground text-sm">
@@ -304,6 +361,7 @@ export function AdminView() {
             </div>
           )}
         </div>
+      )}
       </div>
     </div>
   );

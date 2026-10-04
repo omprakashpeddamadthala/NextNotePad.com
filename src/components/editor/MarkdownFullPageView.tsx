@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { FileText, Pencil, Printer, X } from "lucide-react";
+import { Check, Copy, FileText, Pencil, Printer, X } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { MarkdownRenderPane } from "./MarkdownRenderPane";
 import { useWorkspaceStore } from "@/store/workspaceStore";
@@ -45,6 +46,19 @@ export function MarkdownFullPageView({
   const [content, setContent] = useState<string | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [reloadNonce, setReloadNonce] = useState(0);
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    if (!content) return;
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopied(true);
+      toast.success("Entire Markdown file copied to clipboard");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Failed to copy Markdown content");
+    }
+  }
 
   function handleEdit() {
     if (onEdit) {
@@ -127,6 +141,22 @@ export function MarkdownFullPageView({
           >
             <Pencil className="size-3 text-primary" />
             <span>Edit Source</span>
+          </Button>
+
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 gap-1.5 px-2.5 text-xs font-medium cursor-pointer border-border/70 hover:bg-accent/60"
+            disabled={content === null || error !== null}
+            onClick={handleCopy}
+            title="Entire MD file to copy"
+          >
+            {copied ? (
+              <Check className="size-3 text-emerald-500" />
+            ) : (
+              <Copy className="size-3 text-primary" />
+            )}
+            <span>{copied ? "Copied" : "Copy MD"}</span>
           </Button>
 
           <Button

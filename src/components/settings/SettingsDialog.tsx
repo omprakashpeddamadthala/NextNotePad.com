@@ -11,23 +11,19 @@ import { useSettingsStore } from "@/store/settingsStore";
 import { GeneralSettingsTab } from "./GeneralSettingsTab";
 import { EditorSettingsTab } from "./EditorSettingsTab";
 import { ThemesSettingsTab } from "./ThemesSettingsTab";
-import { ShortcutsSettingsTab } from "./ShortcutsSettingsTab";
-import { AiConfigSettingsTab } from "./AiConfigSettingsTab";
 import {
-  Keyboard,
   Palette,
   Settings2,
   SlidersHorizontal,
   Code2,
   RotateCcw,
-  Sparkles,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-type SettingsTabKey = "general" | "editor" | "themes" | "shortcuts" | "ai";
+type SettingsTabKey = "general" | "editor" | "themes";
 
 interface TabItem {
   id: SettingsTabKey;
@@ -55,19 +51,6 @@ const TABS: TabItem[] = [
     label: "Themes",
     subtitle: "Appearance & color schemes",
     icon: Palette,
-  },
-  {
-    id: "shortcuts",
-    label: "Shortcuts",
-    subtitle: "Keyboard shortcut mapping",
-    icon: Keyboard,
-  },
-  {
-    id: "ai",
-    label: "AI Config",
-    subtitle: "Gemini & Claude credentials",
-    icon: Sparkles,
-    badge: "Admin",
   },
 ];
 
@@ -225,13 +208,9 @@ export function SettingsDialog() {
 
             {/* Scrollable Content Body */}
             <div className="np-scrollbar flex-1 overflow-y-auto p-4 sm:p-6">
-              {activeTab === "general" && (
-                <GeneralSettingsTab onNavigateTab={(tab) => setActiveTab(tab as SettingsTabKey)} />
-              )}
+              {activeTab === "general" && <GeneralSettingsTab />}
               {activeTab === "editor" && <EditorSettingsTab />}
               {activeTab === "themes" && <ThemesSettingsTab />}
-              {activeTab === "shortcuts" && <ShortcutsSettingsTab />}
-              {activeTab === "ai" && <AiConfigSettingsTab />}
             </div>
           </main>
         </div>

@@ -18,6 +18,8 @@ import { useAuthStore } from "@/store/authStore";
 import { useMultiWorkspaceStore } from "@/store/multiWorkspaceStore";
 import * as cloudRepo from "@/services/storage/cloudWorkspaceRepository";
 import {
+  getCachedDriveFileIndexSync,
+  getCachedWorkspaceTreeSync,
   loadDriveFileIndex,
   prefetchFileContents,
 } from "@/services/storage/driveDataClient";
@@ -51,7 +53,9 @@ export function QuickOpenDialog() {
   const workspaces = useMultiWorkspaceStore((s) => s.workspaces);
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId);
 
-  const [cloudFiles, setCloudFiles] = useState<SearchableFile[]>([]);
+  const [cloudFiles, setCloudFiles] = useState<SearchableFile[]>(
+    () => getCachedDriveFileIndexSync() ?? [],
+  );
 
   // Fetch all files across all user workspaces when dialog opens in authenticated mode
   useEffect(() => {
@@ -93,11 +97,15 @@ export function QuickOpenDialog() {
   // Combine and sort files
   const files = useMemo(() => {
     const recentOrder = new Map(recent.map((r, i) => [r.fileId, i]));
+    const effectiveCloudFiles =
+      cloudFiles.length > 0
+        ? cloudFiles
+        : (getCachedDriveFileIndexSync() ?? []);
 
-    if (status === "authenticated" && cloudFiles.length > 0) {
+    if (status === "authenticated" && effectiveCloudFiles.length > 0) {
       // De-duplicate by id, prioritizing latest
       const fileMap = new Map<string, SearchableFile>();
-      for (const cf of cloudFiles) {
+      for (const cf of effectiveCloudFiles) {
         fileMap.set(cf.id, cf);
       }
       // Also ensure any local unsaved/just created nodes in active workspace are present
@@ -148,6 +156,37 @@ export function QuickOpenDialog() {
       activeWorkspaceId &&
       file.workspaceId !== activeWorkspaceId
     ) {
+      const cachedTree = getCachedWorkspaceTreeSync(file.workspaceId);
+      if (cachedTree) {
+        // Instant switch with zero delay!
+        useWorkspaceStore
+          .getState()
+          .replaceAll(
+            Object.fromEntries(cachedTree.nodes.map((n) => [n.id, n])),
+          );
+        useTabsStore.getState().resetSession();
+        openTab(file.id);
+        addRecent(file.id);
+
+        void switchWorkspace(file.workspaceId, { background: true });
+        void cloudRepo.fetchWorkspaceTree(file.workspaceId, {
+          background: true,
+          onFresh: (fresh) => {
+            if (
+              useMultiWorkspaceStore.getState().activeWorkspaceId ===
+              fresh.workspaceId
+            ) {
+              useWorkspaceStore
+                .getState()
+                .replaceAll(
+                  Object.fromEntries(fresh.nodes.map((n) => [n.id, n])),
+                );
+            }
+          },
+        });
+        return;
+      }
+
       const toastId = toast.loading(`Switching to "${file.workspaceName}"...`);
       try {
         const treePromise = cloudRepo.fetchWorkspaceTree(file.workspaceId, {

@@ -5,9 +5,7 @@ import {
   driveErrorResponse,
 } from "@/lib/drive/session";
 import {
-  assertNodeInWorkspace,
   entryToNodeDto,
-  getWorkspace,
   getNode,
   isFolder,
   nodeDto,
@@ -36,20 +34,16 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       (session as { workspaceId?: string }).workspaceId ??
       null;
     if (!workspaceId) return unauthorized();
-    if (requestedWorkspaceId) await getWorkspace(ds, requestedWorkspaceId);
-    let entry: Awaited<ReturnType<typeof getNode>>;
-    let content: string;
-    if (requestedWorkspaceId) {
-      entry = await getNode(ds, id);
-      if (isFolder(entry)) return notFound();
-      await assertNodeInWorkspace(ds, entry, workspaceId);
-      content = await ds.readText(id);
-    } else {
-      [entry, content] = await Promise.all([getNode(ds, id), ds.readText(id)]);
-      if (isFolder(entry)) return notFound();
-    }
+
+    const [entry, content] = await Promise.all([
+      getNode(ds, id),
+      ds.readText(id),
+    ]);
+    if (isFolder(entry)) return notFound();
+
+    const dto = await nodeDto(ds, entry, workspaceId);
     return NextResponse.json({
-      ...(await nodeDto(ds, entry, workspaceId)),
+      ...dto,
       content,
     });
   } catch (err) {
@@ -59,12 +53,35 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
-    const session = await getDriveSessionWithWorkspace();
-    if (!session) return unauthorized();
-    const { id } = await params;
+    const requestedWorkspaceId =
+      request.nextUrl.searchParams.get("workspaceId");
     const parsed = updateFileSchema.safeParse(await request.json());
     if (!parsed.success) return badRequest(parsed.error);
-    const { ds, workspaceId } = session;
+
+    const isContentOnly =
+      parsed.data.content !== undefined &&
+      parsed.data.name === undefined &&
+      parsed.data.parentId === undefined &&
+      parsed.data.language === undefined &&
+      parsed.data.hidden === undefined &&
+      parsed.data.locked === undefined &&
+      parsed.data.encryptionSalt === undefined &&
+      parsed.data.encryptionIv === undefined;
+
+    const session =
+      isContentOnly || requestedWorkspaceId
+        ? await getDriveSession()
+        : await getDriveSessionWithWorkspace();
+    if (!session) return unauthorized();
+    const { id } = await params;
+    const { ds } = session;
+    const workspaceId = isContentOnly
+      ? ""
+      : (requestedWorkspaceId ??
+        ("workspaceId" in session
+          ? (session as unknown as { workspaceId: string }).workspaceId
+          : ""));
+
     const entry = await updateNode(ds, workspaceId, id, parsed.data);
     const moved =
       parsed.data.name !== undefined || parsed.data.parentId !== undefined;
@@ -84,7 +101,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
 export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   try {
-    const session = await getDriveSessionWithWorkspace();
+    const session = await getDriveSession();
     if (!session) return unauthorized();
     const { id } = await params;
     await trashNode(session.ds, id);

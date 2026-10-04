@@ -147,9 +147,6 @@ function stripNulls(
   ) as Record<string, string>;
 }
 
-/** Drive's query language has a length cap, so a level of the tree is fetched in chunks. */
-const PARENTS_PER_QUERY = 40;
-
 // ----- workspaces -----
 
 export async function listWorkspaceEntries(
@@ -282,25 +279,32 @@ export async function renameWorkspace(
 
 // ----- tree -----
 
-/** Breadth-first walk of a workspace folder: one batched `files.list` per tree level (chunked
- *  by parent), rather than one request per folder. */
-export async function loadWorkspaceTree(
-  ds: DriveService,
+/** Groups entries under each of their parents, for in-memory tree walks. */
+function indexByParent(all: DriveEntry[]): Map<string, DriveEntry[]> {
+  const byParent = new Map<string, DriveEntry[]>();
+  for (const e of all) {
+    for (const p of e.parents) {
+      const list = byParent.get(p);
+      if (list) list.push(e);
+      else byParent.set(p, [e]);
+    }
+  }
+  return byParent;
+}
+
+/** Breadth-first walk of one workspace over an already-fetched listing — no Drive calls. */
+function buildTree(
+  byParent: Map<string, DriveEntry[]>,
   workspaceId: string,
-): Promise<NodeDto[]> {
+): NodeDto[] {
   const nodes: NodeDto[] = [];
   const pathOf = new Map<string, string>([[workspaceId, ""]]);
   let frontier = [workspaceId];
   while (frontier.length > 0) {
     const next: string[] = [];
-    for (let i = 0; i < frontier.length; i += PARENTS_PER_QUERY) {
-      const chunk = frontier.slice(i, i + PARENTS_PER_QUERY);
-      const q = `(${chunk.map((id) => `'${id}' in parents`).join(" or ")}) and trashed = false`;
-      const entries = await ds.list(q);
-      for (const e of entries) {
-        if (isInternalEntry(e)) continue;
-        const parent = e.parents.find((p) => pathOf.has(p));
-        if (parent === undefined || pathOf.has(e.id)) continue;
+    for (const parent of frontier) {
+      for (const e of byParent.get(parent) ?? []) {
+        if (isInternalEntry(e) || pathOf.has(e.id)) continue;
         const path = `${pathOf.get(parent)}/${e.name}`;
         pathOf.set(e.id, path);
         nodes.push(
@@ -312,6 +316,63 @@ export async function loadWorkspaceTree(
     frontier = next;
   }
   return nodes;
+}
+
+/** Every non-trashed entry the app can see, plus the workspace folders among them. With the
+ *  `drive.file` scope that is exactly what NextNotePad created, so it is one paginated (and
+ *  server-side deduplicated/briefly cached) request shared by tree loads, the all-workspaces
+ *  prefetch and the Quick Open index — instead of one sequential list request per tree level. */
+async function listAppEntriesWithWorkspaces(ds: DriveService) {
+  const [workspacesId, all] = await Promise.all([
+    ds.ensureWorkspacesFolder(),
+    ds.listAllAppEntries(),
+  ]);
+  const workspaces = all
+    .filter((e) => isFolder(e) && e.parents.includes(workspacesId))
+    .sort((a, b) => a.createdTime - b.createdTime);
+  return { all, workspaces };
+}
+
+/** A workspace's tree (metadata only), built from the shared app-entries listing. */
+export async function loadWorkspaceTree(
+  ds: DriveService,
+  workspaceId: string,
+): Promise<NodeDto[]> {
+  const all = await ds.listAllAppEntries();
+  return buildTree(indexByParent(all), workspaceId);
+}
+
+/** `GET /api/workspace` payload. Validating the workspace and loading its tree don't depend on
+ *  each other, so they run in parallel. `hasAnyHistory` is true if anything was ever created
+ *  here, including items since moved to Drive's trash, so guest migration never re-triggers. */
+export async function loadWorkspaceTreeForClient(
+  ds: DriveService,
+  workspaceId: string,
+  opts: { validate?: boolean } = {},
+): Promise<{ nodes: NodeDto[]; hasAnyHistory: boolean; workspaceId: string }> {
+  const [nodes] = await Promise.all([
+    loadWorkspaceTree(ds, workspaceId),
+    opts.validate === false ? null : getWorkspace(ds, workspaceId),
+  ]);
+  const hasAnyHistory =
+    nodes.length > 0 || (await ds.hasTrashedChildren(workspaceId));
+  return { nodes, hasAnyHistory, workspaceId };
+}
+
+/** Every workspace and its tree from a single Drive listing — what the client prefetches in the
+ *  background so switching workspaces never waits on Drive. `hasAnyHistory` is only claimed when
+ *  the tree is non-empty (checking the trash per workspace would cost a call each); the client
+ *  re-verifies an empty tree before making the one-time guest-migration decision anyway. */
+export async function loadAllWorkspaceTrees(ds: DriveService) {
+  const { all, workspaces } = await listAppEntriesWithWorkspaces(ds);
+  const byParent = indexByParent(all);
+  const trees: Record<string, { nodes: NodeDto[]; hasAnyHistory: boolean }> =
+    {};
+  for (const w of workspaces) {
+    const nodes = buildTree(byParent, w.id);
+    trees[w.id] = { nodes, hasAnyHistory: nodes.length > 0 };
+  }
+  return { workspaces: workspaces.map(workspaceToDto), trees };
 }
 
 /** Builds the slash path of `id` (relative to the workspace) by walking up its parents. */
@@ -433,6 +494,37 @@ export async function assertNodeInWorkspace(
   throw new AppError("Not found", 404);
 }
 
+/** What the client needs to open a file: its content and current version (the version keys the
+ *  client's content cache). Metadata and media are fetched in parallel — no parent walk, no path
+ *  building, no workspace resolution — so an uncached open is one Drive round trip. */
+export async function readFileContentForClient(ds: DriveService, id: string) {
+  const [entry, content] = await Promise.all([
+    ds.get(id, { fresh: true }).catch((err) => {
+      if (err instanceof DriveNotFoundError)
+        throw new AppError("Not found", 404);
+      throw err;
+    }),
+    ds.readText(id).catch((err) => {
+      if (err instanceof DriveNotFoundError)
+        throw new AppError("Not found", 404);
+      throw err;
+    }),
+  ]);
+  if (entry.trashed || isFolder(entry)) throw new AppError("Not found", 404);
+  return { id: entry.id, version: entry.version, content };
+}
+
+/** The workspace a request targets when the client names it (`?workspaceId=`), validated as one
+ *  of the user's workspaces. Cheap: the workspace entry is normally in the entry cache. Lets
+ *  mutations skip reading `.appConfig.json` for the active workspace — and act on the workspace
+ *  the user is actually looking at, even if another device switched the active one meanwhile. */
+export async function resolveRequestWorkspace(
+  ds: DriveService,
+  workspaceId: string,
+): Promise<string> {
+  return (await getWorkspace(ds, workspaceId)).id;
+}
+
 export interface NodePatch {
   name?: string;
   parentId?: string | null;
@@ -515,10 +607,7 @@ export async function trashNode(ds: DriveService, id: string): Promise<void> {
 /** Every file in every workspace, for the cross-workspace Quick Open index — one paginated
  *  listing of the app's Drive entries, joined to workspaces in memory. */
 export async function listAllFiles(ds: DriveService) {
-  const [workspaces, all] = await Promise.all([
-    listWorkspaceEntries(ds),
-    ds.listAllAppEntries(),
-  ]);
+  const { all, workspaces } = await listAppEntriesWithWorkspaces(ds);
   const byId = new Map(all.map((e) => [e.id, e]));
   const wsById = new Map(workspaces.map((w) => [w.id, w]));
   const resolved = new Map<

@@ -4,7 +4,7 @@ import {
   getDriveSessionWithWorkspace,
   driveErrorResponse,
 } from "@/lib/drive/session";
-import { getWorkspace, loadWorkspaceTree } from "@/lib/drive/workspaceService";
+import { loadWorkspaceTreeForClient } from "@/lib/drive/workspaceService";
 import { unauthorized } from "@/lib/api/respond";
 
 /** The active workspace's tree, read straight from its Drive folder (metadata only — file
@@ -24,11 +24,10 @@ export async function GET(request: NextRequest) {
       (session as { workspaceId?: string }).workspaceId ??
       null;
     if (!workspaceId) return unauthorized();
-    if (requestedWorkspaceId) await getWorkspace(ds, requestedWorkspaceId);
-    const nodes = await loadWorkspaceTree(ds, workspaceId);
-    const hasAnyHistory =
-      nodes.length > 0 || (await ds.hasTrashedChildren(workspaceId));
-    return NextResponse.json({ nodes, hasAnyHistory, workspaceId });
+    const result = await loadWorkspaceTreeForClient(ds, workspaceId, {
+      validate: Boolean(requestedWorkspaceId),
+    });
+    return NextResponse.json(result);
   } catch (err) {
     return driveErrorResponse(err, "Load workspace");
   }

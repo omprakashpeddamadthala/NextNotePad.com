@@ -15,6 +15,7 @@ import { fetchJson, jsonBody } from "@/lib/api/fetchJson";
 import { toast } from "sonner";
 import {
   cacheWorkspaceList,
+  getCachedWorkspaceListSync,
   loadWorkspaceList,
   type WorkspaceListResponse,
 } from "@/services/storage/driveDataClient";
@@ -67,7 +68,10 @@ interface MultiWorkspaceActions {
    * This persists the choice server-side and updates local state.
    * Callers should reset the workspace file tree after this completes.
    */
-  switchWorkspace: (workspaceId: string) => Promise<boolean>;
+  switchWorkspace: (
+    workspaceId: string,
+    options?: { background?: boolean },
+  ) => Promise<boolean>;
   /**
    * Create a new workspace (including its Drive folder).
    * On success, automatically switches to the new workspace.
@@ -129,6 +133,13 @@ export const useMultiWorkspaceStore = create<
         }),
 
       loadWorkspaces: async (options = {}) => {
+        const cached = getCachedWorkspaceListSync();
+        if (cached && get().workspaces.length === 0) {
+          set({
+            workspaces: cached.workspaces,
+            activeWorkspaceId: cached.activeWorkspaceId,
+          });
+        }
         if (get().workspaces.length === 0)
           set({ loadingWorkspaces: true, loadError: null });
         try {
@@ -148,15 +159,27 @@ export const useMultiWorkspaceStore = create<
         }
       },
 
-      switchWorkspace: async (workspaceId: string) => {
+      switchWorkspace: async (
+        workspaceId: string,
+        options: { background?: boolean } = {},
+      ) => {
         const { activeWorkspaceId } = get();
         if (activeWorkspaceId === workspaceId) return true;
 
-        set({ activeWorkspaceId: workspaceId, switchingWorkspace: true });
+        if (!options.background) {
+          set({ activeWorkspaceId: workspaceId, switchingWorkspace: true });
+        } else {
+          set({ activeWorkspaceId: workspaceId });
+        }
+
         try {
           const workspace = await fetchJson<WorkspaceRecord>(
             `/api/workspaces/${workspaceId}/switch`,
-            { method: "POST", action: "Switch workspace" },
+            {
+              method: "POST",
+              action: "Switch workspace",
+              background: options.background,
+            },
           );
           set({ activeWorkspaceId: workspace.id, switchingWorkspace: false });
           void cacheWorkspaceList({
@@ -167,11 +190,13 @@ export const useMultiWorkspaceStore = create<
         } catch (err) {
           const message =
             err instanceof Error ? err.message : "Failed to switch workspace.";
-          toast.error(message);
-          set({
-            activeWorkspaceId,
-            switchingWorkspace: false,
-          });
+          if (!options.background) {
+            toast.error(message);
+            set({
+              activeWorkspaceId,
+              switchingWorkspace: false,
+            });
+          }
           return false;
         }
       },

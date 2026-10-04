@@ -56,6 +56,7 @@ async function flush(): Promise<void> {
     await fetchJson("/api/settings", {
       ...jsonBody("PUT", patch),
       action: "Sync settings",
+      background: true,
     });
   } catch (err) {
     // Re-queue so the next change (or the next login) retries it; localStorage keeps the value
@@ -81,6 +82,7 @@ export async function syncSettingsOnLogin(): Promise<void> {
   try {
     const cloud = await fetchJson<CloudSettingsResponse>("/api/settings", {
       action: "Load settings",
+      background: true,
     });
     const seed: SettingsPatch = {};
 

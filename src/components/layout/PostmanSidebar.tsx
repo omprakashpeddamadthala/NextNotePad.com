@@ -24,8 +24,6 @@ import { RecycleBinPanel } from "@/components/trash/RecycleBinPanel";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useUIStore } from "@/store/uiStore";
 import { useTrashStore } from "@/store/trashStore";
-import { useAuthStore } from "@/store/authStore";
-import { useMultiWorkspaceStore } from "@/store/multiWorkspaceStore";
 import { useDialogStore } from "@/store/dialogStore";
 import { useCreateAndRename } from "@/hooks/useCreateAndRename";
 import { useNewNodeTargetParentId } from "@/hooks/useNewNodeTargetParentId";

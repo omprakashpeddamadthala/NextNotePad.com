@@ -2,8 +2,8 @@ import type { ThemeModule } from "./types";
 
 export const vsCode: ThemeModule = {
   id: "vs-code",
-  label: "IntelliJ High Contrast",
-  monacoThemeId: "np-intellij-high-contrast",
+  label: "High Contrast",
+  monacoThemeId: "np-high-contrast",
   chrome: {
     background: "#000000",
     foreground: "#FFFFFF",

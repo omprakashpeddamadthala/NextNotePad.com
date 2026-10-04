@@ -4,10 +4,9 @@ import { create } from "zustand";
  *  would otherwise make it strobe on every keystroke-triggered autosave. */
 const SHOW_DELAY_MS = 150;
 
-/** Requests taking longer than this trigger the center loading animation overlay.
- *  Fast backend calls complete silently or with just the subtle top bar.
- *  When a request is taking noticeable time (> 500ms), a centered animation is displayed. */
-const SLOW_DELAY_MS = 500;
+/** Requests taking longer than 2 seconds trigger a subtle non-blocking loading indicator.
+ *  Fast backend calls complete silently without any pop-ups. */
+const SLOW_DELAY_MS = 2000;
 
 interface ApiActivityState {
   /** Number of internal API requests currently in flight. */
