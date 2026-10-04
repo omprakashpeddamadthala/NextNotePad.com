@@ -43,9 +43,6 @@ next-env.d.ts
 
 /src/generated/prisma
 
-# sqlite dev database (local data, not schema) — DATABASE_URL resolves this to the project root
-/dev.db
-/dev.db-journal
 
 # IDE and Agent configurations
 .agents/

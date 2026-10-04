@@ -193,7 +193,6 @@ export const useTabsStore = create<TabsState & TabsActions>()(
       resetSession: () =>
         set({ tabs: [], activeTabId: null, dirtyTabIds: {}, closedStack: [], splitView: null }),
 
-      /** After migrating guest files to the cloud, swap each open tab's local fileId for its new server id. */
       remapFileIds: (idMap) =>
         set((state) => ({
           tabs: state.tabs.map((t) => (idMap[t.fileId] ? { ...t, fileId: idMap[t.fileId] } : t)),

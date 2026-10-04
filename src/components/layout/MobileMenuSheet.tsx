@@ -23,7 +23,6 @@ import { useAuthStore } from "@/store/authStore";
 import { AppLogo } from "@/components/ui/AppLogo";
 import { APP_BRAND } from "@/lib/constants/branding";
 
-/** Gives every command category one touch-friendly home on mobile. */
 function MenuGridCell({ children }: { children: React.ReactNode }) {
   return (
     <div className="border-border/70 bg-background/70 active:bg-accent rounded-xl border text-center shadow-xs transition-colors [&>button]:flex [&>button]:h-12 [&>button]:w-full [&>button]:items-center [&>button]:justify-center [&>button]:px-2 [&>button]:py-2.5">
@@ -32,8 +31,6 @@ function MenuGridCell({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Mobile counterpart to the desktop menu bar. Commands are intentionally not repeated as a
- * second action grid: each capability has one predictable menu category. */
 export function MobileMenuSheet() {
   const open = useUIStore((s) => s.mobileMenuSheetOpen);
   const setOpen = useUIStore((s) => s.setMobileMenuSheetOpen);

@@ -1,16 +1,9 @@
 import { create } from "zustand";
 
-/**
- * Client-side view of Drive persistence for signed-in users. Writes go straight to Drive via
- * the API, so "saved" only becomes true once Drive acknowledged the write — nothing here is a
- * second source of truth, it only tracks what is still in flight or failed in this tab.
- */
 export type SyncPhase = "saved" | "saving" | "offline" | "failed";
 
 interface SyncStatusState {
-  /** fileId -> last error message, for saves that have failed and will be retried. */
   failed: Record<string, string>;
-  /** fileIds currently being written. */
   saving: Record<string, true>;
   online: boolean;
   markSaving: (fileId: string) => void;

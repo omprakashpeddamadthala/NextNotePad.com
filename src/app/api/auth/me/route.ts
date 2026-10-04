@@ -27,7 +27,6 @@ export async function GET() {
       ...authUser,
     });
 
-    // Rolling session: renew session cookie for 1 year so user stays permanently logged in
     try {
       const sessionToken = await signSessionToken({ userId: user.id });
       response.cookies.set(SESSION_COOKIE_NAME, sessionToken, {
@@ -38,7 +37,6 @@ export async function GET() {
         path: "/",
       });
     } catch {
-      // Non-fatal
     }
 
     return response;

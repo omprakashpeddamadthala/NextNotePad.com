@@ -9,7 +9,6 @@ interface LockDialogState {
   closeLockDialog: () => void;
 }
 
-/** Transient — never persisted, same as the other on-demand dialog/view stores. */
 export const useLockDialogStore = create<LockDialogState>((set) => ({
   open: false,
   mode: "lock",

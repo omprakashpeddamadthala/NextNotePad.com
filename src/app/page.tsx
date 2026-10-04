@@ -8,12 +8,6 @@ function subscribeNever() {
   return () => {};
 }
 
-/**
- * Zustand's persist middleware rehydrates from localStorage synchronously on
- * the client but not during SSR — rendering AppShell only after mount keeps
- * the server/first-client-paint HTML identical (both show the loader),
- * avoiding a hydration mismatch on every persisted store.
- */
 import { AppLogo } from "@/components/ui/AppLogo";
 import { APP_BRAND } from "@/lib/constants/branding";
 

@@ -24,8 +24,6 @@ type SettingsPatch = Partial<{
 
 const PUSH_DEBOUNCE_MS = 1500;
 const MAX_SYNCED_RECENTS = 50;
-// Matches settingsStore's own initial value — used if Drive ever has a theme id this build
-// no longer recognizes (e.g. a theme renamed/removed since that value was saved).
 const FALLBACK_THEME: ThemeName = "notepad-plus-plus";
 
 let pushTimer: ReturnType<typeof setTimeout> | null = null;
@@ -46,8 +44,6 @@ function recentsPatch(): SettingsPatch {
   return { recentFiles: recent.slice(0, MAX_SYNCED_RECENTS), favorites };
 }
 
-/** Sends only the parts that changed; the server merges them into a fresh read of
- *  `.appConfig.json`, so a concurrent change from another device to a different part survives. */
 async function flush(): Promise<void> {
   const patch = pendingPatch;
   pendingPatch = {};
@@ -59,8 +55,6 @@ async function flush(): Promise<void> {
       background: true,
     });
   } catch (err) {
-    // Re-queue so the next change (or the next login) retries it; localStorage keeps the value
-    // on this device meanwhile, so nothing is lost locally.
     pendingPatch = { ...patch, ...pendingPatch };
     console.error("Failed to sync settings to Google Drive:", err);
   }
@@ -73,11 +67,6 @@ function schedule(patch: SettingsPatch) {
   pushTimer = setTimeout(() => void flush(), PUSH_DEBOUNCE_MS);
 }
 
-/**
- * Called once right after sign-in. Settings, recent files and favorites live in the user's
- * `NextNotePad.com/.appConfig.json`: Drive wins if it has a value, otherwise it's seeded from
- * this browser's (possibly guest-customized) values. Changes are then pushed, debounced.
- */
 export async function syncSettingsOnLogin(): Promise<void> {
   try {
     const cloud = await fetchJson<CloudSettingsResponse>("/api/settings", {
@@ -96,8 +85,6 @@ export async function syncSettingsOnLogin(): Promise<void> {
       Object.assign(seed, settingsPatch());
     }
 
-    // Drive ids are per-account, so recents/favorites from guest mode (local ids) don't carry
-    // over — only the account's own list from Drive is used.
     useRecentFilesStore.setState({
       recent: cloud.recentFiles ?? [],
       favorites: cloud.favorites ?? [],
@@ -114,7 +101,7 @@ export async function syncSettingsOnLogin(): Promise<void> {
     return;
   }
 
-  if (unsubscribers.length > 0) return; // already watching from an earlier login this session
+  if (unsubscribers.length > 0) return;
   unsubscribers = [
     useSettingsStore.subscribe(() => schedule(settingsPatch())),
     useRecentFilesStore.subscribe((state, prev) => {

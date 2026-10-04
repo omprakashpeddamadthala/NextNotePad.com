@@ -27,7 +27,7 @@ The UI deliberately avoids the "modern SaaS code editor" look — square corners
 | Editor | Monaco Editor (`@monaco-editor/react`) |
 | State | Zustand, TanStack React Query, TanStack React Virtual |
 | Forms | React Hook Form + Zod |
-| Database | SQLite via Prisma 7 (`@prisma/client` + `@prisma/adapter-better-sqlite3` driver adapter) |
+| Database | PostgreSQL via Prisma 7 (`@prisma/client` + `@prisma/adapter-pg` driver adapter) — auth identity and deployment config only; workspace data lives in Google Drive |
 | Auth | Google OAuth 2.0 (`googleapis`) + JWT sessions (`jose`) |
 | Cloud sync | Google Drive API |
 | Import/export | JSZip, FileSaver, DOMPurify, `marked` (Markdown) |
@@ -59,7 +59,7 @@ cp .env.example .env.local
 
 | Variable | Description |
 |---|---|
-| `DATABASE_URL` | SQLite connection string. Already set in the auto-generated `.env` (Prisma CLI convention) — leave it there, e.g. `file:./dev.db`. |
+| `DATABASE_URL` | PostgreSQL connection string, e.g. `postgresql://user:password@localhost:5432/nextnotepad`. `JDBC_DATABASE_URL` + `DATABASE_USERNAME` / `DATABASE_PASSWORD` are accepted as an alternative. |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client ID (Web application). Only required for sign-in/cloud sync — Guest Mode works without them. |
 | `GOOGLE_REDIRECT_URI` | Must exactly match an "Authorized redirect URI" on that OAuth client. Defaults to `http://localhost:3000/api/auth/google/callback`. |
 | `JWT_SECRET` | Signs session JWTs. Generate with `openssl rand -base64 32`. |
@@ -87,7 +87,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | `npm start` | Start the production server (after `build`) |
 | `npm run lint` | ESLint |
 | `npx tsc --noEmit` | Type-check |
-| `npx prisma studio` | Browse the local SQLite database |
+| `npx prisma studio` | Browse the database |
 
 ## Project structure
 
@@ -146,13 +146,13 @@ The legacy `Workspace` / `Folder` / `File` / `SyncFailure` / `UserSettings` tabl
 
 ## Docker
 
-A multi-stage `Dockerfile` builds a production image (Debian-based, since `better-sqlite3` compiles a native addon that must match the runtime's libc) and runs pending Prisma migrations on every container start.
+A multi-stage `Dockerfile` builds a Debian-based production image.
 
 ```bash
 docker compose up --build
 ```
 
-This builds `omprakashornold/nextnotepad:local`, serves on port `3000`, and persists the SQLite database in a named volume (`nextnotepad-data` → `/app/data`). Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, and `JWT_SECRET` in your shell or an `.env` file before running — `docker-compose.yml` reads them from the environment.
+This builds `omprakashornold/nextnotepad:local`, serves on port `3000`. Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, and `JWT_SECRET` in your shell or an `.env` file before running — `docker-compose.yml` reads them from the environment.
 
 CI (`.github/workflows/ci-cd.yml`) type-checks, lints, and builds on every push/PR to `main`, then builds and pushes the Docker image to Docker Hub on pushes to `main`.
 
@@ -161,7 +161,7 @@ CI (`.github/workflows/ci-cd.yml`) type-checks, lints, and builds on every push/
 Development has proceeded in phases:
 
 - ✅ **Phase 1** — Guest Mode (fully client-side editor, no backend)
-- ✅ **Phase 2a** — Google OAuth + JWT sessions + cloud-backed workspace (Prisma/SQLite)
+- ✅ **Phase 2a** — Google OAuth + JWT sessions + cloud-backed workspace
 - ✅ **Phase 2b** — One-way push sync to Google Drive
 - ✅ **Phase 2c** — Google Drive as the single source of truth (DB keeps auth identity only)
 - ⏳ **Phase 3** — Offline/service-worker hardening, security hardening

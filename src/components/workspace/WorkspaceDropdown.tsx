@@ -57,7 +57,6 @@ export function WorkspaceDropdown({
 
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId);
 
-  // Load workspaces when authenticated
   useEffect(() => {
     if (
       status === "authenticated" &&
@@ -71,7 +70,6 @@ export function WorkspaceDropdown({
   async function handleSwitch(id: string) {
     if (id === activeWorkspaceId || switchingWorkspace) return;
 
-    // Instant switch if target workspace tree is cached in memory
     const cachedTree = cloudRepo.getCachedWorkspaceTreeSync(id);
     if (cachedTree) {
       useWorkspaceStore
@@ -81,7 +79,6 @@ export function WorkspaceDropdown({
         );
       useTabsStore.getState().resetSession();
 
-      // Immediately pre-load all files in target workspace
       const files = cachedTree.nodes.filter(
         (n): n is FileNode => n.type === "file" && !n.deleted && !n.locked,
       );
@@ -92,7 +89,6 @@ export function WorkspaceDropdown({
         );
       }
 
-      // Background persist & background SWR freshness check
       void (async () => {
         try {
           await switchWorkspace(id, { background: true });
@@ -107,7 +103,6 @@ export function WorkspaceDropdown({
               );
           }
         } catch {
-          // Silent background refresh failure
         }
       })();
       return;
@@ -133,7 +128,6 @@ export function WorkspaceDropdown({
       return;
     }
 
-    // Reload the workspace file tree for the newly active workspace
     try {
       const data = await treePromise;
       useWorkspaceStore
@@ -154,7 +148,6 @@ export function WorkspaceDropdown({
     );
   }
 
-  // Guest mode handling
   if (status === "guest") {
     return (
       <DropdownMenu>
@@ -187,7 +180,6 @@ export function WorkspaceDropdown({
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onSelect={() => {
-              // Full-page navigation required for OAuth 302 endpoint
               // eslint-disable-next-line @next/next/no-location-assign-relative-destination
               window.location.assign("/api/auth/google");
             }}

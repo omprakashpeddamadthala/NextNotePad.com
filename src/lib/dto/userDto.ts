@@ -8,8 +8,6 @@ function toTimestamp(d: Date | string | number | null | undefined): number {
   return Number.isNaN(t) ? Date.now() : t;
 }
 
-/** Never includes googleAccessToken/googleRefreshToken — this DTO is what the Admin Panel's user
- *  list sends to the client, and those tokens have no business leaving the server. */
 export function userToDto(user: UserModel) {
   return {
     id: user.id,

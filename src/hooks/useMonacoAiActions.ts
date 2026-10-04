@@ -3,9 +3,11 @@ import type { RefObject } from "react";
 import { toast } from "sonner";
 import type { editor as MonacoEditorNS } from "monaco-editor";
 import { useRegisterAction } from "@/hooks/useRegisterAction";
-import { correctText } from "@/services/ai/correctText";
-import { generateMarkdown } from "@/services/ai/generateMarkdown";
-import { generatePrompt } from "@/services/ai/generatePrompt";
+import {
+  correctText,
+  generateMarkdown,
+  generatePrompt,
+} from "@/services/ai/aiText";
 import { ApiError } from "@/lib/api/fetchJson";
 import type { AiProvider } from "@/types/settings";
 
@@ -41,18 +43,9 @@ interface StreamingAiActionConfig {
   unchangedMessage: string;
   changedMessage: string;
   notConfiguredMessage: string;
-  /** Whether streamed-but-unchanged output should snap back to the exact original text — makes
-   *  sense for a proofreader (drift is never intentional) but not for a rewrite whose whole job
-   *  is to change the text's shape (a genuinely no-op rewrite is rare and harmless either way). */
   snapBackIfUnchanged: boolean;
 }
 
-/** Shared engine behind every "select text, stream an AI rewrite over it" action: guards against
- *  overlapping runs, falls back to the whole document when nothing's selected (same convention as
- *  the other Tools-menu commands), streams the selection's replacement in incrementally as chunks
- *  arrive so long requests read as progressive rather than a multi-second blocking wait, and
- *  restores the original text if the stream fails partway through. `runFixGrammar` and
- *  `runGenerateMarkdown` each just supply their own network call and messaging. */
 function runStreamingAiAction(
   editor: MonacoEditorNS.IStandaloneCodeEditor,
   config: StreamingAiActionConfig,
@@ -80,10 +73,6 @@ function runStreamingAiAction(
   isRunning.current = true;
   const toastId = toast.loading(config.loadingMessage);
 
-  // The first chunk replaces the original selection; every chunk after that is a plain insert at
-  // wherever streaming left off, so each edit only costs what's new — not the whole response
-  // re-written on every chunk (which would get slower and slower as the response grows, the
-  // opposite of the ChatGPT-style typewriter feel this is going for).
   const startOffset = model.getOffsetAt(range.getStartPosition());
   let endOffset = startOffset;
   let firstChunk = true;
@@ -131,8 +120,6 @@ function runStreamingAiAction(
         result.trim() === original.trim() &&
         result !== original
       ) {
-        // Streaming can drift on trivial whitespace even when no real change was made — snap
-        // back to the exact original text rather than leave that drift.
         editor.executeEdits("tools.ai", [{ range: currentRange, text: original }]);
       }
       editor.pushUndoStop();
@@ -144,7 +131,6 @@ function runStreamingAiAction(
     })
     .catch((err: unknown) => {
       if (streamed) {
-        // Restore whatever partial/garbled text the failed stream left behind.
         editor.executeEdits("tools.ai", [{ range: spanFromStart(), text: original }]);
         editor.pushUndoStop();
       }
@@ -155,16 +141,6 @@ function runStreamingAiAction(
     });
 }
 
-/** Wires the AI-powered Monaco actions ("Fix Grammar & Spelling", "Generate MD Syntax", and
- *  "Generate Prompt") into the shared action registry.
- *
- *  Each feature shares one in-flight guard across its own three ids (so you can't kick off two
- *  runs of the *same* feature on the same selection at once, whichever id triggered them), but
- *  the features guard independently of each other: "tools.ai.fixGrammar" /
- *  "tools.ai.generateMdSyntax" / "tools.ai.generatePrompt" run whatever provider is set in
- *  Settings > General (used by their right-click context-menu action and Command Palette entry),
- *  while ".gemini"/".claude" suffixes force a specific provider for that one call (the Tools
- *  menu's submenus). */
 export function useMonacoAiActions({
   registerGlobalActions,
   editorRef,

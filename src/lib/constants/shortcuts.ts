@@ -31,12 +31,10 @@ export type ActionId =
 export interface ShortcutDef {
   action: ActionId;
   label: string;
-  /** Human-readable combo, e.g. "Ctrl+Shift+S". Matched case-insensitively against key names. */
   keys: string;
   category: "File" | "Edit" | "Search" | "View" | "Window";
 }
 
-/** The Notepad++ shortcut set from the spec, mapped to app actions. */
 export const SHORTCUTS: ShortcutDef[] = [
   { action: "file.new", label: "New File", keys: "Ctrl+N", category: "File" },
   { action: "file.newFolder", label: "New Folder", keys: "Ctrl+Shift+N", category: "File" },

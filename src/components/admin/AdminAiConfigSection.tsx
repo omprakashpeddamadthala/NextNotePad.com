@@ -166,7 +166,6 @@ export function AdminAiConfigSection() {
 
   return (
     <form className="space-y-6 max-w-3xl pb-8" onSubmit={handleSubmit(onSubmit)}>
-      {/* Header Info Banner */}
       <div className="rounded-xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs backdrop-blur-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/60">
           <div className="flex items-center gap-2.5">
@@ -202,9 +201,7 @@ export function AdminAiConfigSection() {
         </div>
       </div>
 
-      {/* Google Gemini Card */}
       <div className="rounded-xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs backdrop-blur-xs space-y-5">
-        {/* Gemini API Key Field */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <Label htmlFor="gemini-api-key" className="text-xs font-semibold">
@@ -266,7 +263,6 @@ export function AdminAiConfigSection() {
           )}
         </div>
 
-        {/* Gemini Model Preset & ID Field */}
         <div className="space-y-3 pt-2 border-t border-border/50">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
@@ -319,7 +315,6 @@ export function AdminAiConfigSection() {
         </div>
       </div>
 
-      {/* Action Buttons */}
       <div className="flex items-center justify-end gap-3 pt-2">
         <Button
           type="button"

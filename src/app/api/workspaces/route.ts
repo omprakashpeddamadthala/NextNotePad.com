@@ -11,8 +11,6 @@ import {
 import { unauthorized, badRequest } from "@/lib/api/respond";
 import { createWorkspaceSchema } from "@/lib/validation/workspaceSchemas";
 
-/** GET /api/workspaces — the user's workspace folders in Drive, plus the active one from
- *  `.appConfig.json` (repaired if it points at a workspace that no longer exists). */
 export async function GET() {
   try {
     const session = await getDriveSession();
@@ -39,7 +37,6 @@ export async function GET() {
   }
 }
 
-/** POST /api/workspaces — create a workspace folder (+ `.workspace.json`) and make it active. */
 export async function POST(request: NextRequest) {
   try {
     const session = await getDriveSession();

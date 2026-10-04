@@ -5,24 +5,19 @@ import {
   type DriveService,
 } from "./driveService";
 
-export const APP_CONFIG_SCHEMA_VERSION = 1;
+const APP_CONFIG_SCHEMA_VERSION = 1;
 
 const recentEntrySchema = z.object({
   fileId: z.string(),
   openedAt: z.number(),
 });
 
-/**
- * `NextNotePad.com/.appConfig.json` — the authoritative per-user application state. Unknown keys
- * are preserved (`passthrough`) so an older build never strips fields a newer build wrote.
- */
-export const appConfigSchema = z
+const appConfigSchema = z
   .object({
     schemaVersion: z.number().int(),
     app: z.literal("NextNotePad.com").default("NextNotePad.com"),
     createdAt: z.string(),
     updatedAt: z.string(),
-    /** Incremented on every write; lets clients and logs tell configs apart cheaply. */
     revision: z.number().int().nonnegative().default(0),
     activeWorkspaceId: z.string().nullable().default(null),
     settings: z
@@ -52,7 +47,7 @@ export const appConfigSchema = z
 
 export type AppConfig = z.infer<typeof appConfigSchema>;
 
-export function defaultAppConfig(now = new Date()): AppConfig {
+function defaultAppConfig(now = new Date()): AppConfig {
   const iso = now.toISOString();
   return appConfigSchema.parse({
     schemaVersion: APP_CONFIG_SCHEMA_VERSION,
@@ -61,14 +56,12 @@ export function defaultAppConfig(now = new Date()): AppConfig {
   });
 }
 
-/** Ordered upgrade steps, keyed by the version they upgrade *from*. Add `1: (c) => {...}` when
- *  schemaVersion 2 is introduced; each step must be pure and idempotent. */
 const MIGRATIONS: Record<
   number,
   (raw: Record<string, unknown>) => Record<string, unknown>
 > = {};
 
-export function migrateAppConfig(raw: unknown): AppConfig {
+function migrateAppConfig(raw: unknown): AppConfig {
   if (!raw || typeof raw !== "object" || Array.isArray(raw))
     throw new Error("appConfig is not an object");
   let current = { ...(raw as Record<string, unknown>) };
@@ -96,8 +89,6 @@ interface CacheEntry {
   fetchedAt: number;
 }
 
-/** Short TTL: other devices/tabs may write the file, so the cache only absorbs bursts of reads
- *  within one page load rather than acting as a second source of truth. */
 const CACHE_TTL_MS = 15_000;
 const cache = new Map<string, CacheEntry>();
 const locks = new Map<string, Promise<unknown>>();
@@ -114,7 +105,6 @@ function withUserLock<T>(userId: string, fn: () => Promise<T>): Promise<T> {
   return next;
 }
 
-/** Loads, validates, migrates, caches and saves `.appConfig.json`. */
 export class AppConfigService {
   constructor(private readonly ds: DriveService) {}
 
@@ -150,8 +140,6 @@ export class AppConfigService {
       config = migrateAppConfig(parsed);
       needsWrite = parsed.schemaVersion !== config.schemaVersion;
     } catch (err) {
-      // Never silently destroy a user's config: keep the unreadable file as a timestamped backup
-      // next to the fresh default so it can be recovered by hand.
       console.error(
         `Corrupted ${APP_CONFIG_FILE_NAME} for user ${this.ds.userId}; backing it up:`,
         err,
@@ -204,9 +192,6 @@ export class AppConfigService {
       return hit.config;
     const requestedAt = Date.now();
     const entry = await withUserLock(this.ds.userId, async () => {
-      // Concurrent callers queue on the lock; whoever ran first has usually just read (or
-      // written) the file, so reuse that rather than every queued caller re-reading it. A `fresh`
-      // load only accepts an entry fetched after it was requested.
       const settled = cache.get(this.ds.userId);
       if (
         settled &&
@@ -227,12 +212,6 @@ export class AppConfigService {
     return entry.config;
   }
 
-  /**
-   * Read-modify-write. The patch is applied to a *fresh* read (not the cache) under a per-user
-   * lock, so a change made from another device since our last read is merged rather than
-   * overwritten — callers express intent ("set theme", "add recent") instead of sending a whole
-   * stale config.
-   */
   async update(patch: AppConfigPatch): Promise<AppConfig> {
     return withUserLock(this.ds.userId, async () => {
       const entry = await this.readFresh();

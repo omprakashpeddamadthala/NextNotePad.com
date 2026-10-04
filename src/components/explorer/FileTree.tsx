@@ -19,14 +19,9 @@ import {
 } from "@/components/ui/context-menu";
 import { ExplorerRootContextMenuContent } from "./ExplorerContextMenuContent";
 
-/** Must stay in sync with TreeNode's row height — the virtualizer positions rows
- *  absolutely at this pitch, so a mismatch clips or overlaps them. */
 const ROW_HEIGHT_DESKTOP = 28;
 const ROW_HEIGHT_TOUCH = 36;
 
-/** Placeholder rows shown while the cloud workspace tree is still being fetched — without this
- *  the explorer renders as an empty tree ("No files yet"), which reads as "your files are gone"
- *  for the second or two before they arrive. */
 function TreeSkeleton() {
   const indents = [0, 0, 14, 14, 28, 0, 14, 0];
   return (
@@ -176,7 +171,6 @@ export function FileTree() {
         })}
       </div>
 
-      {/* Empty space filler so the user can always click / right-click below items to target root */}
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <div

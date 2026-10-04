@@ -1,6 +1,5 @@
 import * as idb from "./indexedDbService";
 
-/** File content lives in IndexedDB, keyed by file id; tree metadata lives in Zustand/localStorage. */
 export async function readFileContent(fileId: string): Promise<string> {
   return (await idb.getFileContent(fileId)) ?? "";
 }

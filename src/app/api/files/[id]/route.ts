@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  getDriveSession,
-  getDriveSessionWithWorkspace,
   driveErrorResponse,
+  getDriveSession,
+  getDriveSessionForRequest,
 } from "@/lib/drive/session";
 import {
   entryToNodeDto,
@@ -21,19 +21,10 @@ interface RouteParams {
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const requestedWorkspaceId =
-      request.nextUrl.searchParams.get("workspaceId");
-    const session = requestedWorkspaceId
-      ? await getDriveSession()
-      : await getDriveSessionWithWorkspace();
+    const session = await getDriveSessionForRequest(request, { validate: false });
     if (!session) return unauthorized();
     const { id } = await params;
-    const { ds } = session;
-    const workspaceId =
-      requestedWorkspaceId ??
-      (session as { workspaceId?: string }).workspaceId ??
-      null;
-    if (!workspaceId) return unauthorized();
+    const { ds, workspaceId } = session;
 
     const [entry, content] = await Promise.all([
       getNode(ds, id),
@@ -53,8 +44,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
-    const requestedWorkspaceId =
-      request.nextUrl.searchParams.get("workspaceId");
     const parsed = updateFileSchema.safeParse(await request.json());
     if (!parsed.success) return badRequest(parsed.error);
 
@@ -68,24 +57,16 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       parsed.data.encryptionSalt === undefined &&
       parsed.data.encryptionIv === undefined;
 
-    const session =
-      isContentOnly || requestedWorkspaceId
-        ? await getDriveSession()
-        : await getDriveSessionWithWorkspace();
+    const session = isContentOnly
+      ? await getDriveSession().then((s) => s && { ...s, workspaceId: "" })
+      : await getDriveSessionForRequest(request, { validate: false });
     if (!session) return unauthorized();
     const { id } = await params;
-    const { ds } = session;
-    const workspaceId = isContentOnly
-      ? ""
-      : (requestedWorkspaceId ??
-        ("workspaceId" in session
-          ? (session as unknown as { workspaceId: string }).workspaceId
-          : ""));
+    const { ds, workspaceId } = session;
 
     const entry = await updateNode(ds, workspaceId, id, parsed.data);
     const moved =
       parsed.data.name !== undefined || parsed.data.parentId !== undefined;
-    // Content-only saves (autosave) skip the parent walk — the client already knows the path.
     const dto = moved
       ? await nodeDto(ds, entry, workspaceId)
       : entryToNodeDto(

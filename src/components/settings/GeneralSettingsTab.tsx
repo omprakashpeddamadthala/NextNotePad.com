@@ -41,7 +41,6 @@ export function GeneralSettingsTab() {
 
   return (
     <div className="space-y-6">
-      {/* Session & Persistence */}
       <div className="rounded-xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs backdrop-blur-xs">
         <div className="mb-4 flex items-center gap-2.5 pb-3 border-b border-border/60">
           <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -54,7 +53,6 @@ export function GeneralSettingsTab() {
         </div>
 
         <div className="space-y-4">
-          {/* Restore Session */}
           <div className="flex items-center justify-between gap-4 rounded-lg border border-border/50 bg-background/50 p-3.5 transition-colors hover:bg-muted/30">
             <div className="space-y-0.5">
               <Label htmlFor="restore-session" className="text-sm font-medium cursor-pointer">
@@ -71,7 +69,6 @@ export function GeneralSettingsTab() {
             />
           </div>
 
-          {/* Auto Save */}
           <div className="space-y-2 rounded-lg border border-border/50 bg-background/50 p-3.5 transition-colors hover:bg-muted/30">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
@@ -108,7 +105,6 @@ export function GeneralSettingsTab() {
         </div>
       </div>
 
-      {/* New File Defaults */}
       <div className="rounded-xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs backdrop-blur-xs">
         <div className="mb-4 flex items-center gap-2.5 pb-3 border-b border-border/60">
           <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -121,7 +117,6 @@ export function GeneralSettingsTab() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Default Encoding */}
           <div className="space-y-2 rounded-lg border border-border/50 bg-background/50 p-3.5">
             <div className="flex items-center gap-2">
               <Binary className="size-3.5 text-muted-foreground" />
@@ -145,7 +140,6 @@ export function GeneralSettingsTab() {
             <p className="text-[11px] text-muted-foreground">Standard UTF-8 is recommended for cross-platform compatibility.</p>
           </div>
 
-          {/* Default Language */}
           <div className="space-y-2 rounded-lg border border-border/50 bg-background/50 p-3.5">
             <div className="flex items-center gap-2">
               <FileCode2 className="size-3.5 text-muted-foreground" />

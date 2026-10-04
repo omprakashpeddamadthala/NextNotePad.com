@@ -10,14 +10,8 @@ import { useSyncStatusStore } from "@/store/syncStatusStore";
 
 const AUTO_SYNC_INTERVAL_MS = 5000;
 
-/** Dispatch on `window` to retry every pending save immediately (e.g. the "Retry" badge). */
-export const FLUSH_SYNC_EVENT = "nnp:flush-sync"; // Auto-sync to backend every 5 seconds
+export const FLUSH_SYNC_EVENT = "nnp:flush-sync";
 
-/**
- * Background auto-sync hook:
- * Automatically synchronizes all modified / dirty notes to the backend repository
- * every 5 seconds, as well as on window blur / visibility change / page unload.
- */
 export function useAutoSyncNotes(): void {
   const isSyncingRef = useRef(false);
 
@@ -32,14 +26,12 @@ export function useAutoSyncNotes(): void {
         const repo = getActiveRepository();
         const sync = useSyncStatusStore.getState();
         const tracking = useAuthStore.getState().status === "authenticated";
-        // Offline: keep everything dirty and queued in memory; the "online" event flushes it.
         if (tracking && !sync.online) return;
 
         for (const tab of tabs) {
           const model = modelRegistry.getModel(tab.fileId);
           if (!model) continue;
 
-          // Check if tab is flagged dirty or if the model value differs from saved value
           const isMarkedDirty = Boolean(dirtyTabIds[tab.id]);
           const isModelDirty = modelRegistry.isDirty(tab.fileId);
 
@@ -54,7 +46,6 @@ export function useAutoSyncNotes(): void {
             updateNode(tab.fileId, { size: content.length });
             if (tracking) sync.markSaved(tab.fileId);
           } catch (err) {
-            // Stays dirty, so the next tick retries it; the status badge shows "Sync failed".
             if (tracking)
               sync.markFailed(
                 tab.fileId,
@@ -71,12 +62,10 @@ export function useAutoSyncNotes(): void {
       }
     }
 
-    // 1. Continuous 5-second interval timer
     const timerId = window.setInterval(() => {
       void syncDirtyNotes();
     }, AUTO_SYNC_INTERVAL_MS);
 
-    // 2. Immediate flush when tab goes hidden (switching tabs/apps) or unloads
     function handleVisibilityChange() {
       if (document.visibilityState === "hidden") {
         void syncDirtyNotes();

@@ -3,8 +3,6 @@ import type { editor as MonacoEditorNS } from "monaco-editor";
 import { useSettingsStore } from "@/store/settingsStore";
 import { CUSTOM_FORMATTERS } from "./formatters";
 
-/** Formats the selection if one exists, otherwise the whole document. JSON/XML use our own
- *  formatter (guaranteed-correct, no CDN dependency); everything else uses Monaco's built-in. */
 export function formatActiveEditor(editor: MonacoEditorNS.IStandaloneCodeEditor): void {
   const model = editor.getModel();
   if (!model) return;
@@ -35,11 +33,6 @@ export function formatActiveEditor(editor: MonacoEditorNS.IStandaloneCodeEditor)
     toast.error(`No formatter available for "${language}"`);
     return;
   }
-  // Monaco's built-in action only does anything if a formatting provider is registered for
-  // this language — that's true for JS/TS/CSS/HTML/JSON out of the box, but most languages
-  // (Python, Go, Rust, Java, YAML, ...) have none, and `action.run()` succeeds silently
-  // without changing anything. Compare before/after so that case gets an honest message
-  // instead of the button looking like it did nothing.
   const before = model.getValue();
   void action.run().then(() => {
     if (model.getValue() === before) {

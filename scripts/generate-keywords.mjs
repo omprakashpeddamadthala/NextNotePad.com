@@ -76,10 +76,8 @@ const features = [
 
 const keywordSet = new Set();
 
-// 1. Add primary keywords first
 primaryKeywords.forEach(k => keywordSet.add(k));
 
-// 2. Pairwise prefix + entity
 for (const m of modifiers) {
   for (const e of entities) {
     keywordSet.add(`${m} ${e}`);
@@ -87,14 +85,12 @@ for (const m of modifiers) {
   }
 }
 
-// 3. Entity + feature
 for (const e of entities) {
   for (const f of features) {
     keywordSet.add(`${e} ${f}`);
   }
 }
 
-// 4. Modifier + entity + feature
 for (const m of modifiers.slice(0, 15)) {
   for (const e of entities.slice(0, 10)) {
     for (const f of features.slice(0, 12)) {
@@ -103,7 +99,6 @@ for (const m of modifiers.slice(0, 15)) {
   }
 }
 
-// 5. Additional long-tail search intent phrases
 const actions = [
   "open", "use", "download", "run", "try", "best app for", "how to open", "how to use"
 ];

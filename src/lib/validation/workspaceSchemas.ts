@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-// Existing schemas untouched
 const importNodeSchema = z.object({
   id: z.string(),
   parentId: z.string().nullable(),
@@ -75,7 +74,6 @@ export const updateSettingsSchema = z.object({
   favorites: z.array(z.string()).max(1000).optional(),
 });
 
-// New multi-workspace schemas
 export const createWorkspaceSchema = z.object({
   name: z
     .string()

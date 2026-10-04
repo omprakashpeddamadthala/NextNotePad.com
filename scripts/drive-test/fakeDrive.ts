@@ -1,4 +1,3 @@
-/* In-memory stand-in for the subset of drive_v3.Drive that DriveService uses. Test-only. */
 type F = {
   id: string;
   name: string;
@@ -25,7 +24,6 @@ export function createFakeDrive() {
   const now = () => new Date(Date.now() + seq).toISOString();
 
   function matches(f: F, q: string): boolean {
-    // supports: clauses joined by " and "; one optional parenthesised "or" group of "'x' in parents"
     const orGroup = q.match(/^\((.*?)\) and (.*)$/);
     let rest = q;
     if (orGroup) {

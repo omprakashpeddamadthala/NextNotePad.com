@@ -4,7 +4,6 @@ interface MigrationPromptState {
   open: boolean;
   fileCount: number;
   resolve: ((accepted: boolean) => void) | null;
-  /** Opens the prompt and resolves once the user answers Yes/No. */
   request: (fileCount: number) => Promise<boolean>;
   respond: (accepted: boolean) => void;
 }

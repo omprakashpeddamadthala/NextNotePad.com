@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  getDriveSessionWithWorkspace,
   driveErrorResponse,
+  getDriveSessionForRequest,
 } from "@/lib/drive/session";
 import { createNode } from "@/lib/drive/workspaceService";
 import { importWorkspaceSchema } from "@/lib/validation/workspaceSchemas";
@@ -9,14 +9,9 @@ import { unauthorized, badRequest } from "@/lib/api/respond";
 
 const CONCURRENCY = 6;
 
-/**
- * One-time bulk import of a guest workspace into the user's active Drive workspace. Processed
- * level by level (parents before children); siblings within a level are created concurrently
- * with a small cap to stay under Drive's per-user rate limits. Client ids are remapped to Drive ids.
- */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getDriveSessionWithWorkspace();
+    const session = await getDriveSessionForRequest(request);
     if (!session) return unauthorized();
     const parsed = importWorkspaceSchema.safeParse(await request.json());
     if (!parsed.success) return badRequest(parsed.error);

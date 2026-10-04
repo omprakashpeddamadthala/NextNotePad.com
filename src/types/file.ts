@@ -1,8 +1,3 @@
-/**
- * Shared metadata shape. `lastSynced`, `version`, `checksum` are unused in
- * guest mode (Phase 1) but typed now so Phase 2 (Drive sync) doesn't need a
- * data migration.
- */
 interface BaseNode {
   id: string;
   name: string;
@@ -23,8 +18,6 @@ export interface FileNode extends BaseNode {
   encoding: string;
   size: number;
   pinnedFavorite: boolean;
-  /** Lock feature — see prisma/schema.prisma's File model comment. Salt/iv are only meaningful
-   *  (non-null) while `locked` is true; the passphrase itself is never stored. */
   locked: boolean;
   encryptionSalt: string | null;
   encryptionIv: string | null;
@@ -69,7 +62,6 @@ export interface RecentEntry {
 export interface TrashEntry {
   node: WorkspaceNode;
   deletedAt: number;
-  /** Serialized subtree so folders can be restored with their children intact. */
   descendants: WorkspaceNode[];
 }
 

@@ -27,8 +27,6 @@ export {
   prefetchFileContents,
 };
 
-// --- Same shape as the local repository (services/storage/workspaceRepository.ts) ---
-
 export async function readFileContent(fileId: string): Promise<string> {
   const node = useWorkspaceStore.getState().nodes[fileId];
   return readDriveFileContent(
@@ -78,10 +76,8 @@ export async function duplicateFileContent(
 }
 
 export async function estimateStorageUsage(): Promise<null> {
-  return null; // N/A server-side in Phase 2a
+  return null;
 }
-
-// --- Cloud-only metadata operations, used by fileOperations.ts when authenticated ---
 
 function activeWorkspaceId(): string | null {
   return useMultiWorkspaceStore.getState().activeWorkspaceId;
@@ -121,7 +117,6 @@ export async function fetchWorkspaceTree(
 
   const result = await load();
 
-  // Pre-load all files in the workspace immediately so clicking any file displays content with zero wait
   const fileNodes = result.nodes.filter(
     (n): n is Extract<WorkspaceNode, { type: "file" }> =>
       n.type === "file" && !n.deleted && !n.locked,
@@ -278,8 +273,6 @@ export async function importWorkspace(
   const result = await fetchJson<{ idMap: Record<string, string> }>(
     "/api/workspace/import",
     {
-      // A full guest-workspace migration can be much larger than a normal request, so it gets a
-      // longer leash than the default timeout before being treated as hung.
       ...jsonBody("POST", { nodes }),
       action: "Import workspace",
       timeoutMs: 60000,

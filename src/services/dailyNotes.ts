@@ -7,7 +7,6 @@ import type { FolderNode } from "@/types/file";
 
 const DAILY_NOTES_FOLDER_NAME = "Daily Notes";
 
-/** Local calendar date, not UTC — `toISOString()` would roll over to the wrong day near midnight. */
 function todayFileName(): string {
   const now = new Date();
   const year = now.getFullYear();
@@ -25,11 +24,6 @@ async function ensureDailyNotesFolder(): Promise<string> {
   return createFolder(null, DAILY_NOTES_FOLDER_NAME);
 }
 
-/**
- * Opens today's daily note under the root "Daily Notes" folder — creating the folder and/or
- * the note the first time either is needed. A second click the same day reopens the same file
- * instead of creating a duplicate; the day after, a fresh dated file is created.
- */
 export async function openTodayDailyNote(): Promise<void> {
   const folderId = await ensureDailyNotesFolder();
   const name = todayFileName();
@@ -40,8 +34,6 @@ export async function openTodayDailyNote(): Promise<void> {
   );
   const fileId = existing ? existing.id : await createFile(folderId, name, "");
 
-  // See openFileAtLocation's comment in fileOperations.ts — the same stale-special-view issue
-  // applies here since this can be triggered while a different markdown file's full-page view is open.
   closeAllSpecialViews();
   useTabsStore.getState().openTab(fileId);
   useRecentFilesStore.getState().addRecent(fileId);

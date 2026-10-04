@@ -51,12 +51,6 @@ const CASE_OPTIONS: { id: CaseConverterId; label: string }[] = [
   { id: "constant", label: "CONSTANT_CASE" },
 ];
 
-/** Every item here acts directly on the active tab's selection (or whole document if nothing is
- *  selected) — same convention as Format Document — instead of opening a separate copy/paste
- *  dialog. Diff Checker also stays on-tab: it replaces the editor content with two open tabs
- *  side by side on Monaco's diff editor, rather than a popup. Fix Grammar & Spelling is the one
- *  async, network-backed item — its submenu picks which provider (Gemini or Claude via
- *  AgentRouter) handles this one call, overriding Settings > General's default for just this run. */
 export function ToolsMenu() {
   return (
     <TopMenu label="Tools">

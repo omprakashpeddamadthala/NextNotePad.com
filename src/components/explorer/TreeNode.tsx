@@ -89,7 +89,6 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
     try {
       renameNode(node.id, trimmed);
     } catch {
-      // duplicate-name toast already shown by renameNode
     }
   }
 
@@ -142,7 +141,6 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
       return;
     moveNode(draggedId, dropTarget);
   }
-
 
   return (
     <div

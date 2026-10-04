@@ -44,10 +44,6 @@ import {
 import { WorkspaceDropdown } from "@/components/workspace/WorkspaceDropdown";
 import { cn } from "@/lib/utils";
 
-// --------------------------------------------------------------------------
-// Empty state for new / empty workspaces
-// --------------------------------------------------------------------------
-
 function EmptyWorkspace() {
   const { createFileAndRename, createFolderAndRename } = useCreateAndRename();
   return (
@@ -86,10 +82,6 @@ function EmptyWorkspace() {
   );
 }
 
-// --------------------------------------------------------------------------
-// Unified Modern Workspace Sidebar
-// --------------------------------------------------------------------------
-
 export function CollectionsSidebar() {
   const [showTrash, setShowTrash] = useState(false);
   const [search, setSearch] = useState("");
@@ -127,7 +119,6 @@ export function CollectionsSidebar() {
           }
         }}
       >
-        {/* ── Top Bar: Workspace Switcher + Collapse Button ─────────────── */}
         <div
           className="flex h-10 shrink-0 items-center justify-between border-b px-2 gap-1.5"
           style={{ borderBottomColor: "var(--np-sidebar-border)" }}
@@ -150,7 +141,6 @@ export function CollectionsSidebar() {
           </Tooltip>
         </div>
 
-        {/* ── Quick Navigation Bar (Linear / Notion Style) ─────────────── */}
         <div
           className="grid grid-cols-5 gap-0.5 border-b p-1 shrink-0"
           style={{ borderBottomColor: "var(--np-sidebar-border)" }}
@@ -191,7 +181,6 @@ export function CollectionsSidebar() {
           />
         </div>
 
-        {/* ── Section Title + Explorer Actions ─────────────────────────── */}
         <div
           className="flex h-8 shrink-0 items-center justify-between border-b px-2.5"
           style={{ borderBottomColor: "var(--np-sidebar-border)" }}
@@ -229,7 +218,6 @@ export function CollectionsSidebar() {
           )}
         </div>
 
-        {/* ── Search / filter ─────────────────────────────────────────── */}
         {!showTrash && (
           <div
             className="relative flex h-8 shrink-0 items-center border-b px-2 py-1"
@@ -264,7 +252,6 @@ export function CollectionsSidebar() {
           </div>
         )}
 
-        {/* ── Main Tree Content ────────────────────────────────────────── */}
         <div className="min-h-0 flex-1 overflow-hidden">
           {showTrash ? (
             <RecycleBinPanel />
@@ -275,7 +262,6 @@ export function CollectionsSidebar() {
           )}
         </div>
 
-        {/* ── Bottom Dock: Quick Utilities ─────────────────────────────── */}
         <div
           className="flex h-8 shrink-0 items-center justify-between border-t px-2 text-muted-foreground"
           style={{ borderTopColor: "var(--np-sidebar-border)" }}
@@ -356,11 +342,3 @@ function QuickNavButton({
   );
 }
 
-// Minimal fallback export for any lingering references
-export function IconNavRail() {
-  return null;
-}
-
-export function PostmanSidebar() {
-  return <CollectionsSidebar />;
-}

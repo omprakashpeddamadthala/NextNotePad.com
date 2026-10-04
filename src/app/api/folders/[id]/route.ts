@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  getDriveSession,
-  getDriveSessionWithWorkspace,
   driveErrorResponse,
+  getDriveSession,
+  getDriveSessionForRequest,
 } from "@/lib/drive/session";
 import { nodeDto, trashNode, updateNode } from "@/lib/drive/workspaceService";
 import { updateFolderSchema } from "@/lib/validation/workspaceSchemas";
@@ -14,21 +14,12 @@ interface RouteParams {
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
-    const requestedWorkspaceId =
-      request.nextUrl.searchParams.get("workspaceId");
-    const session = requestedWorkspaceId
-      ? await getDriveSession()
-      : await getDriveSessionWithWorkspace();
+    const session = await getDriveSessionForRequest(request);
     if (!session) return unauthorized();
     const { id } = await params;
     const parsed = updateFolderSchema.safeParse(await request.json());
     if (!parsed.success) return badRequest(parsed.error);
-    const { ds } = session;
-    const workspaceId = requestedWorkspaceId
-      ? (await ds.get(requestedWorkspaceId)).id
-      : ("workspaceId" in session
-          ? (session as unknown as { workspaceId: string }).workspaceId
-          : "");
+    const { ds, workspaceId } = session;
     const entry = await updateNode(ds, workspaceId, id, parsed.data);
     return NextResponse.json(await nodeDto(ds, entry, workspaceId));
   } catch (err) {
@@ -36,7 +27,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-/** Trashing a Drive folder trashes its whole subtree, so no per-descendant cascade is needed. */
 export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   try {
     const session = await getDriveSession();

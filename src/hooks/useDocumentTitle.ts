@@ -5,12 +5,6 @@ import { useTabsStore } from "@/store/tabsStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { APP_BRAND } from "@/lib/constants/branding";
 
-/**
- * Keeps document.title synchronized with the active editor tab, matching VS Code:
- * - "[●] filename.ext — NextNotePad" when a file is open (with ● if dirty)
- * - "NextNotePad" when no file is open
- * Prevents redundant tagline repetition in window title bars.
- */
 export function useDocumentTitle(): void {
   const tabs = useTabsStore((s) => s.tabs);
   const activeTabId = useTabsStore((s) => s.activeTabId);

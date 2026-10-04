@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { useSettingsStore } from "@/store/settingsStore";
 import { THEME_MODULES } from "@/lib/monaco/themes";
 
-/** Pushes the active theme's colors onto :root as CSS custom properties, live, no reload needed. */
 export function ThemeApplier() {
   const themeName = useSettingsStore((s) => s.theme);
 
@@ -17,11 +16,9 @@ export function ThemeApplier() {
     root.classList.toggle("dark", chrome.isDark);
     root.setAttribute("data-np-theme", theme.id);
 
-    // Compute a muted foreground: 55% foreground mixed with background
-    // This is a reasonable default — the individual chrome objects don't define it explicitly
     const mutedFg = chrome.isDark
-      ? "rgba(148, 163, 184, 0.9)"  // slate-400 ish for dark themes
-      : "rgba(100, 116, 139, 0.9)"; // slate-500 ish for light themes
+      ? "rgba(148, 163, 184, 0.9)"
+      : "rgba(100, 116, 139, 0.9)";
 
     const shadcnVars: Record<string, string> = {
       "--background": chrome.background,
@@ -43,7 +40,6 @@ export function ThemeApplier() {
       "--ring": chrome.accent,
     };
 
-    // Compute sidebar/rail background — slightly darker than toolbar for visual hierarchy
     const railBg = chrome.isDark
       ? `color-mix(in srgb, ${chrome.toolbarBackground} 85%, black 15%)`
       : `color-mix(in srgb, ${chrome.toolbarBackground} 92%, black 8%)`;

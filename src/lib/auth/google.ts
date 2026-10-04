@@ -12,14 +12,6 @@ function getEnv(name: string): string {
   return value;
 }
 
-/**
- * Origin to build post-login redirect URLs against. Deriving it from `request.url` breaks behind
- * a reverse proxy like Railway's — the app only sees the proxy's internal connection (e.g.
- * `http://localhost:8080`), not the public HTTPS domain, so `NextResponse.redirect(new URL(path,
- * request.url))` sends the browser to that internal address instead. `GOOGLE_REDIRECT_URI` is
- * already the one piece of config that must be the true public URL (Google itself redirects here),
- * so reuse its origin rather than adding another env var or trusting client-controlled headers.
- */
 export function getAppOrigin(request?: { headers: Headers; url: string }): string {
   const envUri = process.env.GOOGLE_REDIRECT_URI;
   if (envUri) {
@@ -83,15 +75,6 @@ export interface GoogleProfile {
   picture?: string;
 }
 
-/**
- * Decodes the profile claims straight out of the token response's `id_token` — no network call.
- * Requesting the `openid` scope (already done in `SCOPES`) means Google's token response always
- * includes this JWT with `sub`/`email`/`name`/`picture` already in it, making the separate
- * userinfo-endpoint round trip `fetchGoogleProfile` used to require entirely redundant. No
- * signature verification needed: it arrived directly from Google's token endpoint in the same
- * response as the access token, over our own server-to-server request — same trust level we
- * already place in the access token itself.
- */
 function decodeJwtPayload(token: string): Record<string, unknown> {
   const parts = token.split(".");
   if (parts.length < 2) {
@@ -121,7 +104,6 @@ export function decodeIdTokenProfile(idToken: string): GoogleProfile {
   };
 }
 
-/** Fallback for the rare case `id_token` isn't present — normally unused since `openid` is always requested. */
 export async function fetchGoogleProfile(accessToken: string): Promise<GoogleProfile> {
   const res = await fetch(GOOGLE_USERINFO_ENDPOINT, {
     headers: { Authorization: `Bearer ${accessToken}` },

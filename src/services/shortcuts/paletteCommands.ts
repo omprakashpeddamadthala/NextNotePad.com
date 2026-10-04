@@ -5,7 +5,6 @@ import {
   Download,
   Upload,
   Info,
-  Database,
   Binary,
   Link2,
   CaseSensitive,
@@ -39,7 +38,6 @@ import { runAction } from "@/services/shortcuts/actionRegistry";
 import { THEME_ORDER } from "@/lib/constants/themes";
 import { THEME_MODULES } from "@/lib/monaco/themes";
 import { emptyTrash } from "@/services/fileOperations";
-import { seedMockWorkspace } from "@/lib/devtools/seedMockData";
 import { HASH_ALGORITHMS } from "@/services/textTools/textTools";
 
 export interface PaletteCommand {
@@ -63,9 +61,6 @@ const CASE_COMMANDS: { id: string; label: string }[] = [
   { id: "constant", label: "CONSTANT_CASE" },
 ];
 
-/** Display order for command groups — matches the app's own menu bar order (File, Edit, Search,
- *  View, Window) before the extra categories the palette adds on top. Anything not listed here
- *  (there shouldn't be any) falls back to alphabetical, appended at the end. */
 const CATEGORY_ORDER = ["File", "Edit", "Search", "View", "Window", "Tools", "Theme", "Settings", "Help", "Developer"];
 
 function groupByCategory(commands: PaletteCommand[]): [string, PaletteCommand[]][] {
@@ -384,21 +379,7 @@ function buildCommands(): PaletteCommand[] {
     })),
   ];
 
-  if (process.env.NODE_ENV === "development") {
-    extraCommands.push({
-      id: "dev-seed-mock-workspace",
-      label: "Dev: Seed 2,000 Mock Files (perf test)",
-      category: "Developer",
-      icon: Database,
-      run: () => seedMockWorkspace(2000, 200),
-    });
-  }
-
   return [...shortcutCommands, ...extraCommands];
 }
 
-/** All palette commands, grouped by category, built once at module load. None of these depend on
- *  component state — each `run` reads whatever store state it needs at click time (same convention
- *  as the rest of the app's menu/toolbar actions) — so there's nothing here that needs recomputing
- *  per render or per CommandPalette mount. */
 export const PALETTE_COMMAND_GROUPS: [string, PaletteCommand[]][] = groupByCategory(buildCommands());

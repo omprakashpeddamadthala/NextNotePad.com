@@ -1,10 +1,5 @@
 "use client";
 
-// ---------------------------------------------------------------------------
-// Image helpers (used below in drag-drop / paste / toolbar-button handlers)
-// ---------------------------------------------------------------------------
-
-/** Reads a File as a base64 data-URL (the full `data:<mime>;base64,...` string). */
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -14,7 +9,6 @@ function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
-/** Inserts `![altText](dataUrl)` at the current cursor in the editor. */
 function insertImageMarkdown(
   editor: import("monaco-editor").editor.IStandaloneCodeEditor,
   altText: string,
@@ -34,7 +28,6 @@ function insertImageMarkdown(
       text: snippet,
     },
   ]);
-  // Move cursor to end of inserted text
   const newColumn = position.column + snippet.length;
   editor.setPosition({ lineNumber: position.lineNumber, column: newColumn });
   editor.focus();
@@ -61,6 +54,7 @@ import { AUTO_SAVE_INTERVALS_MS } from "@/lib/constants/defaultSettings";
 import { useExplorerSelectionStore } from "@/store/explorerSelectionStore";
 import { formatActiveEditor } from "@/services/formatting/formatActiveEditor";
 import { toggleBookmark, nextBookmarkLine } from "@/lib/monaco/bookmarks";
+import { closeFindWidget, toggleFindWidget } from "@/lib/monaco/findWidget";
 import { runAction } from "@/services/shortcuts/actionRegistry";
 import { usePendingGotoStore } from "@/store/pendingGotoStore";
 import { useMarkdownPreviewContentStore } from "@/store/markdownPreviewContentStore";
@@ -124,7 +118,6 @@ export function MonacoEditorWrapper({
   const currentTabIdRef = useRef<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<unknown>(null);
-  /** Bumped by the retry button to re-run the load effect after a failure. */
   const [reloadNonce, setReloadNonce] = useState(0);
   const isMobile = useIsMobile();
 
@@ -148,7 +141,6 @@ export function MonacoEditorWrapper({
 
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  /** Reads the autosave setting live (not from a closure) since Monaco listeners are registered once at mount. */
   function scheduleAutoSave(id: string, tid: string) {
     const autoSave = useSettingsStore.getState().settings.autoSave;
     if (autoSave === "off" || autoSave === "manual") return;
@@ -159,9 +151,6 @@ export function MonacoEditorWrapper({
     }, delay);
   }
 
-  /** Single write path for both autosave and Ctrl+S. Only marks the tab clean once the write
-   *  actually succeeded — a failed save has to keep the file dirty, or the user is told their
-   *  work is saved when the server never received it. */
   async function persistFile(
     id: string,
     tid: string,
@@ -177,8 +166,6 @@ export function MonacoEditorWrapper({
       updateNode(id, { size: value.length });
     } catch (err) {
       const detail = err instanceof Error ? err.message : "Unknown error.";
-      // Autosave failures still surface — silently dropping them is how you lose work — but as
-      // a single id'd toast so a flapping connection can't stack up dozens of them.
       toast.error(`Couldn't save "${nodes[id]?.name ?? "file"}".`, {
         id: `save-failed-${id}`,
         description: opts?.silent
@@ -212,8 +199,6 @@ export function MonacoEditorWrapper({
     });
   }
 
-  /** Pushes this pane's current content to `MarkdownPreview` if it's showing a markdown file —
-   *  primary pane only, so a split-compare secondary pane never fights it for the preview. */
   function pushMarkdownPreviewContent(
     id: string,
     model: MonacoEditorNS.ITextModel,
@@ -241,8 +226,6 @@ export function MonacoEditorWrapper({
 
     const node = useWorkspaceStore.getState().nodes[id];
     if (node?.type === "file" && node.locked) {
-      // Nothing to load until the LockedFileOverlay's passphrase prompt unlocks it — that flips
-      // `node.locked` to false, which re-triggers this effect via the isLocked dependency below.
       setLoading(false);
       currentFileIdRef.current = id;
       currentTabIdRef.current = tid;
@@ -257,9 +240,6 @@ export function MonacoEditorWrapper({
       try {
         content = await getActiveRepository().readFileContent(id);
       } catch (err) {
-        // Without this, a failed read rejected out of the effect entirely: the error surfaced as
-        // an unhandled rejection and `setLoading(false)` never ran, leaving the pane stuck on
-        // "Loading…" forever with no way to recover short of a page reload.
         setLoadError(err);
         setLoading(false);
         return;
@@ -272,10 +252,6 @@ export function MonacoEditorWrapper({
         loadedNode?.type === "file" ? loadedNode.language : "plaintext",
       );
     }
-    // Must run on every path, not just the fresh-load one above: reopening a file whose model is
-    // still cached from an earlier tab (models outlive tab-close, by design, to keep undo history)
-    // skips that branch entirely, and `loading` starts `true` on every mount — leaving the skeleton
-    // stuck on screen forever over a fully-loaded editor if this were left inside the `if`.
     setLoading(false);
 
     editor.setModel(model);
@@ -289,7 +265,6 @@ export function MonacoEditorWrapper({
     } else {
       editor.revealLine(1);
     }
-    // Don't steal focus from an in-progress inline rename in the explorer (e.g. right after "New File").
     if (!useExplorerSelectionStore.getState().renamingNodeId) editor.focus();
 
     currentFileIdRef.current = id;
@@ -308,9 +283,6 @@ export function MonacoEditorWrapper({
 
   useEffect(() => {
     if (editorRef.current) void switchToFile(fileId, tabId);
-    // isLocked is intentionally included: a locked->unlocked transition (via LockedFileOverlay)
-    // must re-run this to actually load the now-decrypted content into a model. reloadNonce lets
-    // the failure state's Try Again button re-run the same load.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fileId, tabId, isLocked, reloadNonce]);
 
@@ -382,20 +354,10 @@ export function MonacoEditorWrapper({
       if (node) setSelectedNodeId(node.id);
     });
 
-    // Toggle find widget on Ctrl+F (opens if closed, closes if already revealed)
-    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF, () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const findController = (editor as any).getContribution?.(
-        "editor.contrib.findController",
-      );
-      if (findController?.getState?.()?.isRevealed) {
-        findController.closeFindWidget();
-      } else {
-        editor.getAction("actions.find")?.run();
-      }
-    });
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF, () =>
+      toggleFindWidget(editor),
+    );
 
-    // Ensure clicking the Find Widget close button ("X" / into mark) always closes the widget reliably
     const editorDom = editor.getDomNode();
     if (editorDom) {
       const handleCloseClick = (e: MouseEvent) => {
@@ -407,11 +369,7 @@ export function MonacoEditorWrapper({
         ) {
           e.preventDefault();
           e.stopPropagation();
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const findController = (editor as any).getContribution?.(
-            "editor.contrib.findController",
-          );
-          findController?.closeFindWidget?.();
+          closeFindWidget(editor);
         }
       };
       editorDom.addEventListener("click", handleCloseClick, true);
@@ -460,12 +418,6 @@ export function MonacoEditorWrapper({
       }
     });
 
-    // Only shows in the right-click menu when text is selected — matches the Tools-menu
-    // command's own selection-or-document convention, but a full-document AI rewrite from a
-    // bare right-click (no selection) would be a surprising, hard-to-undo action to expose there.
-    // Monaco's context menu has no submenu API, so provider choice (matching the Tools menu's
-    // Gemini/Claude split) is exposed as two flat, explicitly-labeled actions per feature rather
-    // than one default-provider action.
     const AI_CONTEXT_MENU_ACTIONS: {
       id: string;
       label: string;
@@ -536,11 +488,6 @@ export function MonacoEditorWrapper({
 
   const themeModule = THEME_MODULES[theme];
 
-  // -------------------------------------------------------------------------
-  // Image insertion — drag-drop, paste, and toolbar-button (custom DOM event)
-  // -------------------------------------------------------------------------
-
-  /** True when the active file is a markdown document. */
   const isMarkdown =
     file?.type === "file" &&
     (file.language === "markdown" ||
@@ -553,33 +500,21 @@ export function MonacoEditorWrapper({
     if (!imgFile.type.startsWith("image/")) return;
     try {
       const dataUrl = await fileToDataUrl(imgFile);
-      const altText = imgFile.name.replace(/\.[^.]+$/, ""); // strip extension
+      const altText = imgFile.name.replace(/\.[^.]+$/, "");
       insertImageMarkdown(editor, altText, dataUrl);
     } catch {
       toast.error("Couldn't read the image file.");
     }
   }
 
-  // -------------------------------------------------------------------------
-  // Document-level capture paste \u2014 the ONLY reliable interception point.
-  //
-  // Monaco's internal <textarea> processes paste via its own capture-phase
-  // listener. Attaching to getDomNode() puts us in the same capture phase
-  // but at a child node, so ordering is undefined. At `document` level with
-  // capture:true we are unconditionally first in the entire propagation chain.
-  // We gate on hasTextFocus() so only the focused editor instance responds.
-  // -------------------------------------------------------------------------
   useEffect(() => {
     function onDocumentPaste(e: ClipboardEvent) {
-      // Only act when this editor instance is focused.
       if (!editorRef.current?.hasTextFocus()) return;
 
-      // Only handle markdown files.
       const node =
         useWorkspaceStore.getState().nodes[currentFileIdRef.current ?? ""];
       if (node?.type !== "file" || node.language !== "markdown") return;
 
-      // Only handle clipboard items that contain an image file.
       const imgItem = Array.from(e.clipboardData?.items ?? []).find(
         (item) => item.kind === "file" && item.type.startsWith("image/"),
       );
@@ -588,14 +523,12 @@ export function MonacoEditorWrapper({
       const imgFile = imgItem.getAsFile();
       if (!imgFile) return;
 
-      // We own this paste \u2014 stop Monaco from consuming it.
       e.stopImmediatePropagation();
       e.preventDefault();
 
       void handleImageFile(imgFile);
     }
 
-    // Toolbar "Insert Image" button fires this custom event.
     function onInsertImage(e: Event) {
       const evtFileId = (e as CustomEvent<string>).detail;
       if (evtFileId !== currentFileIdRef.current) return;
@@ -609,7 +542,6 @@ export function MonacoEditorWrapper({
       input.click();
     }
 
-    // capture:true \u2014 fires at the very top of the event propagation chain.
     document.addEventListener("paste", onDocumentPaste, { capture: true });
     document.addEventListener("md-insert-image", onInsertImage);
     return () => {
@@ -621,7 +553,6 @@ export function MonacoEditorWrapper({
   return (
     <div
       className="relative h-full"
-      // Drag-drop handler: accept image files dropped directly onto the editor area.
       onDragOver={(e) => {
         if (!isMarkdown) return;
         const hasImage = Array.from(e.dataTransfer.items).some(

@@ -1,10 +1,3 @@
-/**
- * Client-side-only AES-256-GCM encryption for the lock feature (see prisma/schema.prisma's File
- * model comment). The passphrase never leaves the browser and is never stored — only the salt,
- * iv, and resulting ciphertext are persisted. A wrong passphrase fails GCM's built-in auth-tag
- * verification, which is what IncorrectPassphraseError below is thrown from.
- */
-
 const PBKDF2_ITERATIONS = 210_000;
 const SALT_BYTES = 16;
 const IV_BYTES = 12;
@@ -49,7 +42,6 @@ export interface EncryptedPayload {
   iv: string;
 }
 
-/** Encrypts plaintext with a freshly-generated random salt + iv. */
 export async function encryptContent(plaintext: string, passphrase: string): Promise<EncryptedPayload> {
   const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTES));
   const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
@@ -62,8 +54,6 @@ export async function encryptContent(plaintext: string, passphrase: string): Pro
   return { ciphertext: bytesToBase64(encrypted), salt: bytesToBase64(salt), iv: bytesToBase64(iv) };
 }
 
-/** Decrypts previously-encrypted content. Throws IncorrectPassphraseError if the passphrase is
- *  wrong (or the data was tampered with) — GCM's auth tag fails to verify in both cases. */
 export async function decryptContent(
   ciphertextB64: string,
   passphrase: string,

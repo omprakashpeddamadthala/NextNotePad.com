@@ -9,11 +9,9 @@ import {
   type DriveService,
 } from "./driveService";
 
-export const DEFAULT_WORKSPACE_NAME = "My Workspace";
+const DEFAULT_WORKSPACE_NAME = "My Workspace";
 const WORKSPACE_META_SCHEMA_VERSION = 1;
 
-/** Per-node metadata the editor needs that Drive has no native field for, stored as Drive
- *  `appProperties` on the node itself (so it travels with the file — no side table). */
 const P = {
   kind: "nnp_kind",
   language: "nnp_lang",
@@ -63,8 +61,7 @@ export function isFolder(e: DriveEntry) {
   return e.mimeType === FOLDER_MIME;
 }
 
-/** App-internal files (`.workspace.json`, `.appConfig.json`) never appear in the file tree. */
-export function isInternalEntry(e: DriveEntry) {
+function isInternalEntry(e: DriveEntry) {
   return (
     e.name === WORKSPACE_META_FILE_NAME ||
     e.name === APP_CONFIG_FILE_NAME ||
@@ -147,8 +144,6 @@ function stripNulls(
   ) as Record<string, string>;
 }
 
-// ----- workspaces -----
-
 export async function listWorkspaceEntries(
   ds: DriveService,
 ): Promise<DriveEntry[]> {
@@ -203,15 +198,12 @@ export async function createWorkspaceFolder(
   return folder;
 }
 
-/** Lists workspaces, creating the default one for a brand-new account. */
 export async function listWorkspaces(ds: DriveService): Promise<DriveEntry[]> {
   const list = await listWorkspaceEntries(ds);
   if (list.length > 0) return list;
   return [await createWorkspaceFolder(ds, DEFAULT_WORKSPACE_NAME)];
 }
 
-/** The active workspace comes from `.appConfig.json`; a stale/missing pointer falls back to the
- *  first workspace and is repaired. Uses the cached config, so on the hot path this is free. */
 export async function resolveActiveWorkspaceId(
   ds: DriveService,
 ): Promise<string> {
@@ -277,9 +269,6 @@ export async function renameWorkspace(
   return updated;
 }
 
-// ----- tree -----
-
-/** Groups entries under each of their parents, for in-memory tree walks. */
 function indexByParent(all: DriveEntry[]): Map<string, DriveEntry[]> {
   const byParent = new Map<string, DriveEntry[]>();
   for (const e of all) {
@@ -292,7 +281,6 @@ function indexByParent(all: DriveEntry[]): Map<string, DriveEntry[]> {
   return byParent;
 }
 
-/** Breadth-first walk of one workspace over an already-fetched listing — no Drive calls. */
 function buildTree(
   byParent: Map<string, DriveEntry[]>,
   workspaceId: string,
@@ -318,10 +306,6 @@ function buildTree(
   return nodes;
 }
 
-/** Every non-trashed entry the app can see, plus the workspace folders among them. With the
- *  `drive.file` scope that is exactly what NextNotePad created, so it is one paginated (and
- *  server-side deduplicated/briefly cached) request shared by tree loads, the all-workspaces
- *  prefetch and the Quick Open index — instead of one sequential list request per tree level. */
 async function listAppEntriesWithWorkspaces(ds: DriveService) {
   const [workspacesId, all] = await Promise.all([
     ds.ensureWorkspacesFolder(),
@@ -333,7 +317,6 @@ async function listAppEntriesWithWorkspaces(ds: DriveService) {
   return { all, workspaces };
 }
 
-/** A workspace's tree (metadata only), built from the shared app-entries listing. */
 export async function loadWorkspaceTree(
   ds: DriveService,
   workspaceId: string,
@@ -342,9 +325,6 @@ export async function loadWorkspaceTree(
   return buildTree(indexByParent(all), workspaceId);
 }
 
-/** `GET /api/workspace` payload. Validating the workspace and loading its tree don't depend on
- *  each other, so they run in parallel. `hasAnyHistory` is true if anything was ever created
- *  here, including items since moved to Drive's trash, so guest migration never re-triggers. */
 export async function loadWorkspaceTreeForClient(
   ds: DriveService,
   workspaceId: string,
@@ -359,10 +339,6 @@ export async function loadWorkspaceTreeForClient(
   return { nodes, hasAnyHistory, workspaceId };
 }
 
-/** Every workspace and its tree from a single Drive listing — what the client prefetches in the
- *  background so switching workspaces never waits on Drive. `hasAnyHistory` is only claimed when
- *  the tree is non-empty (checking the trash per workspace would cost a call each); the client
- *  re-verifies an empty tree before making the one-time guest-migration decision anyway. */
 export async function loadAllWorkspaceTrees(ds: DriveService) {
   const { all, workspaces } = await listAppEntriesWithWorkspaces(ds);
   const byParent = indexByParent(all);
@@ -375,8 +351,7 @@ export async function loadAllWorkspaceTrees(ds: DriveService) {
   return { workspaces: workspaces.map(workspaceToDto), trees };
 }
 
-/** Builds the slash path of `id` (relative to the workspace) by walking up its parents. */
-export async function pathFor(
+async function pathFor(
   ds: DriveService,
   entry: DriveEntry,
   workspaceId: string,
@@ -395,8 +370,7 @@ export async function pathFor(
   return `/${names.join("/")}`;
 }
 
-/** Resolves a client-facing parent id (null = workspace root) to a Drive folder id. */
-export async function resolveParent(
+async function resolveParent(
   ds: DriveService,
   workspaceId: string,
   parentId: string | null,
@@ -480,44 +454,6 @@ export async function getNode(
   return entry;
 }
 
-export async function assertNodeInWorkspace(
-  ds: DriveService,
-  entry: DriveEntry,
-  workspaceId: string,
-): Promise<void> {
-  let parentId = entry.parents[0];
-  for (let depth = 0; parentId && depth < 64; depth++) {
-    if (parentId === workspaceId) return;
-    const parent = await getNode(ds, parentId);
-    parentId = parent.parents[0];
-  }
-  throw new AppError("Not found", 404);
-}
-
-/** What the client needs to open a file: its content and current version (the version keys the
- *  client's content cache). Metadata and media are fetched in parallel — no parent walk, no path
- *  building, no workspace resolution — so an uncached open is one Drive round trip. */
-export async function readFileContentForClient(ds: DriveService, id: string) {
-  const [entry, content] = await Promise.all([
-    ds.get(id, { fresh: true }).catch((err) => {
-      if (err instanceof DriveNotFoundError)
-        throw new AppError("Not found", 404);
-      throw err;
-    }),
-    ds.readText(id).catch((err) => {
-      if (err instanceof DriveNotFoundError)
-        throw new AppError("Not found", 404);
-      throw err;
-    }),
-  ]);
-  if (entry.trashed || isFolder(entry)) throw new AppError("Not found", 404);
-  return { id: entry.id, version: entry.version, content };
-}
-
-/** The workspace a request targets when the client names it (`?workspaceId=`), validated as one
- *  of the user's workspaces. Cheap: the workspace entry is normally in the entry cache. Lets
- *  mutations skip reading `.appConfig.json` for the active workspace — and act on the workspace
- *  the user is actually looking at, even if another device switched the active one meanwhile. */
 export async function resolveRequestWorkspace(
   ds: DriveService,
   workspaceId: string,
@@ -538,8 +474,6 @@ export interface NodePatch {
   encryptionIv?: string | null;
 }
 
-/** Applies a file/folder patch in a single Drive `files.update` (metadata + media together).
- *  A content-only patch (the autosave hot path) skips the metadata read entirely. */
 export async function updateNode(
   ds: DriveService,
   workspaceId: string,
@@ -581,7 +515,6 @@ export async function updateNode(
   const props: Record<string, string | null> = folder
     ? folderProps({ collapsed: patch.collapsed, hidden: patch.hidden })
     : fileProps(patch);
-  // Renaming without an explicit language keeps the language in step with the new extension.
   if (
     !folder &&
     patch.name !== undefined &&
@@ -604,8 +537,6 @@ export async function trashNode(ds: DriveService, id: string): Promise<void> {
   await ds.trash(id);
 }
 
-/** Every file in every workspace, for the cross-workspace Quick Open index — one paginated
- *  listing of the app's Drive entries, joined to workspaces in memory. */
 export async function listAllFiles(ds: DriveService) {
   const { all, workspaces } = await listAppEntriesWithWorkspaces(ds);
   const byId = new Map(all.map((e) => [e.id, e]));

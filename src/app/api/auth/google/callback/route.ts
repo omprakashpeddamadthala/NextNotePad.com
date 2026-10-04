@@ -14,8 +14,6 @@ import {
 } from "@/lib/auth/jwt";
 import { prisma } from "@/lib/db/prisma";
 
-/** Short, non-sensitive identifier for an error: pg/Prisma/Node codes (e.g. ECONNREFUSED,
- *  P1001, 28P01) or the Google HTTP status / OAuth error (e.g. 401 invalid_client). */
 function safeErrorCode(err: unknown): string {
   if (!err || typeof err !== "object") return "unknown";
   const e = err as { code?: unknown; message?: unknown; cause?: { code?: unknown } };
@@ -61,8 +59,6 @@ export async function GET(request: NextRequest) {
     return res;
   }
 
-  // Which step failed — surfaced to the browser as `authReason` so production failures can be
-  // diagnosed without log access. Only stage names / error codes are exposed, never secrets.
   let stage = "token";
   try {
     const tokens = await exchangeCodeForTokens(code);
@@ -94,9 +90,6 @@ export async function GET(request: NextRequest) {
         googleTokenExpiresAt: new Date(Date.now() + tokens.expires_in * 1000),
       },
     });
-
-    // Workspaces and `.appConfig.json` are created lazily in the user's Drive on first use
-    // (see src/lib/drive/workspaceService.ts) — nothing app-related is stored in the database.
 
     stage = "session";
     const sessionToken = await signSessionToken({ userId: user.id });

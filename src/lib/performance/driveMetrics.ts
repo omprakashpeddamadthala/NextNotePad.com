@@ -40,7 +40,7 @@ export function incrementDriveMetric(name: MetricName): void {
   counters[name] += 1;
 }
 
-export function recordDriveTiming(name: string, durationMs: number): void {
+function recordDriveTiming(name: string, durationMs: number): void {
   if (!enabled) return;
   const current = timings.get(name) ?? { count: 0, totalMs: 0, maxMs: 0 };
   timings.set(name, {
@@ -62,16 +62,11 @@ export async function measureDriveTiming<T>(
   }
 }
 
-export function getDriveMetrics(): DriveMetricsSnapshot {
+function getDriveMetrics(): DriveMetricsSnapshot {
   return {
     counters: { ...counters },
     timings: Object.fromEntries(timings),
   };
-}
-
-export function resetDriveMetrics(): void {
-  for (const key of Object.keys(counters) as MetricName[]) counters[key] = 0;
-  timings.clear();
 }
 
 if (typeof window !== "undefined" && enabled) {

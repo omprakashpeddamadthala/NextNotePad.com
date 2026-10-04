@@ -77,9 +77,7 @@ export function SettingsDialog() {
       >
         <DialogTitle className="sr-only">Settings</DialogTitle>
         <div className="flex h-full flex-col md:flex-row overflow-hidden">
-          {/* Left Navigation Rail (Master) */}
           <aside className="w-full md:w-64 shrink-0 border-b md:border-b-0 md:border-r border-border/70 bg-muted/20 flex flex-col justify-between">
-            {/* Nav Header */}
             <div>
               <div className="p-4 sm:p-5 pb-3 flex items-center justify-between border-b border-border/50">
                 <div className="flex items-center gap-2.5">
@@ -95,7 +93,6 @@ export function SettingsDialog() {
                 </div>
               </div>
 
-              {/* Navigation List */}
               <nav className="p-2 sm:p-3 space-y-1">
                 {TABS.map((tab) => {
                   const Icon = tab.icon;
@@ -154,7 +151,6 @@ export function SettingsDialog() {
               </nav>
             </div>
 
-            {/* Nav Footer Status Card */}
             <div className="hidden md:block p-3 m-3 rounded-xl border border-border/60 bg-background/50">
               <div className="flex items-center gap-2 text-[11px] font-medium text-foreground">
                 <span className="flex size-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -166,9 +162,7 @@ export function SettingsDialog() {
             </div>
           </aside>
 
-          {/* Right Detail Pane (Detail) */}
           <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-background/50">
-            {/* Top Bar */}
             <header className="h-16 shrink-0 border-b border-border/70 px-4 sm:px-6 flex items-center justify-between gap-3 bg-card/40 backdrop-blur-md">
               <div className="min-w-0">
                 <h2 className="font-heading text-base font-semibold tracking-tight text-foreground flex items-center gap-2 truncate">
@@ -179,7 +173,6 @@ export function SettingsDialog() {
                 </p>
               </div>
 
-              {/* Action Buttons */}
               <div className="flex items-center gap-2 shrink-0">
                 <Button
                   type="button"
@@ -206,7 +199,6 @@ export function SettingsDialog() {
               </div>
             </header>
 
-            {/* Scrollable Content Body */}
             <div className="np-scrollbar flex-1 overflow-y-auto p-4 sm:p-6">
               {activeTab === "general" && <GeneralSettingsTab />}
               {activeTab === "editor" && <EditorSettingsTab />}

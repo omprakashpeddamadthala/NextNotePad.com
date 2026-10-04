@@ -15,11 +15,6 @@ interface MarkdownPreviewProps {
   fileId: string;
 }
 
-/** Live-rendered read-only preview of the active markdown file, shown beside the editor.
- *  Fetches once for the initial paint, then prefers the editor's live content (pushed by
- *  `MonacoEditorWrapper` on every keystroke) once available — so it updates as you type.
- *  Callers must render this with `key={fileId}` so switching files remounts it fresh instead
- *  of needing an effect to reset state (which the React Compiler flags as cascading renders). */
 export function MarkdownPreview({ fileId }: MarkdownPreviewProps) {
   const [initialContent, setInitialContent] = useState<string | null>(() => {
     const existing = modelRegistry.getModel(fileId);
@@ -44,8 +39,6 @@ export function MarkdownPreview({ fileId }: MarkdownPreviewProps) {
       .then((content) => {
         if (!cancelled) setInitialContent(content);
       })
-      // Previously uncaught: a failed read escaped as an unhandled rejection (surfacing as a
-      // "Failed to fetch" runtime overlay) and left this pane on "Loading preview…" indefinitely.
       .catch((err: unknown) => {
         if (!cancelled) setError(err);
       });

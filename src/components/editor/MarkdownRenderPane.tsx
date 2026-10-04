@@ -9,20 +9,11 @@ interface MarkdownRenderPaneProps {
   error?: unknown;
   html?: string;
   onRetry: () => void;
-  /** Body skeleton line count — the side-by-side preview and the full-page view have different
-   *  amounts of vertical room, so each picks its own. */
   skeletonBodyLines?: number;
-  /** The side-by-side preview centers its column against the editor next to it; the full-page
-   *  view owns the whole pane and left-aligns instead. */
   centered?: boolean;
   className?: string;
 }
 
-/** The rendered-markdown body shared by MarkdownPreview and MarkdownFullPageView: loading
- *  skeleton, load failure with retry, or the rendered HTML. The two callers fetch content
- *  differently (MarkdownPreview needs live reactive updates as you type; MarkdownFullPageView
- *  takes a one-time snapshot since it's never shown alongside a live editor) and have different
- *  headers, so only this shared body is factored out rather than the whole component. */
 export function MarkdownRenderPane({
   state,
   error,

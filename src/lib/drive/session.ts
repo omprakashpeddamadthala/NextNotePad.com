@@ -1,11 +1,14 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth/session";
 import { getDriveClientForUser } from "./driveClient";
 import { DriveNotFoundError, DriveService } from "./driveService";
 import { ensureLegacyMigrated } from "./legacyMigration";
-import { AppError, resolveActiveWorkspaceId } from "./workspaceService";
+import {
+  AppError,
+  resolveActiveWorkspaceId,
+  resolveRequestWorkspace,
+} from "./workspaceService";
 
-/** Authenticated user + their Drive. Every application-data route goes through this. */
 export async function getDriveSession() {
   const user = await getSessionUser();
   if (!user) return null;
@@ -14,13 +17,18 @@ export async function getDriveSession() {
   return { user, ds };
 }
 
-export async function getDriveSessionWithWorkspace() {
+export async function getDriveSessionForRequest(
+  request: NextRequest,
+  { validate = true }: { validate?: boolean } = {},
+) {
   const session = await getDriveSession();
   if (!session) return null;
-  return {
-    ...session,
-    workspaceId: await resolveActiveWorkspaceId(session.ds),
-  };
+  const requested = request.nextUrl.searchParams.get("workspaceId");
+  let workspaceId: string;
+  if (!requested) workspaceId = await resolveActiveWorkspaceId(session.ds);
+  else if (validate) workspaceId = await resolveRequestWorkspace(session.ds, requested);
+  else workspaceId = requested;
+  return { ...session, workspaceId, workspaceRequested: Boolean(requested) };
 }
 
 function googleStatus(err: unknown): number | null {
@@ -34,7 +42,6 @@ function googleStatus(err: unknown): number | null {
   return Number.isFinite(s) && s >= 400 ? s : null;
 }
 
-/** Maps service/Drive failures onto the JSON error shape the client's `fetchJson` expects. */
 export function driveErrorResponse(err: unknown, action: string) {
   if (err instanceof AppError)
     return NextResponse.json({ error: err.message }, { status: err.status });

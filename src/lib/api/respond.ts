@@ -13,10 +13,6 @@ export function badRequest(error: ZodError) {
   return NextResponse.json({ error: "Invalid request", details: error.flatten() }, { status: 400 });
 }
 
-export function serverError(message = "Internal server error") {
-  return NextResponse.json({ error: message }, { status: 500 });
-}
-
 export function forbidden(message = "Forbidden") {
   return NextResponse.json({ error: message }, { status: 403 });
 }

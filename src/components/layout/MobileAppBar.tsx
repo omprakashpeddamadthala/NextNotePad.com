@@ -9,13 +9,6 @@ import { useDialogStore } from "@/store/dialogStore";
 import { useActiveFile } from "@/hooks/useActiveFile";
 import { APP_BRAND } from "@/lib/constants/branding";
 
-/**
- * Mobile's stand-in for the desktop MenuBar + Toolbar: one compact row instead of two dense,
- * horizontally-scrolling desktop bars that (per the desktop-tuned layout) left most buttons
- * reachable only by scrolling sideways — poor discoverability and a bad look on a phone.
- * The sidebar toggle stays directly on the bar (frequent, one-tap); everything else — every
- * menu and every toolbar action, none removed — lives in `MobileMenuSheet` behind the hamburger.
- */
 export function MobileAppBar() {
   const mobileSidebarOpen = useUIStore((s) => s.mobileSidebarOpen);
   const toggleMobileSidebar = useUIStore((s) => s.toggleMobileSidebar);

@@ -1,28 +1,16 @@
-import { getClaudeConfig } from "./claudeClient";
+import { getEffectiveAiConfig } from "./appConfig";
 import { AiProviderError } from "./AiProviderError";
 
 const AGENTROUTER_BASE_URL = "https://agentrouter.org/v1";
 
-// AgentRouter's gateway is a drop-in ANTHROPIC_BASE_URL replacement for the official Claude Code
-// CLI and rejects any request whose User-Agent doesn't match that client's wire image — every
-// other candidate header (anthropic-version, anthropic-beta, x-app, etc.) was tested and found
-// unnecessary. Verified directly against the live API before writing this file; there is no
-// public API reference documenting this, so if AgentRouter changes their WAF fingerprint check
-// this will need re-verifying the same way.
 const CLAUDE_CODE_USER_AGENT = "claude-cli/2.1.158 (external, sdk-cli)";
 
-// Claude via AgentRouter is markedly slower than Gemini for longer documents — verified: a ~9KB
-// input still hadn't finished streaming at 45s. 120s gives real documents (up to the 20K char cap
-// in aiSchemas.ts) room to actually complete instead of getting cut off mid-stream.
 const REQUEST_TIMEOUT_MS = 120000;
 
 interface OpenAiChatChunk {
   choices?: { delta?: { content?: string } }[];
 }
 
-/** Parses an OpenAI-compatible chat-completions SSE body (`data: {...}\n\n`, terminated by
- *  `data: [DONE]`) into plain text deltas. AgentRouter also emits a bare `data: null` heartbeat
- *  line mid-stream — skipped along with anything else that doesn't parse as a content delta. */
 async function* parseOpenAiSse(reader: ReadableStreamDefaultReader<Uint8Array>): AsyncGenerator<string> {
   const decoder = new TextDecoder();
   let buffer = "";
@@ -57,19 +45,12 @@ function describeAgentRouterFailure(status: number): string {
   return `AgentRouter request failed (${status}).`;
 }
 
-/** Streams a grammar-correction completion from Claude via AgentRouter, normalized to plain text
- *  deltas — same shape/contract as `streamGeminiCorrection` so the route can treat both providers
- *  identically. Throws AiProviderError (never the raw fetch Response or its body — the response
- *  is only ever inspected for its status code, never echoed) before yielding anything if setup or
- *  the initial request fails. */
-export async function* streamClaudeCorrection(params: {
+export async function* streamClaudeText(params: {
   text: string;
   systemInstruction: string;
 }): AsyncGenerator<string> {
-  let config: Awaited<ReturnType<typeof getClaudeConfig>>;
-  try {
-    config = await getClaudeConfig();
-  } catch {
+  const { agentRouterApiKey: apiKey, claudeModel: model } = await getEffectiveAiConfig();
+  if (!apiKey || !model) {
     throw new AiProviderError("Claude (AgentRouter) isn't configured on this server.", 503);
   }
 
@@ -79,11 +60,11 @@ export async function* streamClaudeCorrection(params: {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${config.apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
         "User-Agent": CLAUDE_CODE_USER_AGENT,
       },
       body: JSON.stringify({
-        model: config.model,
+        model,
         stream: true,
         max_tokens: 8192,
         temperature: 0.2,
@@ -102,7 +83,6 @@ export async function* streamClaudeCorrection(params: {
   }
 
   if (!res.ok) {
-    // Status only — never forward the response body into a user-facing message or log.
     throw new AiProviderError(describeAgentRouterFailure(res.status), res.status === 401 ? 503 : res.status);
   }
 

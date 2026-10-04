@@ -15,11 +15,6 @@ interface ToolbarButtonProps {
   onClick: () => void;
   active?: boolean;
   disabled?: boolean;
-  /** "touch" pins a finger-sized target with no `sm:` shrink — for MobileAppBar, which (per
-   *  useIsMobile's 767px cutoff) can render as narrow as 640px, the point at which the default
-   *  size's `sm:size-7` would otherwise kick in and shrink an on-screen touch target.
-   *  "compact" is for rows with several buttons crammed alongside a text label (the Explorer
-   *  header) where the default size truncates the label at common laptop/split-screen widths. */
   size?: "default" | "touch" | "compact";
 }
 

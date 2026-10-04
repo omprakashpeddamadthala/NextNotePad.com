@@ -11,9 +11,6 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-/** Last-resort fallback for the whole app shell — without this, a crash anywhere in the editor,
- *  explorer, or a panel would blank the entire page instead of leaving something the user can
- *  recover from. */
 export class ErrorBoundary extends Component<
   ErrorBoundaryProps,
   ErrorBoundaryState

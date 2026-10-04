@@ -20,9 +20,6 @@ import type { WorkspaceNode } from "@/types/file";
 
 const MIN_PASSPHRASE_LENGTH = 4;
 
-/** Owns the form's local state, keyed by `${targetId}-${mode}` in the parent so opening the
- *  dialog for a different node (or switching lock<->unlock) remounts fresh instead of needing an
- *  effect to reset state (same pattern as MarkdownPreview's key={fileId}). */
 function LockUnlockForm({
   targetId,
   mode,

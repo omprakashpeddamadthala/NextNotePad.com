@@ -33,7 +33,6 @@ import { CenterApiLoader } from "./CenterApiLoader";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useAutoSyncNotes } from "@/hooks/useAutoSyncNotes";
 
-// Lazy-loaded dialogs — none of these render anything visible until opened
 const SettingsDialog = dynamic(
   () =>
     import("@/components/settings/SettingsDialog").then(
@@ -131,7 +130,6 @@ export function AppShell() {
 
   return (
     <div className="bg-background text-foreground flex h-full min-h-0 flex-1 flex-col">
-      {/* Skip-to-editor link for keyboard users */}
       <a
         href="#editor-main"
         className="focus:bg-background focus:text-foreground focus:ring-ring sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-sm focus:px-3 focus:py-1.5 focus:text-sm focus:font-medium focus:ring-2"
@@ -151,7 +149,6 @@ export function AppShell() {
         <MenuBar />
       )}
 
-      {/* ── Main body ─────────────────────────────────────────────────────── */}
       {isMobile ? (
         <div className="min-h-0 flex-1">
           <div className="flex h-full flex-col">
@@ -177,7 +174,6 @@ export function AppShell() {
           </Sheet>
         </div>
       ) : (
-        /* ── Desktop: Resizable Workspace (Sidebar + Editor Area + Developer Toolkit) ── */
         <div className="bg-background flex min-h-0 flex-1 overflow-hidden">
           <ResizablePanelGroup orientation="horizontal">
             {sidebarVisible && (
@@ -234,7 +230,6 @@ export function AppShell() {
 
       <StatusBar />
 
-      {/* Global dialogs */}
       <SettingsDialog />
       <QuickOpenDialog />
       <CommandPalette />

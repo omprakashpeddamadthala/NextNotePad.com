@@ -6,8 +6,6 @@ import { useAuthStore } from "@/store/authStore";
 import { selectSyncPhase, useSyncStatusStore } from "@/store/syncStatusStore";
 import { FLUSH_SYNC_EVENT } from "@/hooks/useAutoSyncNotes";
 
-/** Drive persistence state for signed-in users: silent when everything is saved, otherwise
- *  "Saving…", "Offline — changes queued" or "Sync failed — Retry". */
 export function SyncStatusBadge() {
   const authenticated = useAuthStore((s) => s.status === "authenticated");
   const phase = useSyncStatusStore(selectSyncPhase);

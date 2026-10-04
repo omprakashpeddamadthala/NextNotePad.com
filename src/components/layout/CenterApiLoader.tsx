@@ -2,13 +2,6 @@
 
 import { useApiActivityStore } from "@/store/apiActivityStore";
 
-/**
- * CenterApiLoader
- *
- * Replaced the intrusive centered modal popup with a subtle, non-blocking loading icon.
- * Only appears if a network operation takes more than 2 seconds.
- * Never blocks the viewport, never shows modal dialogs, and allows uninterrupted editing.
- */
 export function CenterApiLoader() {
   const isSlowLoading = useApiActivityStore((s) => s.isSlowLoading);
 

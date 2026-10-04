@@ -1,6 +1,3 @@
-/** Pure text-transform helpers backing the Tools dialog — no editor/DOM dependencies so they're
- *  trivially unit-testable and reusable from anywhere (menu, command palette, mobile sheet). */
-
 import { v4 as uuidv4 } from "uuid";
 
 export function base64Encode(text: string): string {
@@ -24,8 +21,6 @@ export function urlDecode(text: string): string {
   return decodeURIComponent(text);
 }
 
-/** Splits identifier-like or prose text into words, treating camelCase/PascalCase boundaries,
- *  underscores, hyphens, and whitespace all as separators. */
 function splitWords(input: string): string[] {
   return input
     .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
@@ -179,7 +174,6 @@ export function trimTrailingWhitespace(text: string): string {
   return text.replace(/[ \t]+(?=\r?$)/gm, "");
 }
 
-/** Collapses runs of 2+ consecutive blank lines down to a single blank line. */
 export function collapseBlankLines(text: string): string {
   return text.replace(/(\r?\n)(?:\r?\n){2,}/g, "$1$1");
 }
@@ -215,9 +209,6 @@ export function generateUuid(): string {
   return uuidv4();
 }
 
-/** Accepts Unix time in seconds or milliseconds and returns an ISO 8601 string. Values with an
- *  absolute magnitude of at least 1e11 are treated as milliseconds, matching common Unix-time
- *  detection while allowing valid 12-digit millisecond timestamps. */
 export function unixToIsoDate(text: string): string {
   const trimmed = text.trim();
   if (!/^-?\d+$/.test(trimmed)) throw new Error("Not a valid Unix timestamp");
@@ -245,8 +236,6 @@ function base64UrlDecode(segment: string): string {
   return new TextDecoder("utf-8", { fatal: false }).decode(bytes);
 }
 
-/** Decodes a JWT's header and payload (base64url JSON segments) for inspection — does not verify
- *  the signature, since that needs the signing secret/key which the editor doesn't have. */
 export function decodeJwt(text: string): string {
   const parts = text.trim().split(".");
   if (parts.length < 2)
@@ -283,8 +272,6 @@ export function htmlDecode(text: string): string {
   );
 }
 
-/** Escapes a raw (possibly multi-line) string into the form you'd embed as a JSON string value —
- *  the inverse of `unescapeJsonString`. */
 export function escapeJsonString(text: string): string {
   return JSON.stringify(text).slice(1, -1);
 }
@@ -354,8 +341,6 @@ export function rgbToHex(text: string): string {
   return `#${toHex(match[1])}${toHex(match[2])}${toHex(match[3])}`;
 }
 
-/** Converts text into a URL-safe slug: lowercase, non-alphanumeric runs become a single hyphen,
- *  leading/trailing hyphens trimmed. */
 export function slugify(text: string): string {
   return text
     .toLowerCase()

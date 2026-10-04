@@ -33,8 +33,6 @@ async function handleSignOut() {
   try {
     await fetchOk("/api/auth/logout", { method: "POST", action: "Sign out" });
   } catch {
-    // Reload regardless: an unhandled rejection here used to leave the menu looking frozen with
-    // no feedback at all. Reloading re-checks the session, so a failed sign-out is self-evident.
     toast.error("Sign out may not have completed — check your connection.");
   }
   window.location.reload();
@@ -66,8 +64,6 @@ export function AccountMenu() {
         size="sm"
         className="np-signin-btn h-7.5 cursor-pointer gap-2 px-3 text-[11.5px] font-medium shadow-sm transition-all duration-200"
         onClick={() => {
-          // A real full-page navigation is required here — this hits an API route that 302s
-          // to Google's consent screen, not an internal Next.js page.
           // eslint-disable-next-line @next/next/no-location-assign-relative-destination
           window.location.href = "/api/auth/google";
         }}

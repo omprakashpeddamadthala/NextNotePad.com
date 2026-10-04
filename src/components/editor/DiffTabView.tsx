@@ -23,17 +23,12 @@ const MonacoDiffEditor = dynamic(() => import("@monaco-editor/react").then((m) =
   ),
 });
 
-/** Reads a tab's current content for the diff: the live (possibly-unsaved) Monaco model if this
- *  file already has one registered, otherwise the last-saved content from disk. */
 async function readTabContent(fileId: string): Promise<string> {
   const existing = modelRegistry.getModel(fileId);
   if (existing) return existing.getValue();
   return getActiveRepository().readFileContent(fileId);
 }
 
-/** Renders two open tabs side by side on Monaco's own diff editor, replacing the normal tab
- *  content — no separate dialog. Reached via the Tools menu, a tab's "Compare with Active Tab"
- *  context-menu item, or the toolbar's Diff Checker button. */
 export function DiffTabView({ diff }: { diff: DiffView }) {
   const theme = useSettingsStore((s) => s.theme);
   const tabs = useTabsStore((s) => s.tabs);
@@ -71,8 +66,6 @@ export function DiffTabView({ diff }: { diff: DiffView }) {
     };
   }, [leftTab, rightTab, reloadNonce]);
 
-  // Only trust `result` while it matches the pair currently being compared — keeps stale content
-  // from a previous pairing showing while the new one is still loading.
   const content = result && leftTab && rightTab && result.leftTabId === leftTab.id && result.rightTabId === rightTab.id ? result : null;
 
   if (!leftTab || !rightTab || !leftNode || !rightNode) {
@@ -136,7 +129,6 @@ export function DiffTabView({ diff }: { diff: DiffView }) {
             beforeMount={handleMonacoBeforeMount}
             options={{
               readOnly: false,
-              // Two panes don't fit on a phone — Monaco's inline mode stacks the diff instead.
               renderSideBySide: !isMobile,
               minimap: { enabled: false },
               automaticLayout: true,
