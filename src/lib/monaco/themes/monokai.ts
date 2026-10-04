@@ -2,7 +2,7 @@ import type { ThemeModule } from "./types";
 
 export const monokai: ThemeModule = {
   id: "monokai",
-  label: "IntelliJ Monokai",
+  label: "Monokai",
   monacoThemeId: "np-monokai",
   chrome: {
     background: "#272822",

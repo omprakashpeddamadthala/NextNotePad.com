@@ -4,10 +4,6 @@ import {
   History,
   FileCode2,
   Binary,
-  Sparkles,
-  ArrowRight,
-  ShieldCheck,
-  CheckCircle2,
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -18,9 +14,8 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 import { useSettingsStore } from "@/store/settingsStore";
-import type { AiProvider, AutoSaveMode, EncodingName } from "@/types/settings";
+import type { AutoSaveMode, EncodingName } from "@/types/settings";
 import { LANGUAGES } from "@/lib/constants/languages";
 
 const AUTO_SAVE_OPTIONS: { value: AutoSaveMode; label: string; desc: string }[] = [
@@ -40,26 +35,7 @@ const ENCODINGS: { value: EncodingName; label: string; desc: string }[] = [
   { value: "ISO-8859-1", label: "ISO-8859-1", desc: "Western European Latin-1" },
 ];
 
-const AI_PROVIDER_OPTIONS: { value: AiProvider; label: string; badge: string; desc: string }[] = [
-  {
-    value: "gemini",
-    label: "Google Gemini",
-    badge: "Official",
-    desc: "Direct Google GenAI integration (Fast & High-accuracy)",
-  },
-  {
-    value: "claude",
-    label: "Claude (via AgentRouter)",
-    badge: "Enterprise",
-    desc: "Anthropic Claude models via AgentRouter gateway",
-  },
-];
-
-interface GeneralSettingsTabProps {
-  onNavigateTab?: (tab: string) => void;
-}
-
-export function GeneralSettingsTab({ onNavigateTab }: GeneralSettingsTabProps) {
+export function GeneralSettingsTab() {
   const settings = useSettingsStore((s) => s.settings);
   const updateSettings = useSettingsStore((s) => s.updateSettings);
 
@@ -191,73 +167,6 @@ export function GeneralSettingsTab({ onNavigateTab }: GeneralSettingsTabProps) {
               </SelectContent>
             </Select>
             <p className="text-[11px] text-muted-foreground">Applies syntax highlighting when creating an untitled tab.</p>
-          </div>
-        </div>
-      </div>
-
-      {/* AI Assistant Preferences */}
-      <div className="rounded-xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs backdrop-blur-xs">
-        <div className="mb-4 flex items-center justify-between pb-3 border-b border-border/60">
-          <div className="flex items-center gap-2.5">
-            <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Sparkles className="size-4" />
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-foreground">AI Intelligence Provider</h4>
-              <p className="text-xs text-muted-foreground">Select provider for grammar correction, code explanations &amp; completions</p>
-            </div>
-          </div>
-          {onNavigateTab && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onNavigateTab("ai")}
-              className="text-xs gap-1.5 h-8 border-primary/30 hover:border-primary/60 text-primary"
-            >
-              Manage API Keys <ArrowRight className="size-3.5" />
-            </Button>
-          )}
-        </div>
-
-        <div className="space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {AI_PROVIDER_OPTIONS.map((provider) => {
-              const isSelected = (settings.aiProvider ?? "gemini") === provider.value;
-              return (
-                <button
-                  key={provider.value}
-                  type="button"
-                  onClick={() => updateSettings({ aiProvider: provider.value })}
-                  className={`flex flex-col text-left p-3.5 rounded-lg border transition-all cursor-pointer ${
-                    isSelected
-                      ? "border-primary bg-primary/5 ring-1 ring-primary/30 shadow-xs"
-                      : "border-border/60 bg-background/50 hover:border-border hover:bg-muted/20"
-                  }`}
-                >
-                  <div className="flex items-center justify-between w-full mb-1">
-                    <span className="font-medium text-sm text-foreground">{provider.label}</span>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
-                      isSelected
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground"
-                    }`}>
-                      {provider.badge}
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">{provider.desc}</p>
-                  {isSelected && (
-                    <div className="mt-2.5 flex items-center gap-1 text-[11px] font-medium text-primary">
-                      <CheckCircle2 className="size-3" /> Selected Provider
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-2 text-[11px] text-muted-foreground">
-            <ShieldCheck className="size-3.5 text-primary shrink-0" />
-            <span>Server-side encryption is used for API requests. Keys are never exposed to client browsers.</span>
           </div>
         </div>
       </div>

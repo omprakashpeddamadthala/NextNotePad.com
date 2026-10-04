@@ -1,4 +1,4 @@
-import { createStore, del, get, set, type UseStore } from "idb-keyval";
+import { createStore, del, entries, get, set, type UseStore } from "idb-keyval";
 import { fetchJson } from "@/lib/api/fetchJson";
 import {
   incrementDriveMetric,
@@ -24,6 +24,12 @@ export interface WorkspaceTreeResponse {
   nodes: WorkspaceNode[];
   hasAnyHistory: boolean;
   workspaceId: string;
+}
+
+export interface AllWorkspaceTreesResponse {
+  workspaces: CachedWorkspaceRecord[];
+  activeWorkspaceId: string | null;
+  trees: Record<string, WorkspaceTreeResponse>;
 }
 
 export interface SearchableDriveFile {
@@ -124,6 +130,7 @@ async function cachedRequest<T>({
   key,
   policy,
   force = false,
+  background = false,
   request,
   onFresh,
 }: {
@@ -131,7 +138,7 @@ async function cachedRequest<T>({
   policy: ResourcePolicy;
   force?: boolean;
   background?: boolean;
-  request: () => Promise<T>;
+  request: (isBackground?: boolean) => Promise<T>;
   onFresh?: (value: T) => void;
 }): Promise<T> {
   const cached = await readRecord<T>(key);
@@ -145,7 +152,7 @@ async function cachedRequest<T>({
     void dedupe(key, async () => {
       try {
         incrementDriveMetric("apiRequest");
-        const value = await request();
+        const value = await request(true);
         await writeRecord(key, value);
         onFresh?.(value);
         return value;
@@ -160,7 +167,7 @@ async function cachedRequest<T>({
   try {
     return await dedupe(key, async () => {
       incrementDriveMetric("apiRequest");
-      const value = await request();
+      const value = await request(background);
       await writeRecord(key, value);
       onFresh?.(value);
       return value;
@@ -179,6 +186,80 @@ export function configureDriveDataClient(userId: string): void {
 
 export function currentDriveCacheUserId(): string | null {
   return activeUserId;
+}
+
+/**
+ * Rapidly warm up the in-memory cache from IndexedDB on startup.
+ * Populates memory map with workspaces, trees, and file index so initial renders
+ * have zero skeleton flicker and zero wait.
+ */
+export async function warmDriveCacheFromIndexedDB(userId: string): Promise<void> {
+  const db = store();
+  if (!db) return;
+  try {
+    const all = await entries<string, CacheRecord<unknown>>(db);
+    const prefix = `${userId}:`;
+    for (const [k, v] of all) {
+      if (
+        typeof k === "string" &&
+        k.startsWith(prefix) &&
+        v &&
+        typeof v === "object" &&
+        "value" in v
+      ) {
+        memory.set(k, v);
+        if (k.startsWith(`${prefix}tree:`)) {
+          const tree = v.value as WorkspaceTreeResponse;
+          if (tree?.nodes) {
+            rememberTree(tree);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("Failed to warm drive cache from IndexedDB:", err);
+  }
+}
+
+/** Synchronously retrieve cached workspace list if available in memory */
+export function getCachedWorkspaceListSync(): WorkspaceListResponse | undefined {
+  if (!activeUserId) return undefined;
+  return (
+    memory.get(userKey("workspaces")) as
+      | CacheRecord<WorkspaceListResponse>
+      | undefined
+  )?.value;
+}
+
+/** Synchronously retrieve cached workspace tree if available in memory */
+export function getCachedWorkspaceTreeSync(
+  workspaceId: string,
+): WorkspaceTreeResponse | undefined {
+  if (!activeUserId) return undefined;
+  const record = memory.get(userKey(`tree:${workspaceId}`)) as
+    | CacheRecord<WorkspaceTreeResponse>
+    | undefined;
+  if (record) {
+    rememberTree(record.value);
+    return record.value;
+  }
+  return undefined;
+}
+
+/** Synchronously retrieve cached file index if available in memory */
+export function getCachedDriveFileIndexSync(): SearchableDriveFile[] | undefined {
+  if (!activeUserId) return undefined;
+  return (
+    memory.get(userKey("files")) as
+      | CacheRecord<{ files: SearchableDriveFile[] }>
+      | undefined
+  )?.value?.files;
+}
+
+/** Check if a workspace tree is already cached in memory */
+export function hasCachedWorkspaceTreeSync(workspaceId: string): boolean {
+  if (!activeUserId) return false;
+  return memory.has(userKey(`tree:${workspaceId}`));
 }
 
 export async function getCachedWorkspaceList(): Promise<
@@ -207,10 +288,10 @@ export function loadWorkspaceList(
       key: userKey("workspaces"),
       policy: POLICIES.workspaces,
       ...options,
-      request: () =>
+      request: (isBg) =>
         fetchJson<WorkspaceListResponse>("/api/workspaces", {
           action: "Load workspaces",
-          background: options.background,
+          background: isBg || options.background,
         }),
     }),
   );
@@ -241,10 +322,10 @@ export function loadWorkspaceTree(
       key: userKey(`tree:${workspaceId}`),
       policy: POLICIES.tree,
       ...options,
-      request: () =>
+      request: (isBg) =>
         fetchJson<WorkspaceTreeResponse>(`/api/workspace?${params}`, {
           action: "Load workspace",
-          background: options.background,
+          background: isBg || options.background,
         }),
       onFresh: (tree) => {
         rememberTree(tree);
@@ -280,6 +361,74 @@ export async function cacheWorkspaceTree(
   await writeRecord(userKey(`tree:${tree.workspaceId}`), tree);
 }
 
+/**
+ * Loads all workspace trees in a single roundtrip via /api/workspaces/trees.
+ * Caches workspace list, individual trees, and builds the full file index.
+ */
+export function loadAllWorkspaceTrees(
+  options: {
+    force?: boolean;
+    background?: boolean;
+    onFresh?: (data: AllWorkspaceTreesResponse) => void;
+  } = {},
+): Promise<AllWorkspaceTreesResponse> {
+  return measureDriveTiming("all-workspace-trees", async () => {
+    const handleData = async (data: AllWorkspaceTreesResponse) => {
+      // 1. Cache workspace list
+      await writeRecord(userKey("workspaces"), {
+        workspaces: data.workspaces,
+        activeWorkspaceId: data.activeWorkspaceId,
+      });
+
+      // 2. Cache each workspace tree and index files
+      const allFiles: SearchableDriveFile[] = [];
+      const wsMap = new Map(data.workspaces.map((w) => [w.id, w.name]));
+
+      for (const [wsId, tree] of Object.entries(data.trees)) {
+        rememberTree(tree);
+        await writeRecord(userKey(`tree:${wsId}`), tree);
+
+        const wsName = wsMap.get(wsId) ?? "Workspace";
+        for (const node of tree.nodes) {
+          if (node.type === "file" && !node.deleted) {
+            allFiles.push({
+              id: node.id,
+              name: node.name,
+              path: node.path,
+              size: node.size,
+              version: node.version,
+              workspaceId: wsId,
+              workspaceName: wsName,
+              updatedAt: new Date(node.updatedAt).toISOString(),
+            });
+          }
+        }
+      }
+
+      // 3. Cache searchable files index
+      await writeRecord(userKey("files"), { files: allFiles });
+    };
+
+    const res = await cachedRequest({
+      key: userKey("all-trees"),
+      policy: POLICIES.tree,
+      ...options,
+      request: (isBg) =>
+        fetchJson<AllWorkspaceTreesResponse>("/api/workspaces/trees", {
+          action: "Load all workspaces",
+          background: isBg ?? options.background ?? true,
+        }),
+      onFresh: async (fresh) => {
+        await handleData(fresh);
+        options.onFresh?.(fresh);
+      },
+    });
+
+    await handleData(res);
+    return res;
+  });
+}
+
 export function loadDriveFileIndex(
   options: {
     force?: boolean;
@@ -292,10 +441,10 @@ export function loadDriveFileIndex(
       key: userKey("files"),
       policy: POLICIES.files,
       ...options,
-      request: () =>
+      request: (isBg) =>
         fetchJson<{ files: SearchableDriveFile[] }>("/api/files", {
           action: "Search all workspaces",
-          background: options.background,
+          background: isBg || options.background,
         }),
       onFresh: (value) => options.onFresh?.(value.files),
     });
@@ -348,7 +497,7 @@ export async function readDriveFileContent(
         `/api/files/${fileId}${params}`,
         {
           action: "Load file",
-          background: options.background,
+          background: options.background ?? true,
         },
       );
       await writeRecord(key, data.content ?? "", version);
@@ -363,6 +512,92 @@ export async function writeCachedFileContent(
   version?: number,
 ): Promise<void> {
   await writeRecord(userKey(`content:${fileId}`), content, version);
+}
+
+/** Immediately update a node in the local memory & IDB cache after mutation */
+export async function updateCachedTreeNode(
+  workspaceId: string,
+  node: WorkspaceNode,
+): Promise<void> {
+  if (!activeUserId) return;
+  const key = userKey(`tree:${workspaceId}`);
+  const cached = await readRecord<WorkspaceTreeResponse>(key);
+  if (cached) {
+    const idx = cached.value.nodes.findIndex((n) => n.id === node.id);
+    let nextNodes: WorkspaceNode[];
+    if (idx >= 0) {
+      nextNodes = [...cached.value.nodes];
+      nextNodes[idx] = node;
+    } else {
+      nextNodes = [...cached.value.nodes, node];
+    }
+    const updatedTree: WorkspaceTreeResponse = {
+      ...cached.value,
+      nodes: nextNodes,
+      hasAnyHistory: true,
+    };
+    rememberTree(updatedTree);
+    await writeRecord(key, updatedTree);
+  }
+
+  if (node.type === "file") {
+    fileWorkspaceIds.set(node.id, workspaceId);
+    const filesKey = userKey("files");
+    const cachedFiles = await readRecord<{ files: SearchableDriveFile[] }>(
+      filesKey,
+    );
+    if (cachedFiles) {
+      const idx = cachedFiles.value.files.findIndex((f) => f.id === node.id);
+      const wsList = getCachedWorkspaceListSync()?.workspaces;
+      const wsName =
+        wsList?.find((w) => w.id === workspaceId)?.name ?? "Workspace";
+      const fileEntry: SearchableDriveFile = {
+        id: node.id,
+        name: node.name,
+        path: node.path,
+        size: node.size,
+        version: node.version,
+        workspaceId,
+        workspaceName: wsName,
+        updatedAt: new Date(node.updatedAt).toISOString(),
+      };
+      let nextFiles: SearchableDriveFile[];
+      if (idx >= 0) {
+        nextFiles = [...cachedFiles.value.files];
+        nextFiles[idx] = fileEntry;
+      } else {
+        nextFiles = [...cachedFiles.value.files, fileEntry];
+      }
+      await writeRecord(filesKey, { files: nextFiles });
+    }
+  }
+}
+
+/** Immediately remove a node from the local memory & IDB cache after deletion */
+export async function removeCachedTreeNode(
+  workspaceId: string,
+  nodeId: string,
+): Promise<void> {
+  if (!activeUserId) return;
+  const key = userKey(`tree:${workspaceId}`);
+  const cached = await readRecord<WorkspaceTreeResponse>(key);
+  if (cached) {
+    const updatedTree: WorkspaceTreeResponse = {
+      ...cached.value,
+      nodes: cached.value.nodes.filter((n) => n.id !== nodeId),
+    };
+    await writeRecord(key, updatedTree);
+  }
+
+  const filesKey = userKey("files");
+  const cachedFiles = await readRecord<{ files: SearchableDriveFile[] }>(
+    filesKey,
+  );
+  if (cachedFiles) {
+    await writeRecord(filesKey, {
+      files: cachedFiles.value.files.filter((f) => f.id !== nodeId),
+    });
+  }
 }
 
 export async function invalidateFileContent(fileId: string): Promise<void> {
@@ -405,17 +640,74 @@ async function mapConcurrent<T>(
 
 export async function prefetchFileContents(
   files: Array<{ id: string; version?: number; size?: number }>,
+  options: { limit?: number; concurrency?: number } = {},
 ): Promise<void> {
+  const limit = options.limit ?? 12;
+  const concurrency = options.concurrency ?? 3;
   const eligible = files
-    .filter((file) => (file.size ?? 0) <= 256 * 1024)
-    .slice(0, 12);
+    .filter((file) => (file.size ?? 0) <= 1024 * 1024)
+    .slice(0, limit);
+  if (eligible.length === 0) return;
   incrementDriveMetric("prefetchStarted");
   try {
-    await mapConcurrent(eligible, 3, async (file) => {
+    await mapConcurrent(eligible, concurrency, async (file) => {
+      const cached = await readCachedFileContent(file.id, file.version);
+      if (cached !== undefined) return;
       await readDriveFileContent(file.id, file.version, { background: true });
     });
     incrementDriveMetric("prefetchCompleted");
   } catch {
     incrementDriveMetric("prefetchFailed");
+  }
+}
+
+let prefetchScheduled = false;
+
+/**
+ * Triggers background prefetching when browser is idle.
+ * Loads all workspace trees and warms cache for files in the active workspace.
+ */
+export function triggerIdleDrivePrefetch(): void {
+  if (prefetchScheduled || typeof window === "undefined" || !activeUserId)
+    return;
+  prefetchScheduled = true;
+
+  const run = async () => {
+    prefetchScheduled = false;
+    try {
+      // 1. Fetch all workspace trees in background
+      await loadAllWorkspaceTrees({ background: true });
+
+      // 2. Prefetch content of all files in active workspace
+      const currentList = getCachedWorkspaceListSync();
+      const activeWsId =
+        currentList?.activeWorkspaceId ?? currentList?.workspaces[0]?.id;
+      if (activeWsId) {
+        const activeTree = getCachedWorkspaceTreeSync(activeWsId);
+        if (activeTree) {
+          const files = activeTree.nodes
+            .filter(
+              (n): n is Extract<WorkspaceNode, { type: "file" }> =>
+                n.type === "file" && !n.deleted && (n.size ?? 0) <= 1024 * 1024,
+            );
+          void prefetchFileContents(files, { limit: 100, concurrency: 5 });
+        }
+      }
+    } catch {
+      // Background idle prefetch failure is non-fatal
+    }
+  };
+
+  if ("requestIdleCallback" in window) {
+    (
+      window as unknown as {
+        requestIdleCallback: (
+          cb: () => void,
+          opts?: { timeout: number },
+        ) => void;
+      }
+    ).requestIdleCallback(() => void run(), { timeout: 3000 });
+  } else {
+    setTimeout(() => void run(), 1200);
   }
 }

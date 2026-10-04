@@ -2,8 +2,8 @@ import type { ThemeModule } from "./types";
 
 export const dracula: ThemeModule = {
   id: "dracula",
-  label: "IntelliJ Darcula",
-  monacoThemeId: "np-intellij-darcula",
+  label: "Dracula",
+  monacoThemeId: "np-dracula",
   chrome: {
     background: "#2B2B2B",
     foreground: "#A9B7C6",

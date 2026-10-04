@@ -2,7 +2,7 @@ import type { ThemeModule } from "./types";
 
 export const solarized: ThemeModule = {
   id: "solarized",
-  label: "IntelliJ Solarized",
+  label: "Solarized Dark",
   monacoThemeId: "np-solarized",
   chrome: {
     background: "#002b36",

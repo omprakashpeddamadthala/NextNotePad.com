@@ -202,7 +202,19 @@ export class AppConfigService {
     const hit = cache.get(this.ds.userId);
     if (!opts.fresh && hit && Date.now() - hit.fetchedAt < CACHE_TTL_MS)
       return hit.config;
+    const requestedAt = Date.now();
     const entry = await withUserLock(this.ds.userId, async () => {
+      // Concurrent callers queue on the lock; whoever ran first has usually just read (or
+      // written) the file, so reuse that rather than every queued caller re-reading it. A `fresh`
+      // load only accepts an entry fetched after it was requested.
+      const settled = cache.get(this.ds.userId);
+      if (
+        settled &&
+        (opts.fresh
+          ? settled.fetchedAt >= requestedAt
+          : Date.now() - settled.fetchedAt < CACHE_TTL_MS)
+      )
+        return settled;
       try {
         return await this.readFresh();
       } catch (err) {

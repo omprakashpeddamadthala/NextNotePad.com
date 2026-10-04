@@ -5,7 +5,7 @@
  * organic tab shapes, and a signature amber-to-teal color story.
  */
 
-/* ── Light Mode (IntelliJ IDEA Ultimate Light) ──────────────────────────── */
+/* ── Light Mode ─────────────────────────────────────────────────────────── */
 :root {
   --np-toolbar-bg: rgba(247, 248, 250, 0.95);
   --np-statusbar-bg: #ebecf0;
@@ -20,7 +20,7 @@
   --np-sidebar-bg: #f7f8fa;
   --np-sidebar-border: #dfe1e5;
 
-  /* JetBrains signature blue & vibrant magenta/purple accents */
+  /* Signature blue & vibrant magenta/purple accents */
   --np-accent-gradient: linear-gradient(135deg, #087cfa 0%, #af32f7 50%, #ff318c 100%);
   --np-accent-glow: rgba(53, 116, 240, 0.2);
   --np-tab-indicator: #3574f0;
@@ -31,7 +31,7 @@
   --np-floating-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.08);
 }
 
-/* ── Dark Mode (IntelliJ IDEA Ultimate Dark / New UI) ───────────────────── */
+/* ── Dark Mode (New UI) ─────────────────────────────────────────────────── */
 .dark {
   --np-toolbar-bg: rgba(30, 31, 34, 0.95);
   --np-statusbar-bg: #2b2d30;

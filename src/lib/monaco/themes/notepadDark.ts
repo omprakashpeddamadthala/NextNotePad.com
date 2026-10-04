@@ -2,8 +2,8 @@ import type { ThemeModule } from "./types";
 
 export const notepadDark: ThemeModule = {
   id: "notepad-dark",
-  label: "IntelliJ Dark (New UI)",
-  monacoThemeId: "np-intellij-dark",
+  label: "Dark (New UI)",
+  monacoThemeId: "np-dark",
   chrome: {
     background: "#1E1F22",
     foreground: "#BCBEC4",

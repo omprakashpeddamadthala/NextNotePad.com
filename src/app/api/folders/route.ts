@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+  getDriveSession,
   getDriveSessionWithWorkspace,
   driveErrorResponse,
 } from "@/lib/drive/session";
@@ -9,11 +10,20 @@ import { unauthorized, badRequest } from "@/lib/api/respond";
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getDriveSessionWithWorkspace();
+    const requestedWorkspaceId =
+      request.nextUrl.searchParams.get("workspaceId");
+    const session = requestedWorkspaceId
+      ? await getDriveSession()
+      : await getDriveSessionWithWorkspace();
     if (!session) return unauthorized();
     const parsed = createFolderSchema.safeParse(await request.json());
     if (!parsed.success) return badRequest(parsed.error);
-    const { ds, workspaceId } = session;
+    const { ds } = session;
+    const workspaceId = requestedWorkspaceId
+      ? (await ds.get(requestedWorkspaceId)).id
+      : ("workspaceId" in session
+          ? (session as unknown as { workspaceId: string }).workspaceId
+          : "");
     const entry = await createNode(ds, workspaceId, {
       type: "folder",
       ...parsed.data,

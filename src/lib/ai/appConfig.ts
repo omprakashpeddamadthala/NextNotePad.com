@@ -15,7 +15,12 @@ export interface EffectiveAiConfig {
  *  call means a key rotated via the UI takes effect on the very next request, not after a
  *  server restart. */
 export async function getEffectiveAiConfig(): Promise<EffectiveAiConfig> {
-  const row = await prisma.appConfig.findUnique({ where: { id: SINGLETON_ID } });
+  let row = null;
+  try {
+    row = await prisma.appConfig.findUnique({ where: { id: SINGLETON_ID } });
+  } catch (err) {
+    console.error("[appConfig] Failed to read AppConfig from database, using env fallback:", err);
+  }
   return {
     geminiApiKey: row?.geminiApiKey || process.env.GEMINI_API_KEY || null,
     geminiModel: row?.geminiModel || process.env.GEMINI_MODEL || null,
@@ -26,7 +31,6 @@ export async function getEffectiveAiConfig(): Promise<EffectiveAiConfig> {
 
 export interface AiConfigStatus {
   gemini: { apiKeyConfigured: boolean; model: string | null };
-  claude: { apiKeyConfigured: boolean; model: string | null };
 }
 
 /** Status view for the admin UI — booleans and (non-secret) model ids only, never the keys
@@ -35,7 +39,6 @@ export async function getAiConfigStatus(): Promise<AiConfigStatus> {
   const effective = await getEffectiveAiConfig();
   return {
     gemini: { apiKeyConfigured: Boolean(effective.geminiApiKey), model: effective.geminiModel },
-    claude: { apiKeyConfigured: Boolean(effective.agentRouterApiKey), model: effective.claudeModel },
   };
 }
 
@@ -50,9 +53,14 @@ export interface AiConfigUpdate {
  *  skips undefined keys in update/create data); `null` explicitly clears it back to falling
  *  through to its env var default; a string sets it. */
 export async function updateAiConfig(patch: AiConfigUpdate): Promise<void> {
-  await prisma.appConfig.upsert({
-    where: { id: SINGLETON_ID },
-    create: { id: SINGLETON_ID, ...patch },
-    update: patch,
-  });
+  try {
+    await prisma.appConfig.upsert({
+      where: { id: SINGLETON_ID },
+      create: { id: SINGLETON_ID, ...patch },
+      update: patch,
+    });
+  } catch (err) {
+    console.error("[appConfig] Failed to upsert AppConfig in database:", err);
+    throw err;
+  }
 }

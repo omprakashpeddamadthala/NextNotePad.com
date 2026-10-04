@@ -7,6 +7,7 @@ import {
   CloudDownload,
   Loader2,
   ShieldCheck,
+  Bot,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -144,11 +145,18 @@ export function AccountMenu() {
           {syncing ? "Refreshing…" : "Refresh from Drive"}
         </DropdownMenuItem>
         {user.isAdmin && (
-          <DropdownMenuItem
-            onSelect={() => useAdminViewStore.getState().open()}
-          >
-            <ShieldCheck /> Admin Panel
-          </DropdownMenuItem>
+          <>
+            <DropdownMenuItem
+              onSelect={() => useAdminViewStore.getState().open("users")}
+            >
+              <ShieldCheck /> Admin Panel
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => useAdminViewStore.getState().open("ai-config")}
+            >
+              <Bot /> AI Configuration
+            </DropdownMenuItem>
+          </>
         )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => void handleSignOut()}>

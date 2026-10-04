@@ -76,10 +76,34 @@ function isRetryable(err: unknown): boolean {
   );
 }
 
-async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
+export type DriveApiMethod = "list" | "get" | "media" | "create" | "update";
+
+/** Process-wide Drive API call counters (every attempt, including retries) — read by the perf
+ *  benchmark and the optional `DRIVE_PERF_DEBUG=1` request log. Cheap enough to keep always on. */
+const apiCalls: Record<DriveApiMethod, number> = {
+  list: 0,
+  get: 0,
+  media: 0,
+  create: 0,
+  update: 0,
+};
+
+export function getDriveApiStats(): Record<DriveApiMethod, number> & {
+  total: number;
+} {
+  const total = Object.values(apiCalls).reduce((a, b) => a + b, 0);
+  return { ...apiCalls, total };
+}
+
+async function withRetry<T>(
+  method: DriveApiMethod,
+  fn: () => Promise<T>,
+  attempts = 3,
+): Promise<T> {
   let lastErr: unknown;
   for (let i = 0; i < attempts; i++) {
     try {
+      apiCalls[method] += 1;
       return await fn();
     } catch (err) {
       lastErr = err;
@@ -107,6 +131,43 @@ const listCache = new Map<
 >();
 const listInFlight = new Map<string, Promise<DriveEntry[]>>();
 const listGeneration = new Map<string, number>();
+
+/** Per-entry metadata, keyed `${userId}:${id}`. Primed from every listing/create/update response
+ *  so walking up a file's parents (path building, workspace-membership checks, resolving a parent
+ *  folder) is normally free instead of one sequential `files.get` per ancestor. The TTL bounds how
+ *  long a change made from another device can go unnoticed; this process's own writes update or
+ *  flush it immediately. */
+const ENTRY_CACHE_TTL_MS = 15_000;
+const ENTRY_CACHE_MAX = 20_000;
+const entryCache = new Map<string, { entry: DriveEntry; expiresAt: number }>();
+const entryInFlight = new Map<string, Promise<DriveEntry>>();
+const entryGeneration = new Map<string, number>();
+
+function rememberEntries(userId: string, entries: DriveEntry[]): void {
+  const expiresAt = Date.now() + ENTRY_CACHE_TTL_MS;
+  for (const entry of entries) {
+    const key = `${userId}:${entry.id}`;
+    entryCache.delete(key); // re-insert so Map order stays oldest-first for eviction
+    entryCache.set(key, { entry, expiresAt });
+  }
+  if (entryCache.size > ENTRY_CACHE_MAX) {
+    for (const key of entryCache.keys()) {
+      entryCache.delete(key);
+      if (entryCache.size <= ENTRY_CACHE_MAX * 0.9) break;
+    }
+  }
+}
+
+function invalidateUserEntries(userId: string): void {
+  entryGeneration.set(userId, (entryGeneration.get(userId) ?? 0) + 1);
+  const prefix = `${userId}:`;
+  for (const key of entryCache.keys()) {
+    if (key.startsWith(prefix)) entryCache.delete(key);
+  }
+  for (const key of entryInFlight.keys()) {
+    if (key.startsWith(prefix)) entryInFlight.delete(key);
+  }
+}
 
 function invalidateUserLists(userId: string): void {
   listGeneration.set(userId, (listGeneration.get(userId) ?? 0) + 1);
@@ -154,11 +215,15 @@ export class DriveService {
     if (userId) {
       layoutCache.delete(userId);
       invalidateUserLists(userId);
+      invalidateUserEntries(userId);
     } else {
       layoutCache.clear();
       listCache.clear();
       listInFlight.clear();
       listGeneration.clear();
+      entryCache.clear();
+      entryInFlight.clear();
+      entryGeneration.clear();
     }
   }
 
@@ -174,7 +239,7 @@ export class DriveService {
       const out: DriveEntry[] = [];
       let pageToken: string | undefined;
       do {
-        const res = await withRetry(() =>
+        const res = await withRetry("list", () =>
           this.drive.files.list({
             q,
             pageSize,
@@ -187,6 +252,7 @@ export class DriveService {
         pageToken = res.data.nextPageToken ?? undefined;
       } while (pageToken);
       if ((listGeneration.get(this.userId) ?? 0) === generation) {
+        rememberEntries(this.userId, out);
         listCache.set(key, {
           entries: out,
           expiresAt: Date.now() + LIST_CACHE_TTL_MS,
@@ -223,7 +289,7 @@ export class DriveService {
   }
 
   async hasTrashedChildren(parentId: string): Promise<boolean> {
-    const res = await withRetry(() =>
+    const res = await withRetry("list", () =>
       this.drive.files.list({
         q: `'${parentId}' in parents and trashed = true`,
         pageSize: 1,
@@ -241,21 +307,40 @@ export class DriveService {
     return this.list("trashed = false");
   }
 
-  async get(id: string): Promise<DriveEntry> {
-    try {
-      const res = await withRetry(() =>
-        this.drive.files.get({ fileId: id, fields: ENTRY_FIELDS }),
-      );
-      return toEntry(res.data);
-    } catch (err) {
-      if (isNotFound(err)) throw new DriveNotFoundError(id);
-      throw err;
+  /** Entry metadata — served from the short-lived entry cache when possible, and concurrent
+   *  lookups of the same id share one request. Pass `fresh` to bypass the cache. */
+  async get(id: string, opts: { fresh?: boolean } = {}): Promise<DriveEntry> {
+    const key = `${this.userId}:${id}`;
+    if (!opts.fresh) {
+      const hit = entryCache.get(key);
+      if (hit && hit.expiresAt > Date.now()) return hit.entry;
+      const pending = entryInFlight.get(key);
+      if (pending) return pending;
     }
+    const generation = entryGeneration.get(this.userId) ?? 0;
+    const request = (async () => {
+      try {
+        const res = await withRetry("get", () =>
+          this.drive.files.get({ fileId: id, fields: ENTRY_FIELDS }),
+        );
+        const entry = toEntry(res.data);
+        if ((entryGeneration.get(this.userId) ?? 0) === generation)
+          rememberEntries(this.userId, [entry]);
+        return entry;
+      } catch (err) {
+        if (isNotFound(err)) throw new DriveNotFoundError(id);
+        throw err;
+      }
+    })().finally(() => {
+      if (entryInFlight.get(key) === request) entryInFlight.delete(key);
+    });
+    entryInFlight.set(key, request);
+    return request;
   }
 
   async readText(id: string): Promise<string> {
     try {
-      const res = await withRetry(() =>
+      const res = await withRetry("media", () =>
         this.drive.files.get(
           { fileId: id, alt: "media" },
           { responseType: "text" },
@@ -278,7 +363,7 @@ export class DriveService {
     appProperties?: Record<string, string>,
     description?: string,
   ): Promise<DriveEntry> {
-    const res = await withRetry(() =>
+    const res = await withRetry("create", () =>
       this.drive.files.create({
         requestBody: {
           name,
@@ -291,7 +376,9 @@ export class DriveService {
       }),
     );
     invalidateUserLists(this.userId);
-    return toEntry(res.data);
+    const entry = toEntry(res.data);
+    rememberEntries(this.userId, [entry]);
+    return entry;
   }
 
   async createFile(
@@ -301,7 +388,7 @@ export class DriveService {
     opts: { mimeType?: string; appProperties?: Record<string, string> } = {},
   ): Promise<DriveEntry> {
     const mimeType = opts.mimeType ?? "text/plain";
-    const res = await withRetry(() =>
+    const res = await withRetry("create", () =>
       this.drive.files.create({
         requestBody: {
           name,
@@ -314,7 +401,9 @@ export class DriveService {
       }),
     );
     invalidateUserLists(this.userId);
-    return toEntry(res.data);
+    const entry = toEntry(res.data);
+    rememberEntries(this.userId, [entry]);
+    return entry;
   }
 
   /** Metadata update. `appProperties` keys set to `null` are removed (Drive semantics). Moving
@@ -347,7 +436,7 @@ export class DriveService {
     if (patch.appProperties)
       requestBody.appProperties = patch.appProperties as Record<string, string>;
     try {
-      const res = await withRetry(() =>
+      const res = await withRetry("update", () =>
         this.drive.files.update({
           fileId: id,
           addParents,
@@ -365,7 +454,9 @@ export class DriveService {
         }),
       );
       invalidateUserLists(this.userId);
-      return toEntry(res.data);
+      const entry = toEntry(res.data);
+      rememberEntries(this.userId, [entry]);
+      return entry;
     } catch (err) {
       if (isNotFound(err)) throw new DriveNotFoundError(id);
       throw err;
@@ -375,7 +466,7 @@ export class DriveService {
   /** Moves to Drive's trash (restorable for 30 days) rather than hard-deleting. */
   async trash(id: string): Promise<void> {
     try {
-      await withRetry(() =>
+      await withRetry("update", () =>
         this.drive.files.update({
           fileId: id,
           requestBody: { trashed: true },
@@ -383,6 +474,8 @@ export class DriveService {
         }),
       );
       invalidateUserLists(this.userId);
+      // Trashing a folder implicitly trashes its whole subtree, so every cached entry is suspect.
+      invalidateUserEntries(this.userId);
     } catch (err) {
       if (!isNotFound(err)) throw err;
     }
@@ -420,5 +513,6 @@ export class DriveService {
   /** Re-resolves cached folder ids after a 404 (e.g. the user deleted the folder in Drive). */
   invalidateLayout() {
     layoutCache.delete(this.userId);
+    invalidateUserEntries(this.userId);
   }
 }
