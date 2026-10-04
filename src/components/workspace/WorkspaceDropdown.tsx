@@ -40,6 +40,7 @@ export function WorkspaceDropdown({
   const workspaces = useMultiWorkspaceStore((s) => s.workspaces);
   const activeWorkspaceId = useMultiWorkspaceStore((s) => s.activeWorkspaceId);
   const loadingWorkspaces = useMultiWorkspaceStore((s) => s.loadingWorkspaces);
+  const loadError = useMultiWorkspaceStore((s) => s.loadError);
   const switchingWorkspace = useMultiWorkspaceStore(
     (s) => s.switchingWorkspace,
   );
@@ -61,11 +62,12 @@ export function WorkspaceDropdown({
     if (
       status === "authenticated" &&
       workspaces.length === 0 &&
-      !loadingWorkspaces
+      !loadingWorkspaces &&
+      !loadError
     ) {
       void loadWorkspaces();
     }
-  }, [status, workspaces.length, loadingWorkspaces, loadWorkspaces]);
+  }, [status, workspaces.length, loadingWorkspaces, loadError, loadWorkspaces]);
 
   async function handleSwitch(id: string) {
     if (id === activeWorkspaceId || switchingWorkspace) return;
@@ -102,8 +104,7 @@ export function WorkspaceDropdown({
                 Object.fromEntries(fresh.nodes.map((node) => [node.id, node])),
               );
           }
-        } catch {
-        }
+        } catch {}
       })();
       return;
     }

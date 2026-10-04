@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import {
   exchangeCodeForTokens,
   decodeIdTokenProfile,
+  DRIVE_FILE_SCOPE,
   fetchGoogleProfile,
   getAppOrigin,
   OAUTH_STATE_COOKIE_NAME,
@@ -16,7 +17,11 @@ import { prisma } from "@/lib/db/prisma";
 
 function safeErrorCode(err: unknown): string {
   if (!err || typeof err !== "object") return "unknown";
-  const e = err as { code?: unknown; message?: unknown; cause?: { code?: unknown } };
+  const e = err as {
+    code?: unknown;
+    message?: unknown;
+    cause?: { code?: unknown };
+  };
   if (typeof e.code === "string" && e.code) return e.code;
   if (typeof e.cause?.code === "string" && e.cause.code) return e.cause.code;
   const msg = typeof e.message === "string" ? e.message : "";
@@ -62,6 +67,15 @@ export async function GET(request: NextRequest) {
   let stage = "token";
   try {
     const tokens = await exchangeCodeForTokens(code);
+    // Google's consent screen lets users untick the Drive permission. Without it every Drive call
+    // fails, so refuse the sign-in up front and tell them to grant it.
+    if (tokens.scope && !tokens.scope.split(" ").includes(DRIVE_FILE_SCOPE)) {
+      const res = NextResponse.redirect(
+        new URL("/?authError=drive_scope_missing", appOrigin),
+      );
+      res.cookies.delete(OAUTH_STATE_COOKIE_NAME);
+      return res;
+    }
     stage = "profile";
     const profile = tokens.id_token
       ? decodeIdTokenProfile(tokens.id_token)

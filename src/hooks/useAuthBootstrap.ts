@@ -35,6 +35,9 @@ export function useAuthBootstrap(): void {
             "Sign-in session expired or state mismatch. Please try signing in again.";
         } else if (authError === "access_denied") {
           message = "Google Sign-in was cancelled or access was denied.";
+        } else if (authError === "drive_scope_missing") {
+          message =
+            "NextNotePad needs access to Google Drive to store your files. Please sign in again and allow Google Drive access.";
         } else if (authError === "oauth_failed") {
           message = "Google OAuth authentication failed. Please try again.";
         }
@@ -77,79 +80,7 @@ export function useAuthBootstrap(): void {
 
         useAuthStore.getState().setAuthenticated(user);
         configureDriveDataClient(user.id);
-
-        await warmDriveCacheFromIndexedDB(user.id);
-
-        const cachedWs = getCachedWorkspaceListSync();
-        const activeWsId =
-          cachedWs?.activeWorkspaceId || cachedWs?.workspaces[0]?.id;
-        let hydratedFromCache = false;
-        if (cachedWs && cachedWs.workspaces.length > 0) {
-          useMultiWorkspaceStore.getState().hydrateWorkspaceList(cachedWs);
-          if (activeWsId) {
-            const cachedTree = getCachedWorkspaceTreeSync(activeWsId);
-            if (cachedTree && cachedTree.nodes.length > 0) {
-              useWorkspaceStore
-                .getState()
-                .replaceAll(
-                  Object.fromEntries(cachedTree.nodes.map((n) => [n.id, n])),
-                );
-              useAuthStore.getState().setWorkspaceReady();
-              hydratedFromCache = true;
-
-              const files = cachedTree.nodes.filter(
-                (n): n is Extract<WorkspaceNode, { type: "file" }> =>
-                  n.type === "file" && !n.deleted && !n.locked,
-              );
-              if (files.length > 0) {
-                void prefetchFileContents(
-                  files.map((f) => ({
-                    id: f.id,
-                    version: f.version,
-                    size: f.size,
-                  })),
-                  { limit: 100, concurrency: 5 },
-                );
-              }
-            }
-          }
-        }
-
-        const [loadedWorkspaceId] = await Promise.all([
-          migrateOrLoadCloudWorkspace(),
-          syncSettingsOnLogin(),
-          loadAllWorkspaceTrees({
-            background: true,
-            onFresh: (fresh) => {
-              useMultiWorkspaceStore.getState().hydrateWorkspaceList({
-                workspaces: fresh.workspaces,
-                activeWorkspaceId: fresh.activeWorkspaceId,
-              });
-            },
-          }),
-        ]);
-
-        const currentActiveId =
-          useMultiWorkspaceStore.getState().activeWorkspaceId;
-        if (
-          currentActiveId &&
-          loadedWorkspaceId &&
-          currentActiveId !== loadedWorkspaceId
-        ) {
-          const { nodes } =
-            await cloudRepo.fetchWorkspaceTree(currentActiveId);
-          useWorkspaceStore
-            .getState()
-            .replaceAll(
-              Object.fromEntries(nodes.map((node) => [node.id, node])),
-            );
-        }
-
-        if (!hydratedFromCache) {
-          useAuthStore.getState().setWorkspaceReady();
-        }
-
-        triggerIdleDrivePrefetch();
+        await loadWorkspaceData(user.id);
       } catch (err) {
         if (!(err instanceof ApiError) || err.status !== 401) {
           console.error("Auth check failed:", err);
@@ -158,4 +89,89 @@ export function useAuthBootstrap(): void {
       }
     })();
   }, []);
+}
+
+// A signed-in user stays signed in even if Drive data fails to load (first-time Drive setup can
+// be slow, Drive may be briefly unreachable, or the Drive permission wasn't granted) — demoting
+// them to guest here made new accounts look like they were logged out right after sign-in.
+async function loadWorkspaceData(userId: string): Promise<void> {
+  try {
+    await warmDriveCacheFromIndexedDB(userId);
+
+    const cachedWs = getCachedWorkspaceListSync();
+    const activeWsId =
+      cachedWs?.activeWorkspaceId || cachedWs?.workspaces[0]?.id;
+    let hydratedFromCache = false;
+    if (cachedWs && cachedWs.workspaces.length > 0) {
+      useMultiWorkspaceStore.getState().hydrateWorkspaceList(cachedWs);
+      if (activeWsId) {
+        const cachedTree = getCachedWorkspaceTreeSync(activeWsId);
+        if (cachedTree && cachedTree.nodes.length > 0) {
+          useWorkspaceStore
+            .getState()
+            .replaceAll(
+              Object.fromEntries(cachedTree.nodes.map((n) => [n.id, n])),
+            );
+          useAuthStore.getState().setWorkspaceReady();
+          hydratedFromCache = true;
+
+          const files = cachedTree.nodes.filter(
+            (n): n is Extract<WorkspaceNode, { type: "file" }> =>
+              n.type === "file" && !n.deleted && !n.locked,
+          );
+          if (files.length > 0) {
+            void prefetchFileContents(
+              files.map((f) => ({
+                id: f.id,
+                version: f.version,
+                size: f.size,
+              })),
+              { limit: 100, concurrency: 5 },
+            );
+          }
+        }
+      }
+    }
+
+    const [loadedWorkspaceId] = await Promise.all([
+      migrateOrLoadCloudWorkspace(),
+      syncSettingsOnLogin(),
+      loadAllWorkspaceTrees({
+        background: true,
+        onFresh: (fresh) => {
+          useMultiWorkspaceStore.getState().hydrateWorkspaceList({
+            workspaces: fresh.workspaces,
+            activeWorkspaceId: fresh.activeWorkspaceId,
+          });
+        },
+      }),
+    ]);
+
+    const currentActiveId = useMultiWorkspaceStore.getState().activeWorkspaceId;
+    if (
+      currentActiveId &&
+      loadedWorkspaceId &&
+      currentActiveId !== loadedWorkspaceId
+    ) {
+      const { nodes } = await cloudRepo.fetchWorkspaceTree(currentActiveId);
+      useWorkspaceStore
+        .getState()
+        .replaceAll(Object.fromEntries(nodes.map((node) => [node.id, node])));
+    }
+
+    if (!hydratedFromCache) {
+      useAuthStore.getState().setWorkspaceReady();
+    }
+
+    triggerIdleDrivePrefetch();
+  } catch (err) {
+    console.error("Loading Drive workspace failed:", err);
+    toast.error("Couldn't load your Google Drive workspace.", {
+      description:
+        err instanceof ApiError && err.status === 401
+          ? "Google Drive access is missing or expired. Sign out and sign in again, allowing Drive access."
+          : "Please refresh the page to try again.",
+    });
+    useAuthStore.getState().setWorkspaceReady();
+  }
 }
