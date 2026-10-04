@@ -4,7 +4,8 @@ const GOOGLE_AUTH_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
 const GOOGLE_USERINFO_ENDPOINT = "https://www.googleapis.com/oauth2/v3/userinfo";
 
-const SCOPES = ["openid", "email", "profile", "https://www.googleapis.com/auth/drive.file"];
+export const DRIVE_FILE_SCOPE = "https://www.googleapis.com/auth/drive.file";
+const SCOPES = ["openid", "email", "profile", DRIVE_FILE_SCOPE];
 
 function getEnv(name: string): string {
   const value = process.env[name];
@@ -49,6 +50,7 @@ export interface GoogleTokens {
   access_token: string;
   refresh_token?: string;
   expires_in: number;
+  scope?: string;
   id_token?: string;
 }
 

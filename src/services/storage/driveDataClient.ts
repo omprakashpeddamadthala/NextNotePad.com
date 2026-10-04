@@ -370,6 +370,7 @@ export function loadAllWorkspaceTrees(
       request: (isBg) =>
         fetchJson<AllWorkspaceTreesResponse>("/api/workspaces/trees", {
           action: "Load all workspaces",
+          timeoutMs: 60000,
           background: isBg ?? options.background ?? true,
         }),
       onFresh: async (fresh) => {
