@@ -26,6 +26,7 @@ import {
   FileDiff,
   BarChart3,
   ChevronDown,
+  Shield,
   type LucideIcon,
 } from "lucide-react";
 import { runAction } from "@/services/shortcuts/actionRegistry";
@@ -306,7 +307,7 @@ export function ToolsNavRail() {
               icon={ArrowDownAZ}
               iconColor="text-teal-400"
               title="Sort & Dedupe Lines"
-              subtitle="Alphabetize / remove duplicates"
+              subtitle="Sort, reverse, shuffle, number"
               filter={q}
             >
               <DropdownMenuItem onSelect={() => runAction("tools.lines.sortAsc")}>
@@ -317,6 +318,23 @@ export function ToolsNavRail() {
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => runAction("tools.lines.dedupe")}>
                 Remove Duplicate Lines
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => runAction("tools.lines.reverse")}>
+                Reverse Lines
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => runAction("tools.lines.shuffle")}>
+                Shuffle Lines
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => runAction("tools.lines.addNumbers")}>
+                Add Line Numbers
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => runAction("tools.lines.removeNumbers")}>
+                Remove Line Numbers
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => runAction("tools.lines.join")}>
+                Join Lines
               </DropdownMenuItem>
             </ToolDropdown>
 
@@ -347,6 +365,15 @@ export function ToolsNavRail() {
               title="Slugify"
               subtitle="URL-friendly text string"
               onClick={() => runAction("tools.slugify")}
+              filter={q}
+            />
+
+            <ToolButton
+              icon={Shield}
+              iconColor="text-orange-400"
+              title="ROT13"
+              subtitle="Simple letter rotation cipher"
+              onClick={() => runAction("tools.rot13")}
               filter={q}
             />
           </ToolSection>
@@ -481,7 +508,7 @@ export function ToolsNavRail() {
               icon={Palette}
               iconColor="text-rose-400"
               title="Color Converter"
-              subtitle="HEX & RGB color format"
+              subtitle="HEX, RGB & HSL formats"
               filter={q}
             >
               <DropdownMenuItem onSelect={() => runAction("tools.color.hexToRgb")}>
@@ -489,6 +516,13 @@ export function ToolsNavRail() {
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => runAction("tools.color.rgbToHex")}>
                 RGB to Hex
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => runAction("tools.color.hexToHsl")}>
+                Hex to HSL
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => runAction("tools.color.hslToHex")}>
+                HSL to Hex
               </DropdownMenuItem>
             </ToolDropdown>
           </ToolSection>

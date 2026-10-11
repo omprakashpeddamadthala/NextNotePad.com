@@ -152,22 +152,60 @@ export function minifyJson(text: string): string {
   return JSON.stringify(JSON.parse(text));
 }
 
+function splitPreservingEol(text: string): { lines: string[]; eol: string } {
+  const eol = text.includes("\r\n") ? "\r\n" : "\n";
+  const lines = text.split(eol);
+  return { lines, eol };
+}
+
 export function sortLinesAscending(text: string): string {
-  return text
-    .split("\n")
-    .sort((a, b) => a.localeCompare(b))
-    .join("\n");
+  const { lines, eol } = splitPreservingEol(text);
+  return lines.sort((a, b) => a.localeCompare(b)).join(eol);
 }
 
 export function sortLinesDescending(text: string): string {
-  return text
-    .split("\n")
-    .sort((a, b) => b.localeCompare(a))
-    .join("\n");
+  const { lines, eol } = splitPreservingEol(text);
+  return lines.sort((a, b) => b.localeCompare(a)).join(eol);
 }
 
 export function removeDuplicateLines(text: string): string {
-  return Array.from(new Set(text.split("\n"))).join("\n");
+  const { lines, eol } = splitPreservingEol(text);
+  return Array.from(new Set(lines)).join(eol);
+}
+
+export function reverseLines(text: string): string {
+  const { lines, eol } = splitPreservingEol(text);
+  return lines.reverse().join(eol);
+}
+
+export function shuffleLines(text: string): string {
+  const { lines, eol } = splitPreservingEol(text);
+  for (let i = lines.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [lines[i], lines[j]] = [lines[j], lines[i]];
+  }
+  return lines.join(eol);
+}
+
+export function addLineNumbers(text: string): string {
+  const { lines, eol } = splitPreservingEol(text);
+  const width = String(lines.length).length;
+  return lines
+    .map((line, i) => `${String(i + 1).padStart(width, " ")}  ${line}`)
+    .join(eol);
+}
+
+export function removeLineNumbers(text: string): string {
+  const { lines, eol } = splitPreservingEol(text);
+  return lines.map((line) => line.replace(/^\s*\d+\s{1,2}/, "")).join(eol);
+}
+
+export function joinLines(text: string): string {
+  const { lines } = splitPreservingEol(text);
+  return lines
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .join(" ");
 }
 
 export function trimTrailingWhitespace(text: string): string {
@@ -193,15 +231,22 @@ export interface TextStats {
   charactersNoSpaces: number;
   words: number;
   lines: number;
+  /** Estimated reading time in seconds, assuming 200 wpm average reading speed. */
+  readingTimeSecs: number;
 }
+
+const WORDS_PER_MINUTE = 200;
 
 export function computeTextStats(text: string): TextStats {
   const trimmed = text.trim();
+  const { lines } = splitPreservingEol(text);
+  const words = trimmed.length === 0 ? 0 : trimmed.split(/\s+/).length;
   return {
     characters: text.length,
     charactersNoSpaces: text.replace(/\s/g, "").length,
-    words: trimmed.length === 0 ? 0 : trimmed.split(/\s+/).length,
-    lines: text.length === 0 ? 0 : text.split("\n").length,
+    words,
+    lines: text.length === 0 ? 0 : lines.length,
+    readingTimeSecs: Math.ceil((words / WORDS_PER_MINUTE) * 60),
   };
 }
 
@@ -267,8 +312,12 @@ export function htmlEncode(text: string): string {
 
 export function htmlDecode(text: string): string {
   return text.replace(
-    /&amp;|&lt;|&gt;|&quot;|&#39;|&apos;/g,
-    (m) => HTML_UNESCAPES[m],
+    /&amp;|&lt;|&gt;|&quot;|&#39;|&apos;|&#(\d+);|&#x([0-9a-fA-F]+);/g,
+    (m, dec?: string, hex?: string) => {
+      if (dec) return String.fromCodePoint(Number(dec));
+      if (hex) return String.fromCodePoint(parseInt(hex, 16));
+      return HTML_UNESCAPES[m];
+    },
   );
 }
 
@@ -343,8 +392,75 @@ export function rgbToHex(text: string): string {
 
 export function slugify(text: string): string {
   return text
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+export function rot13(text: string): string {
+  return text.replace(/[a-zA-Z]/g, (c) => {
+    const base = c <= "Z" ? 65 : 97;
+    return String.fromCharCode(((c.charCodeAt(0) - base + 13) % 26) + base);
+  });
+}
+
+export function hexToHsl(text: string): string {
+  const hex = text.trim().replace(/^#/, "");
+  const full = /^[0-9a-fA-F]{3}$/.test(hex)
+    ? hex
+        .split("")
+        .map((c) => c + c)
+        .join("")
+    : hex;
+  if (!/^[0-9a-fA-F]{6}$/.test(full)) throw new Error("Not a valid hex color");
+  const r = parseInt(full.slice(0, 2), 16) / 255;
+  const g = parseInt(full.slice(2, 4), 16) / 255;
+  const b = parseInt(full.slice(4, 6), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return `hsl(0, 0%, ${Math.round(l * 100)}%)`;
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h: number;
+  if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+  else if (max === g) h = ((b - r) / d + 2) / 6;
+  else h = ((r - g) / d + 4) / 6;
+  return `hsl(${Math.round(h * 360)}, ${Math.round(s * 100)}%, ${Math.round(l * 100)}%)`;
+}
+
+export function hslToHex(text: string): string {
+  const match = text
+    .trim()
+    .match(/hsla?\(\s*(\d+)\s*,\s*(\d+)%?\s*,\s*(\d+)%?\s*(?:,\s*[\d.]+\s*)?\)/i);
+  if (!match) throw new Error("Not a valid hsl()/hsla() color");
+  const h = Number(match[1]) / 360;
+  const s = Number(match[2]) / 100;
+  const l = Number(match[3]) / 100;
+  function hue2rgb(p: number, q: number, t: number): number {
+    if (t < 0) t += 1;
+    if (t > 1) t -= 1;
+    if (t < 1 / 6) return p + (q - p) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+    return p;
+  }
+  let r: number, g: number, b: number;
+  if (s === 0) {
+    r = g = b = l;
+  } else {
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    r = hue2rgb(p, q, h + 1 / 3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1 / 3);
+  }
+  const toHex = (n: number) =>
+    Math.max(0, Math.min(255, Math.round(n * 255)))
+      .toString(16)
+      .padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }

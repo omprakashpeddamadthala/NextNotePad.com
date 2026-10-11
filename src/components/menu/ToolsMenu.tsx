@@ -22,6 +22,11 @@ import {
   FileCode,
   Wand2,
   Command as CommandIcon,
+  Shuffle,
+  ListOrdered,
+  WrapText,
+  RotateCcw,
+  Shield,
 } from "lucide-react";
 import { TopMenu } from "./TopMenu";
 import {
@@ -177,6 +182,22 @@ export function ToolsMenu() {
           <DropdownMenuItem onSelect={() => runAction("tools.lines.dedupe")}>
             Remove Duplicate Lines
           </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runAction("tools.lines.reverse")}>
+            <RotateCcw /> Reverse Lines
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runAction("tools.lines.shuffle")}>
+            <Shuffle /> Shuffle Lines
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={() => runAction("tools.lines.addNumbers")}>
+            <ListOrdered /> Add Line Numbers
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runAction("tools.lines.removeNumbers")}>
+            Remove Line Numbers
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runAction("tools.lines.join")}>
+            <WrapText /> Join Lines
+          </DropdownMenuItem>
         </DropdownMenuSubContent>
       </DropdownMenuSub>
       <DropdownMenuSub>
@@ -293,10 +314,19 @@ export function ToolsMenu() {
           <DropdownMenuItem onSelect={() => runAction("tools.color.rgbToHex")}>
             RGB to Hex
           </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runAction("tools.color.hexToHsl")}>
+            Hex to HSL
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => runAction("tools.color.hslToHex")}>
+            HSL to Hex
+          </DropdownMenuItem>
         </DropdownMenuSubContent>
       </DropdownMenuSub>
       <DropdownMenuItem onSelect={() => runAction("tools.slugify")}>
         <SquareSlash /> Slugify
+      </DropdownMenuItem>
+      <DropdownMenuItem onSelect={() => runAction("tools.rot13")}>
+        <Shield /> ROT13
       </DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem onSelect={() => runAction("tools.diffChecker")}>

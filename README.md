@@ -13,7 +13,12 @@ The UI deliberately avoids the "modern SaaS code editor" look — square corners
 - **Global search & replace**, Quick Open, and a Command Palette (`cmdk`).
 - **Recycle bin** — soft-deleted files/folders can be restored.
 - **Export/import** — zip a workspace up or restore from one (`jszip`, `file-saver`).
+- **Developer text utilities & code formatters** — case conversion, sorting, deduplication, line operations, hashing, and language-aware formatters.
+- **Diff viewer & split editor** — side-by-side or inline comparison between tabs or versions, plus multi-pane split editing.
+- **AI-powered text tools** — Fix Grammar & Spelling, Markdown conversion, and AI Prompt assistant powered by Google Gemini and Claude (via AgentRouter), with live streaming and runtime configuration in the Admin Panel.
+- **Voice dictation** — browser SpeechRecognition integration for hands-free drafting.
 - **Workspace stats**, responsive layout for mobile/tablet, resizable panels.
+- **Admin Panel** — user management (block/unblock, promote admins) and deployment-wide AI key rotation gated by `ADMIN_EMAIL`.
 - **Google Sign-In** — JWT-based session (`jose`). The database holds only account identity (`User`: Google id, email, OAuth tokens, admin/blocked flags) plus the deployment-wide `AppConfig`. On first login your local guest workspace is imported into your Drive automatically.
 - **Google Drive is the source of truth** — every workspace is a real folder under `NextNotePad.com/Workspaces/` in your Drive (with a `.workspace.json`), files and folders are real Drive items (language/encoding/hidden/lock metadata in Drive `appProperties`), and theme, editor settings, recent files, favorites and the active workspace live in `NextNotePad.com/.appConfig.json`. Content is fetched lazily when a file is opened; saves go straight to Drive, with a toolbar badge for Saving / Offline / Sync failed. Existing database-backed accounts are copied to Drive once, idempotently, on their next request (`src/lib/drive/legacyMigration.ts`).
 - **PWA-ready** — installable manifest + service worker (`public/sw.js`).
@@ -23,13 +28,14 @@ The UI deliberately avoids the "modern SaaS code editor" look — square corners
 | Layer | Choice |
 |---|---|
 | Framework | [Next.js 15](https://nextjs.org) (App Router), React 19, TypeScript |
-| Styling | Tailwind CSS 4, shadcn/ui (`radix-ui`), `next-themes` |
-| Editor | Monaco Editor (`@monaco-editor/react`) |
+| Styling | Tailwind CSS 4, shadcn/ui (`radix-ui`), custom Notepad++ styles |
+| Editor | Monaco Editor (`@monaco-editor/react` + `monaco-editor`) |
 | State | Zustand, TanStack React Query, TanStack React Virtual |
 | Forms | React Hook Form + Zod |
 | Database | PostgreSQL via Prisma 7 (`@prisma/client` + `@prisma/adapter-pg` driver adapter) — auth identity and deployment config only; workspace data lives in Google Drive |
 | Auth | Google OAuth 2.0 (`googleapis`) + JWT sessions (`jose`) |
-| Cloud sync | Google Drive API |
+| Cloud sync | Google Drive API v3 |
+| AI Text Engine | Google Gemini (`@google/genai`) & Claude via AgentRouter |
 | Import/export | JSZip, FileSaver, DOMPurify, `marked` (Markdown) |
 
 > ⚠️ This project pins **Next.js 15 / Prisma 7**, both recent major versions with breaking changes from their older, more widely-known APIs. See `AGENTS.md` — before making changes, read the matching guide under `node_modules/next/dist/docs/`.
@@ -63,6 +69,11 @@ cp .env.example .env.local
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | From Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client ID (Web application). Only required for sign-in/cloud sync — Guest Mode works without them. |
 | `GOOGLE_REDIRECT_URI` | Must exactly match an "Authorized redirect URI" on that OAuth client. Defaults to `http://localhost:3000/api/auth/google/callback`. |
 | `JWT_SECRET` | Signs session JWTs. Generate with `openssl rand -base64 32`. |
+| `GEMINI_API_KEY` | Google Gemini API key for AI text utilities. Free tier at Google AI Studio. |
+| `GEMINI_MODEL` | Optional Gemini model ID (e.g. `gemini-2.5-flash`). |
+| `AGENTROUTER_API_KEY` | AgentRouter API key for Claude integration. |
+| `CLAUDE_MODEL` | Model ID for AgentRouter Claude integration (e.g. `claude-3-5-sonnet`). |
+| `ADMIN_EMAIL` | Account email granted deployment admin privileges (Admin panel + runtime AI config). |
 
 ### 3. Set up the database
 
@@ -86,8 +97,13 @@ Open [http://localhost:3000](http://localhost:3000).
 | `npm run build` | Production build |
 | `npm start` | Start the production server (after `build`) |
 | `npm run lint` | ESLint |
-| `npx tsc --noEmit` | Type-check |
-| `npx prisma studio` | Browse the database |
+| `npm run format` | Format files with Prettier |
+| `npm run format:check` | Check code formatting |
+| `npm run test:text-tools` | Run text utilities unit tests |
+| `npm run test:drive` | Run Google Drive migration & service test suite |
+| `npm run test:drive-cache` | Run Drive caching benchmarks & tests |
+| `npx tsc --noEmit` | Type-check TypeScript files |
+| `npx prisma studio` | Browse the database UI |
 
 ## Project structure
 
@@ -95,38 +111,44 @@ Open [http://localhost:3000](http://localhost:3000).
 src/
   app/
     api/
-      auth/         Google OAuth login/callback, session (/me), logout
-      files/         File CRUD
-      folders/        Folder CRUD
-      workspace/      Workspace fetch + guest-workspace import
-      settings/        Per-user editor settings
-    page.tsx           App shell
+      admin/          Admin user management & deployment-wide AI config
+      ai/             Streaming AI endpoints (correct grammar, markdown, prompt)
+      auth/           Google OAuth login/callback, session (/me), logout
+      files/          File CRUD in Google Drive
+      folders/        Folder CRUD in Google Drive
+      workspaces/     Workspace tree listing, switching, CRUD
+      settings/       Settings sync
+    layout.tsx        Root layout, SEO metadata, JSON-LD schema
+    page.tsx          App shell with client-side bootstrap
   components/
-    editor/            Monaco wrapper, tabs
-    explorer/           File/folder tree
-    menu/               Notepad++-style top menu bar (File/Edit/Search/View/...)
-    panels/             Resizable layout panels
-    search/             Find & replace, Quick Open, Command Palette
-    settings/            Settings dialog
-    trash/               Recycle bin UI
-    dialogs/ auth/ pwa/  Misc dialogs, sign-in UI, PWA install prompt
-    ui/                  shadcn/ui primitives
+    admin/            Admin panel & AI configuration UI
+    editor/           Monaco wrapper, tabs, split editor, diff viewer, markdown preview
+    explorer/         File/folder tree & context menus
+    layout/           AppShell, Notepad++ MenuBar, StatusBar, ResizablePanels, ToolsNavRail
+    menu/             Top menus (File, Edit, Search, View, Language, Encoding, Tools, Window, Help)
+    panels/           BottomPanel (Find in Files results, Recycle Bin)
+    search/           Find & replace, Quick Open, Command Palette
+    settings/         Settings dialog (General, Themes, Editor, AI Config)
+    trash/            Recycle bin UI
+    dialogs/ auth/    Workspace stats, Export/Import, Lock/Unlock, Auth dialogs
+    ui/               shadcn/ui and Radix UI primitives
   services/
-    storage/            Active repository abstraction (guest vs. cloud mode)
-    auth/                Guest → cloud workspace migration
-    exportImport/         Zip export/import
-    formatting/          JSON/XML/HTML/CSS/JS formatters
-    search/               Search/replace engine
-    shortcuts/            Keyboard shortcut → action registry
+    storage/          Active repository abstraction (guest IndexedDB vs. cloud Drive)
+    textTools/        Text processing utilities (dedupe, sort, case, hashing)
+    formatting/       JSON/XML/HTML/CSS/JS formatters
+    exportImport/     Zip export/import
+    search/           Search/replace engine
+    shortcuts/        Keyboard shortcut registry
   lib/
-    drive/               DriveService, AppConfigService (.appConfig.json), workspace tree, legacy migration
-    auth/                 JWT/session helpers
-    monaco/themes/         9 editor color themes
-    db/                    Prisma client singleton
-  store/                 Zustand stores
-  generated/prisma/      Generated Prisma client (do not edit)
+    ai/               Gemini & Claude text streaming providers
+    drive/            DriveService, AppConfigService (.appConfig.json), tree cache, legacy migration
+    auth/             Google OAuth & JWT session helpers
+    monaco/themes/    9 editor color themes (including authentic Notepad++)
+    db/               Prisma client singleton with pg.Pool
+  store/              Zustand stores (workspace, tabs, auth, settings, ui, trash)
+  generated/prisma/   Generated Prisma client (do not edit)
 prisma/
-  schema.prisma          User / Workspace / Folder / File / SyncFailure / UserSettings
+  schema.prisma       User (auth identity) and AppConfig (AI configuration)
 ```
 
 ## Data model
