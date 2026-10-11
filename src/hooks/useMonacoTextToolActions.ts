@@ -15,6 +15,11 @@ import {
   sortLinesAscending,
   sortLinesDescending,
   removeDuplicateLines,
+  reverseLines,
+  shuffleLines,
+  addLineNumbers,
+  removeLineNumbers,
+  joinLines,
   trimTrailingWhitespace,
   collapseBlankLines,
   tabsToSpaces,
@@ -34,7 +39,10 @@ import {
   binaryToDecimal,
   hexToRgb,
   rgbToHex,
+  hexToHsl,
+  hslToHex,
   slugify,
+  rot13,
 } from "@/services/textTools/textTools";
 
 interface UseMonacoTextToolActionsParams {
@@ -117,10 +125,14 @@ function reportTextStats(editor: MonacoEditorNS.IStandaloneCodeEditor): void {
     toast.error("Open a file first to count its content.");
     return;
   }
-  const { characters, charactersNoSpaces, words, lines } =
+  const { characters, charactersNoSpaces, words, lines, readingTimeSecs } =
     computeTextStats(text);
+  const mins = Math.floor(readingTimeSecs / 60);
+  const secs = readingTimeSecs % 60;
+  const readTime =
+    mins > 0 ? `~${mins}m ${secs}s read` : `~${secs}s read`;
   toast.success(
-    `${words} words, ${characters} chars (${charactersNoSpaces} w/o spaces), ${lines} lines.`,
+    `${words} words, ${characters} chars (${charactersNoSpaces} w/o spaces), ${lines} lines. ${readTime}`,
   );
 }
 
@@ -676,6 +688,118 @@ export function useMonacoTextToolActions({
           slugify,
           "Slugified.",
           "Couldn't slugify this content.",
+        );
+    },
+    [registerGlobalActions],
+  );
+
+  useRegisterAction(
+    "tools.lines.reverse",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(
+          editorRef.current,
+          reverseLines,
+          "Lines reversed.",
+          "Couldn't reverse lines.",
+          { expandSelectionToFullLines: true },
+        );
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.lines.shuffle",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(
+          editorRef.current,
+          shuffleLines,
+          "Lines shuffled.",
+          "Couldn't shuffle lines.",
+          { expandSelectionToFullLines: true },
+        );
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.lines.addNumbers",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(
+          editorRef.current,
+          addLineNumbers,
+          "Line numbers added.",
+          "Couldn't add line numbers.",
+          { expandSelectionToFullLines: true },
+        );
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.lines.removeNumbers",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(
+          editorRef.current,
+          removeLineNumbers,
+          "Line numbers removed.",
+          "Couldn't remove line numbers.",
+          { expandSelectionToFullLines: true },
+        );
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.lines.join",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(
+          editorRef.current,
+          joinLines,
+          "Lines joined.",
+          "Couldn't join lines.",
+          { expandSelectionToFullLines: true },
+        );
+    },
+    [registerGlobalActions],
+  );
+
+  useRegisterAction(
+    "tools.rot13",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(
+          editorRef.current,
+          rot13,
+          "ROT13 applied.",
+          "Couldn't apply ROT13.",
+        );
+    },
+    [registerGlobalActions],
+  );
+
+  useRegisterAction(
+    "tools.color.hexToHsl",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(
+          editorRef.current,
+          hexToHsl,
+          "Converted to HSL.",
+          "Couldn't convert — not a valid hex color.",
+        );
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "tools.color.hslToHex",
+    () => {
+      if (registerGlobalActions && editorRef.current)
+        transformActiveEditor(
+          editorRef.current,
+          hslToHex,
+          "Converted to hex.",
+          "Couldn't convert — not a valid hsl() color.",
         );
     },
     [registerGlobalActions],
