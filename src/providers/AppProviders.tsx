@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeApplier } from "./ThemeApplier";
 import { ServiceWorkerRegistration } from "./ServiceWorkerRegistration";
+import { AppLockManager } from "@/components/lock/AppLockManager";
 
 export function AppProviders({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -20,6 +21,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       <TooltipProvider delayDuration={400}>
         <ThemeApplier />
         <ServiceWorkerRegistration />
+        <AppLockManager />
         {children}
         <Toaster position="bottom-right" richColors closeButton />
       </TooltipProvider>

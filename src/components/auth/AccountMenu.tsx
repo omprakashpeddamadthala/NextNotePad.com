@@ -8,6 +8,8 @@ import {
   Loader2,
   ShieldCheck,
   Bot,
+  Lock,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +23,8 @@ import {
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/authStore";
 import { useAdminViewStore } from "@/store/adminViewStore";
+import { useLockStore } from "@/store/lockStore";
+import { useDialogStore } from "@/store/dialogStore";
 import { syncFromDrive } from "@/services/driveImport";
 import { fetchOk } from "@/lib/api/fetchJson";
 
@@ -154,6 +158,17 @@ export function AccountMenu() {
             </DropdownMenuItem>
           </>
         )}
+        <DropdownMenuSeparator />
+        {useLockStore.getState().enabled && (
+          <DropdownMenuItem onSelect={() => void useLockStore.getState().lock()}>
+            <Lock /> Lock Application
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem
+          onSelect={() => useDialogStore.getState().openDialog("settings")}
+        >
+          <Shield /> Password Lock &amp; Security
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => void handleSignOut()}>
           <LogOut /> Sign Out

@@ -3,15 +3,18 @@
 import { useSyncExternalStore } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { PasswordLockScreen } from "@/components/lock/PasswordLockScreen";
+import { useLockStore } from "@/store/lockStore";
+import { AppLogo } from "@/components/ui/AppLogo";
+import { APP_BRAND } from "@/lib/constants/branding";
 
 function subscribeNever() {
   return () => {};
 }
 
-import { AppLogo } from "@/components/ui/AppLogo";
-import { APP_BRAND } from "@/lib/constants/branding";
-
 export default function Home() {
+  const isLocked = useLockStore((s) => s.isLocked);
+
   const mounted = useSyncExternalStore(
     subscribeNever,
     () => true,
@@ -45,6 +48,14 @@ export default function Home() {
           </div>
         </div>
       </div>
+    );
+  }
+
+  if (isLocked) {
+    return (
+      <ErrorBoundary>
+        <PasswordLockScreen />
+      </ErrorBoundary>
     );
   }
 

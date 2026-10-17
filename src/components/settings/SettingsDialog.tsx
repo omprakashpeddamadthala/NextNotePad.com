@@ -11,6 +11,7 @@ import { useSettingsStore } from "@/store/settingsStore";
 import { GeneralSettingsTab } from "./GeneralSettingsTab";
 import { EditorSettingsTab } from "./EditorSettingsTab";
 import { ThemesSettingsTab } from "./ThemesSettingsTab";
+import { SecuritySettingsTab } from "./SecuritySettingsTab";
 import {
   Palette,
   Settings2,
@@ -18,12 +19,13 @@ import {
   Code2,
   RotateCcw,
   X,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-type SettingsTabKey = "general" | "editor" | "themes";
+type SettingsTabKey = "general" | "editor" | "themes" | "security";
 
 interface TabItem {
   id: SettingsTabKey;
@@ -51,6 +53,12 @@ const TABS: TabItem[] = [
     label: "Themes",
     subtitle: "Appearance & color schemes",
     icon: Palette,
+  },
+  {
+    id: "security",
+    label: "Security",
+    subtitle: "Password lock & privacy",
+    icon: Shield,
   },
 ];
 
@@ -203,6 +211,7 @@ export function SettingsDialog() {
               {activeTab === "general" && <GeneralSettingsTab />}
               {activeTab === "editor" && <EditorSettingsTab />}
               {activeTab === "themes" && <ThemesSettingsTab />}
+              {activeTab === "security" && <SecuritySettingsTab />}
             </div>
           </main>
         </div>

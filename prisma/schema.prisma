@@ -39,6 +39,17 @@ model User {
   // next request, no re-login needed.
   blocked Boolean @default(false)
 
+  // Application Password Lock settings & state
+  lockEnabled            Boolean   @default(false)
+  lockPasswordHash       String?
+  lockPasswordSalt       String?
+  lockPolicy             String    @default("next_visit") // 'next_visit' | 'new_day' | 'immediate'
+  lockPwaOnResume        Boolean   @default(true)
+  lockAutoTimeoutMinutes Int       @default(0) // 0 = disabled
+  lockLastUnlockedAt     DateTime?
+  lockFailedAttempts     Int       @default(0)
+  lockLockedUntil        DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
