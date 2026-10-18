@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { getSessionUser } from "@/lib/auth/session";
+import { isUserLocked } from "@/lib/lock/lockService";
 import { getDriveClientForUser } from "./driveClient";
 import { DriveNotFoundError, DriveService } from "./driveService";
 import { ensureLegacyMigrated } from "./legacyMigration";
@@ -12,6 +14,11 @@ import {
 export async function getDriveSession() {
   const user = await getSessionUser();
   if (!user) return null;
+  const cookieStore = await cookies();
+  const lockStatus = await isUserLocked(user, cookieStore);
+  if (lockStatus.isLocked) {
+    throw new AppError("Application is locked. Unlock required.", 423);
+  }
   const ds = new DriveService(getDriveClientForUser(user), user.id);
   await ensureLegacyMigrated(ds);
   return { user, ds };
@@ -44,7 +51,10 @@ function googleStatus(err: unknown): number | null {
 
 export function driveErrorResponse(err: unknown, action: string) {
   if (err instanceof AppError)
-    return NextResponse.json({ error: err.message }, { status: err.status });
+    return NextResponse.json(
+      { error: err.message, locked: err.status === 423 },
+      { status: err.status },
+    );
   if (err instanceof DriveNotFoundError)
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   const status = googleStatus(err);

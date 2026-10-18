@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useAuthStore, type AuthUser } from "@/store/authStore";
+import { useLockStore, type LockConfig } from "@/store/lockStore";
 import { useMultiWorkspaceStore } from "@/store/multiWorkspaceStore";
 import { fetchJson, ApiError } from "@/lib/api/fetchJson";
 import { migrateOrLoadCloudWorkspace } from "@/services/auth/migrateGuestWorkspace";
@@ -17,6 +18,24 @@ import {
 import * as cloudRepo from "@/services/storage/cloudWorkspaceRepository";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import type { WorkspaceNode } from "@/types/file";
+
+export async function initUserWorkspace(user: AuthUser): Promise<void> {
+  useAuthStore.getState().setAuthenticated(user);
+  configureDriveDataClient(user.id);
+  await loadWorkspaceData(user.id);
+}
+
+interface AuthMeResponse {
+  authenticated?: boolean;
+  locked?: boolean;
+  lock?: LockConfig & { isLocked: boolean };
+  user?: AuthUser | null;
+  id?: string;
+  email?: string;
+  name?: string | null;
+  avatarUrl?: string | null;
+  isAdmin?: boolean;
+}
 
 export function useAuthBootstrap(): void {
   const ranRef = useRef(false);
@@ -60,15 +79,20 @@ export function useAuthBootstrap(): void {
 
     (async () => {
       try {
-        const data = await fetchJson<
-          | ({
-              authenticated?: boolean;
-              user?: AuthUser | null;
-            } & Partial<AuthUser>)
-          | null
-        >("/api/auth/me", {
+        const data = await fetchJson<AuthMeResponse | null>("/api/auth/me", {
           action: "Check session",
         });
+
+        if (data?.lock) {
+          useLockStore.getState().setLockConfig(data.lock);
+        }
+
+        // If locked, halt loading immediately. No workspace data, no cached nodes,
+        // and no user details are exposed until the user enters their lock password.
+        if (data?.locked || data?.lock?.isLocked) {
+          useLockStore.getState().setLocked(true);
+          return;
+        }
 
         const user: AuthUser | null =
           data?.user ?? (data?.id && data?.email ? (data as AuthUser) : null);
@@ -78,9 +102,7 @@ export function useAuthBootstrap(): void {
           return;
         }
 
-        useAuthStore.getState().setAuthenticated(user);
-        configureDriveDataClient(user.id);
-        await loadWorkspaceData(user.id);
+        await initUserWorkspace(user);
       } catch (err) {
         if (!(err instanceof ApiError) || err.status !== 401) {
           console.error("Auth check failed:", err);

@@ -1,4 +1,6 @@
+import { cookies } from "next/headers";
 import { getSessionUser } from "./session";
+import { isUserLocked } from "@/lib/lock/lockService";
 
 const ADMIN_EMAIL_DEFAULT = "omprakashornold@gmail.com";
 
@@ -15,6 +17,10 @@ export async function getAdminUser() {
   const user = await getSessionUser();
   if (!user) return null;
   if (!isBootstrapAdmin(user.email) && !user.isAdmin) return null;
+
+  const cookieStore = await cookies();
+  const lockStatus = await isUserLocked(user, cookieStore);
+  if (lockStatus.isLocked) return null;
 
   return user;
 }

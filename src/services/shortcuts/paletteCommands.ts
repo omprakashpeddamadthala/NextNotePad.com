@@ -34,10 +34,12 @@ import {
   WrapText,
   RotateCcw,
   Shield,
+  Lock,
   type LucideIcon,
 } from "lucide-react";
 import { useDialogStore } from "@/store/dialogStore";
 import { useSettingsStore } from "@/store/settingsStore";
+import { useLockStore } from "@/store/lockStore";
 import { SHORTCUTS } from "@/lib/constants/shortcuts";
 import { runAction } from "@/services/shortcuts/actionRegistry";
 import { THEME_ORDER } from "@/lib/constants/themes";
@@ -101,6 +103,21 @@ function buildCommands(): PaletteCommand[] {
       category: "Settings",
       icon: Settings,
       run: () => useDialogStore.getState().openDialog("settings"),
+    },
+    {
+      id: "lock-application",
+      label: "Lock Application",
+      category: "Settings",
+      icon: Lock,
+      shortcut: "Ctrl+Alt+L",
+      run: () => {
+        const lockStore = useLockStore.getState();
+        if (lockStore.enabled) {
+          void lockStore.lock();
+        } else {
+          useDialogStore.getState().openDialog("settings");
+        }
+      },
     },
     {
       id: "empty-trash",

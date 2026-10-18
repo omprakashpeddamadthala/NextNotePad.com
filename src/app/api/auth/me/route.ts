@@ -1,16 +1,44 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { getSessionUser } from "@/lib/auth/session";
 import { isBootstrapAdmin } from "@/lib/auth/admin";
 import { signSessionToken, SESSION_COOKIE_NAME, SESSION_TTL_SECONDS } from "@/lib/auth/jwt";
+import { isUserLocked, getUserLockRecord } from "@/lib/lock/lockService";
 
 export async function GET() {
   try {
     const user = await getSessionUser();
     if (!user) {
       return NextResponse.json(
-        { authenticated: false, user: null },
+        { authenticated: false, user: null, locked: false },
         { status: 200 },
       );
+    }
+
+    const [record, cookieStore] = await Promise.all([
+      getUserLockRecord(user.id),
+      cookies(),
+    ]);
+
+    const lockStatus = await isUserLocked(user, cookieStore);
+
+    const lockInfo = {
+      enabled: record?.lockEnabled ?? false,
+      isLocked: lockStatus.isLocked,
+      policy: record?.lockPolicy || "next_visit",
+      pwaOnResume: record?.pwaOnResume ?? true,
+      autoTimeoutMinutes: record?.autoTimeoutMinutes ?? 0,
+    };
+
+    // When the application is locked, do NOT return any sensitive user details
+    // (email, name, avatar, etc.) to the client.
+    if (lockStatus.isLocked) {
+      return NextResponse.json({
+        authenticated: true,
+        locked: true,
+        lock: lockInfo,
+        user: null,
+      });
     }
 
     const authUser = {
@@ -23,6 +51,8 @@ export async function GET() {
 
     const response = NextResponse.json({
       authenticated: true,
+      locked: false,
+      lock: lockInfo,
       user: authUser,
       ...authUser,
     });

@@ -6,6 +6,7 @@ import { useWorkspaceStore } from "@/store/workspaceStore";
 import { getActiveRepository } from "@/services/storage/activeRepository";
 import * as modelRegistry from "@/lib/monaco/modelRegistry";
 import { useAuthStore } from "@/store/authStore";
+import { useLockStore } from "@/store/lockStore";
 import { useSyncStatusStore } from "@/store/syncStatusStore";
 
 const AUTO_SYNC_INTERVAL_MS = 5000;
@@ -18,6 +19,7 @@ export function useAutoSyncNotes(): void {
   useEffect(() => {
     async function syncDirtyNotes() {
       if (isSyncingRef.current) return;
+      if (useLockStore.getState().isLocked) return;
       isSyncingRef.current = true;
 
       try {

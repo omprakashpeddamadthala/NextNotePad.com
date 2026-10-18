@@ -1,13 +1,17 @@
 "use client";
 
-import { AppWindow } from "lucide-react";
+import { AppWindow, Lock } from "lucide-react";
 import { TopMenu } from "./TopMenu";
 import {
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
 } from "@/components/ui/dropdown-menu";
 import { useTabsStore } from "@/store/tabsStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
+import { useLockStore } from "@/store/lockStore";
+import { useDialogStore } from "@/store/dialogStore";
 
 export function WindowMenu() {
   const tabs = useTabsStore((s) => s.tabs);
@@ -17,6 +21,20 @@ export function WindowMenu() {
 
   return (
     <TopMenu label="Window">
+      <DropdownMenuItem
+        onSelect={() => {
+          const lockStore = useLockStore.getState();
+          if (lockStore.enabled) {
+            void lockStore.lock();
+          } else {
+            useDialogStore.getState().openDialog("settings");
+          }
+        }}
+      >
+        <Lock /> Lock Application
+        <DropdownMenuShortcut>Ctrl+Alt+L</DropdownMenuShortcut>
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
       {tabs.length === 0 && (
         <DropdownMenuLabel className="text-muted-foreground font-normal">
           No open windows

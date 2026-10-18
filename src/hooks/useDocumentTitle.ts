@@ -3,9 +3,11 @@
 import { useEffect } from "react";
 import { useTabsStore } from "@/store/tabsStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
+import { useLockStore } from "@/store/lockStore";
 import { APP_BRAND } from "@/lib/constants/branding";
 
 export function useDocumentTitle(): void {
+  const isLocked = useLockStore((s) => s.isLocked);
   const tabs = useTabsStore((s) => s.tabs);
   const activeTabId = useTabsStore((s) => s.activeTabId);
   const dirtyTabIds = useTabsStore((s) => s.dirtyTabIds);
@@ -13,6 +15,11 @@ export function useDocumentTitle(): void {
 
   useEffect(() => {
     if (typeof document === "undefined") return;
+
+    if (isLocked) {
+      document.title = `${APP_BRAND.name} — Locked`;
+      return;
+    }
 
     const activeTab = tabs.find((t) => t.id === activeTabId);
     if (!activeTab) {
@@ -25,5 +32,5 @@ export function useDocumentTitle(): void {
     const isDirty = Boolean(dirtyTabIds[activeTab.id]);
 
     document.title = `${isDirty ? "● " : ""}${name} — ${APP_BRAND.name}`;
-  }, [tabs, activeTabId, dirtyTabIds, nodes]);
+  }, [isLocked, tabs, activeTabId, dirtyTabIds, nodes]);
 }
