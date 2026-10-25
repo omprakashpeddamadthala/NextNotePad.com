@@ -47,7 +47,7 @@ const pendingContent = new Map<string, string>();
 
 const state = () => useLocalMirrorStore.getState();
 
-export function isLocalMirrorSupported(): boolean {
+function isLocalMirrorSupported(): boolean {
   return typeof window !== "undefined" && "showDirectoryPicker" in window;
 }
 

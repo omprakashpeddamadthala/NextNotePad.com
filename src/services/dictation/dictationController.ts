@@ -32,7 +32,7 @@ function getCtor(): (new () => SpeechRecognition) | null {
   return window.SpeechRecognition ?? window.webkitSpeechRecognition ?? null;
 }
 
-export function isDictationSupported(): boolean {
+function isDictationSupported(): boolean {
   return getCtor() !== null;
 }
 

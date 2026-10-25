@@ -3,3 +3,6 @@ node_modules
 out
 build
 src/generated
+.kilo
+_bmad-output
+.claude

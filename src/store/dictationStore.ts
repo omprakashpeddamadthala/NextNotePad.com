@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type DictationPhase = "idle" | "listening" | "polishing";
+type DictationPhase = "idle" | "listening" | "polishing";
 
 /** "hold": push-to-talk, ends on key release. "handsfree": ends on demand. */
 export type DictationMode = "hold" | "handsfree";

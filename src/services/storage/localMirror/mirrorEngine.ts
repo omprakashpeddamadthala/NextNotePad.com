@@ -15,7 +15,7 @@ const MANIFEST_SCHEMA_VERSION = 1;
 const WRITE_CONCURRENCY = 4;
 const MANIFEST_SAVE_EVERY = 25;
 
-export interface ManifestEntry {
+interface ManifestEntry {
   workspaceId: string;
   path: string;
   version: number;
@@ -331,7 +331,7 @@ function isNotFound(err: unknown): boolean {
   return name === "NotFoundError" || name === "TypeMismatchError";
 }
 
-export function isPermissionError(err: unknown): boolean {
+function isPermissionError(err: unknown): boolean {
   return (err as DOMException)?.name === "NotAllowedError";
 }
 

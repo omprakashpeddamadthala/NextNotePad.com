@@ -38,30 +38,21 @@ export function getTodayDateString(): string {
 
 const SESSION_STORAGE_KEY = "np_unlocked_session";
 
-export function isSessionUnlocked(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    return window.sessionStorage.getItem(SESSION_STORAGE_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-export function markSessionUnlocked(): void {
+function markSessionUnlocked(): void {
   if (typeof window === "undefined") return;
   try {
     window.sessionStorage.setItem(SESSION_STORAGE_KEY, "1");
   } catch {}
 }
 
-export function clearSessionUnlocked(): void {
+function clearSessionUnlocked(): void {
   if (typeof window === "undefined") return;
   try {
     window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
   } catch {}
 }
 
-export const useLockStore = create<LockState>()((set, get) => ({
+export const useLockStore = create<LockState>()((set) => ({
   enabled: false,
   isLocked: false,
   policy: "next_visit",
