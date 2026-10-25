@@ -1,7 +1,16 @@
 import crypto from "node:crypto";
-import { promisify } from "node:util";
 
-const scryptAsync = promisify(crypto.scrypt);
+// `promisify(crypto.scrypt)` drops the overload that takes options, so wrap it by hand.
+function scryptAsync(
+  password: string,
+  salt: string,
+  keylen: number,
+  options: crypto.ScryptOptions,
+): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    crypto.scrypt(password, salt, keylen, options, (err, key) => (err ? reject(err) : resolve(key)));
+  });
+}
 
 // OWASP recommended scrypt parameters for password hashing:
 // N = 16384 (cost factor), r = 8 (block size), p = 1 (parallelization), keylen = 64 bytes
@@ -27,12 +36,12 @@ export async function hashLockPassword(password: string): Promise<PasswordHashRe
   // Generate 16 bytes (128 bits) of cryptographic random salt
   const salt = crypto.randomBytes(16).toString("hex");
 
-  const derivedKey = (await scryptAsync(password, salt, SCRYPT_KEYLEN, {
+  const derivedKey = await scryptAsync(password, salt, SCRYPT_KEYLEN, {
     N: SCRYPT_COST,
     r: SCRYPT_BLOCK_SIZE,
     p: SCRYPT_PARALLELIZATION,
     maxmem: 32 * 1024 * 1024,
-  })) as Buffer;
+  });
 
   return {
     hash: derivedKey.toString("hex"),
@@ -59,12 +68,12 @@ export async function verifyLockPassword(
   }
 
   try {
-    const derivedKey = (await scryptAsync(password, salt, SCRYPT_KEYLEN, {
+    const derivedKey = await scryptAsync(password, salt, SCRYPT_KEYLEN, {
       N: SCRYPT_COST,
       r: SCRYPT_BLOCK_SIZE,
       p: SCRYPT_PARALLELIZATION,
       maxmem: 32 * 1024 * 1024,
-    })) as Buffer;
+    });
 
     const storedBuffer = Buffer.from(storedHash, "hex");
 

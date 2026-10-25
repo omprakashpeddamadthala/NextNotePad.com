@@ -32,6 +32,9 @@ import { ApiLoadingBar } from "./ApiLoadingBar";
 import { CenterApiLoader } from "./CenterApiLoader";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useAutoSyncNotes } from "@/hooks/useAutoSyncNotes";
+import { useLocalMirror } from "@/hooks/useLocalMirror";
+import { useDictationHotkey } from "@/hooks/useDictationHotkey";
+import { DictationOverlay } from "@/components/editor/DictationOverlay";
 
 const SettingsDialog = dynamic(
   () =>
@@ -120,6 +123,8 @@ export function AppShell() {
   useAppBootstrap();
   useDocumentTitle();
   useAutoSyncNotes();
+  useLocalMirror();
+  useDictationHotkey();
 
   const sidebarVisible = useUIStore((s) => s.sidebarVisible);
   const bottomPanelVisible = useUIStore((s) => s.bottomPanelVisible);
@@ -139,6 +144,7 @@ export function AppShell() {
       <GlobalActionsRegistrar />
       <ApiLoadingBar />
       <CenterApiLoader />
+      <DictationOverlay />
 
       {isMobile ? (
         <>

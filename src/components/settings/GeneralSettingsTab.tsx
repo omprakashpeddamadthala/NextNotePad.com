@@ -4,6 +4,7 @@ import {
   History,
   FileCode2,
   Binary,
+  Mic,
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -17,6 +18,7 @@ import {
 import { useSettingsStore } from "@/store/settingsStore";
 import type { AutoSaveMode, EncodingName } from "@/types/settings";
 import { LANGUAGES } from "@/lib/constants/languages";
+import { LocalFolderSyncSection } from "./LocalFolderSyncSection";
 
 const AUTO_SAVE_OPTIONS: { value: AutoSaveMode; label: string; desc: string }[] = [
   { value: "off", label: "Off", desc: "No automatic saving" },
@@ -164,6 +166,40 @@ export function GeneralSettingsTab() {
           </div>
         </div>
       </div>
+
+      <div className="rounded-xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs backdrop-blur-xs">
+        <div className="mb-4 flex items-center gap-2.5 pb-3 border-b border-border/60">
+          <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <Mic className="size-4" />
+          </div>
+          <div>
+            <h4 className="text-sm font-semibold text-foreground">Voice Typing</h4>
+            <p className="text-xs text-muted-foreground">
+              Hold Alt+V to talk, release to finish. Tap it to talk hands-free.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-4 rounded-lg border border-border/50 bg-background/50 p-3.5 transition-colors hover:bg-muted/30">
+          <div className="space-y-0.5">
+            <Label htmlFor="dictation-auto-correct" className="text-sm font-medium cursor-pointer">
+              Auto-correct grammar
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Fixes grammar and capitalisation, removes filler words like “um”, and turns spoken
+              “comma”, “new line” or “scratch that” into edits. Runs offline in your browser — no
+              AI. Turn off to keep exactly what was heard.
+            </p>
+          </div>
+          <Switch
+            id="dictation-auto-correct"
+            checked={settings.dictationAutoCorrect !== false}
+            onCheckedChange={(v) => updateSettings({ dictationAutoCorrect: v })}
+          />
+        </div>
+      </div>
+
+      <LocalFolderSyncSection />
     </div>
   );
 }

@@ -18,6 +18,7 @@ import {
   updateCachedTreeNode,
   writeCachedFileContent,
 } from "./driveDataClient";
+import { notifyLocalMirrorContent } from "./localMirror/localMirrorService";
 
 export {
   getCachedDriveFileIndexSync,
@@ -51,6 +52,7 @@ export async function writeFileContent(
     content,
     node?.type === "file" ? node.version : undefined,
   );
+  notifyLocalMirrorContent(fileId, content);
 }
 
 export async function deleteFileContent(fileId: string): Promise<void> {
@@ -190,8 +192,10 @@ export async function patchCloudFile(
     action: "Update file",
     background: true,
   });
-  if (patch.content !== undefined)
+  if (patch.content !== undefined) {
     await writeCachedFileContent(fileId, patch.content, node.version);
+    notifyLocalMirrorContent(fileId, patch.content);
+  }
   if (
     patch.name !== undefined ||
     patch.parentId !== undefined ||

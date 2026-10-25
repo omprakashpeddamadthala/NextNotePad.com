@@ -1,43 +1,25 @@
 "use client";
 
 import { Mic } from "lucide-react";
-import { toast } from "sonner";
 import { ToolbarButton } from "@/components/layout/ToolbarButton";
-import { useSpeechDictation } from "@/hooks/useSpeechDictation";
-import { useEditorInsertStore } from "@/store/editorInsertStore";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { useDictationStore } from "@/store/dictationStore";
+import { toggleDictation } from "@/services/dictation/dictationController";
+import { DICTATION_HOTKEY_LABEL } from "@/hooks/useDictationHotkey";
 
 export function VoiceDictationButton({
   variant = "toolbar",
 }: {
   variant?: "toolbar" | "menu";
 }) {
-  const { start, stop, listening, isSupported } = useSpeechDictation({
-    onResult: (text) => useEditorInsertStore.getState().insertFn?.(text),
-    onError: (message) => toast.error(`Voice input error: ${message}`),
-  });
-
-  function handleClick() {
-    if (!isSupported) {
-      toast.error(
-        "Voice typing isn't supported in this browser — try Chrome or Edge.",
-      );
-      return;
-    }
-    if (listening) {
-      stop();
-      return;
-    }
-    if (!useEditorInsertStore.getState().insertFn) {
-      toast.error("Open a file first to dictate into it.");
-      return;
-    }
-    start();
-  }
+  const listening = useDictationStore((s) => s.phase === "listening");
+  const label = listening
+    ? "Stop & Insert Voice Typing"
+    : `Voice Typing (hold ${DICTATION_HOTKEY_LABEL})`;
 
   if (variant === "menu") {
     return (
-      <DropdownMenuItem onSelect={handleClick}>
+      <DropdownMenuItem onSelect={() => toggleDictation()}>
         <Mic /> {listening ? "Stop Voice Typing" : "Voice Typing"}
       </DropdownMenuItem>
     );
@@ -46,9 +28,9 @@ export function VoiceDictationButton({
   return (
     <ToolbarButton
       icon={Mic}
-      label={listening ? "Stop Voice Typing" : "Voice Typing"}
+      label={label}
       active={listening}
-      onClick={handleClick}
+      onClick={() => toggleDictation()}
     />
   );
 }

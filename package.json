@@ -15,7 +15,9 @@
     "test:drive": "tsx scripts/drive-test/run.ts",
     "test:drive-cache": "tsx scripts/drive-cache-test.ts",
     "test:text-tools": "tsx --test src/services/textTools/textTools.test.ts",
-    "test:lock": "tsx --test src/lib/lock/lock.test.ts"
+    "test:lock": "tsx --test src/lib/lock/lock.test.ts",
+    "test:local-mirror": "tsx --test src/services/storage/localMirror/localMirror.test.ts",
+    "test:dictation": "tsx --test src/services/dictation/dictation.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.18.0",
@@ -32,6 +34,7 @@
     "dompurify": "^3.4.13",
     "file-saver": "^2.0.5",
     "googleapis": "^174.0.0",
+    "harper.js": "^2.13.0",
     "idb-keyval": "^6.3.0",
     "jose": "^6.2.8",
     "jszip": "^3.10.1",
