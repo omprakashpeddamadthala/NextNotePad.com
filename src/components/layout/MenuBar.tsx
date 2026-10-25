@@ -26,6 +26,7 @@ import { SyncStatusBadge } from "@/components/auth/SyncStatusBadge";
 import { InstallAppButton } from "@/components/pwa/InstallAppButton";
 import { AppLogo } from "@/components/ui/AppLogo";
 import { ToolbarButton } from "./ToolbarButton";
+import { VoiceDictationButton } from "@/components/editor/VoiceDictationButton";
 import { useDialogStore } from "@/store/dialogStore";
 import {
   Tooltip,
@@ -160,6 +161,7 @@ export function MenuBar() {
             </TooltipContent>
           </Tooltip>
 
+          <VoiceDictationButton />
           <ToolbarButton
             icon={Settings2}
             label="Open Settings"

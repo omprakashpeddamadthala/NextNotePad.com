@@ -682,3 +682,18 @@
   background-color: rgba(239, 68, 68, 0.18) !important;
   color: #ef4444 !important;
 }
+
+/* Voice typing: words still being heard, then words waiting for AI cleanup. */
+.monaco-editor .nnp-dictation-live {
+  opacity: 0.7;
+  text-decoration: underline dotted rgba(239, 68, 68, 0.7);
+  text-underline-offset: 3px;
+}
+.monaco-editor .nnp-dictation-pending {
+  animation: nnp-dictation-pulse 1.2s ease-in-out infinite;
+}
+@keyframes nnp-dictation-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}

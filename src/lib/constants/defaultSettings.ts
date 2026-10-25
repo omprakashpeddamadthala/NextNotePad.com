@@ -18,6 +18,7 @@ export const DEFAULT_SETTINGS: EditorSettings = {
   autoClosingBrackets: true,
   zoomLevel: 0,
   aiProvider: "gemini",
+  dictationAutoCorrect: true,
 };
 
 export const AUTO_SAVE_INTERVALS_MS: Record<string, number> = {

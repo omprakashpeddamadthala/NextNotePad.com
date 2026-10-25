@@ -35,4 +35,6 @@ export interface EditorSettings {
   autoClosingBrackets: boolean;
   zoomLevel: number;
   aiProvider: AiProvider;
+  /** Auto-correct voice typing (grammar, fillers, spoken punctuation). */
+  dictationAutoCorrect: boolean;
 }

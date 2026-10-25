@@ -148,10 +148,10 @@ export function EditorWelcome() {
     {
       icon: Mic,
       title: "Voice Dictation",
-      description: "Speak to write notes and documentation directly into the editor using speech-to-text.",
+      description: "Hold Alt+V and speak — your words type live at the cursor, then grammar and filler words are fixed automatically, offline.",
       badge: "Speech-to-Text",
       badgeClass: "border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300",
-      action: () => toast.info("Click the microphone button on any open file tab to start dictation."),
+      action: () => toast.info("Open a file, then hold Alt+V (or click the mic in the top bar) and speak."),
     },
     {
       icon: Smartphone,
