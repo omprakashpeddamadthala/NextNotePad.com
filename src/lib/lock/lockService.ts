@@ -37,7 +37,7 @@ let schemaEnsured = false;
  * Idempotently ensures the password lock database columns exist on the User table.
  * Uses individual native ALTER TABLE statements compatible with PostgreSQL and SQLite.
  */
-export async function ensureLockSchema(): Promise<void> {
+async function ensureLockSchema(): Promise<void> {
   if (schemaEnsured) return;
 
   const runSql = async (sql: string) => {
