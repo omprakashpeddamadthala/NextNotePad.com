@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getSessionUser } from "@/lib/auth/session";
-import { isBootstrapAdmin } from "@/lib/auth/admin";
 import { signSessionToken, SESSION_COOKIE_NAME, SESSION_TTL_SECONDS } from "@/lib/auth/jwt";
 import { isUserLocked, getUserLockRecord } from "@/lib/lock/lockService";
+import { toAuthUser, toLockInfo } from "@/lib/lock/lockHttp";
 
 export async function GET() {
   try {
@@ -20,15 +20,8 @@ export async function GET() {
       cookies(),
     ]);
 
-    const lockStatus = await isUserLocked(user, cookieStore);
-
-    const lockInfo = {
-      enabled: record?.lockEnabled ?? false,
-      isLocked: lockStatus.isLocked,
-      policy: record?.lockPolicy || "next_visit",
-      pwaOnResume: record?.lockPwaOnResume ?? true,
-      autoTimeoutMinutes: record?.lockAutoTimeoutMinutes ?? 0,
-    };
+    const lockStatus = await isUserLocked(user, cookieStore, record);
+    const lockInfo = toLockInfo(record, lockStatus.isLocked);
 
     // When the application is locked, do NOT return any sensitive user details
     // (email, name, avatar, etc.) to the client.
@@ -41,13 +34,7 @@ export async function GET() {
       });
     }
 
-    const authUser = {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      avatarUrl: user.avatarUrl,
-      isAdmin: Boolean(user.isAdmin || isBootstrapAdmin(user.email)),
-    };
+    const authUser = toAuthUser(user);
 
     const response = NextResponse.json({
       authenticated: true,
@@ -66,7 +53,9 @@ export async function GET() {
         maxAge: SESSION_TTL_SECONDS,
         path: "/",
       });
-    } catch {
+    } catch (err) {
+      // Refreshing the sliding session is best-effort; the current cookie is still valid.
+      console.warn("[api/auth/me] Could not refresh session cookie:", err);
     }
 
     return response;

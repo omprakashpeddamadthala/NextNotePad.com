@@ -45,7 +45,10 @@ import { runAction } from "@/services/shortcuts/actionRegistry";
 import { THEME_ORDER } from "@/lib/constants/themes";
 import { THEME_MODULES } from "@/lib/monaco/themes";
 import { emptyTrash } from "@/services/fileOperations";
-import { HASH_ALGORITHMS } from "@/services/textTools/textTools";
+import {
+  CASE_CONVERTER_OPTIONS,
+  HASH_ALGORITHMS,
+} from "@/services/textTools/textTools";
 
 export interface PaletteCommand {
   id: string;
@@ -55,18 +58,6 @@ export interface PaletteCommand {
   icon?: LucideIcon;
   run: () => void;
 }
-
-const CASE_COMMANDS: { id: string; label: string }[] = [
-  { id: "upper", label: "UPPERCASE" },
-  { id: "lower", label: "lowercase" },
-  { id: "title", label: "Title Case" },
-  { id: "sentence", label: "Sentence case" },
-  { id: "camel", label: "camelCase" },
-  { id: "pascal", label: "PascalCase" },
-  { id: "snake", label: "snake_case" },
-  { id: "kebab", label: "kebab-case" },
-  { id: "constant", label: "CONSTANT_CASE" },
-];
 
 const CATEGORY_ORDER = ["File", "Edit", "Search", "View", "Window", "Tools", "Theme", "Settings", "Help", "Developer"];
 
@@ -175,7 +166,7 @@ function buildCommands(): PaletteCommand[] {
       icon: Link2,
       run: () => runAction("tools.urlDecode"),
     },
-    ...CASE_COMMANDS.map((c) => ({
+    ...CASE_CONVERTER_OPTIONS.map((c) => ({
       id: `tools-case-${c.id}`,
       label: `Tools: Case — ${c.label}`,
       category: "Tools",

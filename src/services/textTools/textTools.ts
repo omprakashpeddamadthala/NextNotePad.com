@@ -125,6 +125,27 @@ export const caseConverters = {
 
 export type CaseConverterId = keyof typeof caseConverters;
 
+const CASE_CONVERTER_LABELS: Record<CaseConverterId, string> = {
+  upper: "UPPERCASE",
+  lower: "lowercase",
+  title: "Title Case",
+  sentence: "Sentence case",
+  camel: "camelCase",
+  pascal: "PascalCase",
+  snake: "snake_case",
+  kebab: "kebab-case",
+  constant: "CONSTANT_CASE",
+};
+
+/** Menu/palette entries for every case converter, in display order. */
+export const CASE_CONVERTER_OPTIONS: readonly {
+  id: CaseConverterId;
+  label: string;
+}[] = (Object.keys(CASE_CONVERTER_LABELS) as CaseConverterId[]).map((id) => ({
+  id,
+  label: CASE_CONVERTER_LABELS[id],
+}));
+
 export const HASH_ALGORITHMS = [
   "SHA-1",
   "SHA-256",

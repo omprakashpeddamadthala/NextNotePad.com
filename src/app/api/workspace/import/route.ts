@@ -5,7 +5,8 @@ import {
 } from "@/lib/drive/session";
 import { createNode } from "@/lib/drive/workspaceService";
 import { importWorkspaceSchema } from "@/lib/validation/workspaceSchemas";
-import { unauthorized, badRequest } from "@/lib/api/respond";
+import { unauthorized } from "@/lib/api/respond";
+import { parseJsonBody } from "@/lib/api/requestBody";
 
 const CONCURRENCY = 6;
 
@@ -13,8 +14,8 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getDriveSessionForRequest(request);
     if (!session) return unauthorized();
-    const parsed = importWorkspaceSchema.safeParse(await request.json());
-    if (!parsed.success) return badRequest(parsed.error);
+    const parsed = await parseJsonBody(request, importWorkspaceSchema);
+    if (!parsed.success) return parsed.response;
     const { ds, workspaceId } = session;
 
     const idMap = new Map<string, string>();

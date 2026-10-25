@@ -1,83 +1,50 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth/session";
 import { setupUserLock } from "@/lib/lock/lockService";
-import { UNLOCK_COOKIE_NAME } from "@/lib/lock/lockTokens";
+import {
+  DEFAULT_AUTO_TIMEOUT_MINUTES,
+  DEFAULT_LOCK_POLICY,
+  DEFAULT_PWA_ON_RESUME,
+  sanitizeLockOptions,
+} from "@/lib/lock/lockPolicy";
+import { lockServerError, setUnlockCookie } from "@/lib/lock/lockHttp";
 import { unauthorized, badRequest } from "@/lib/api/respond";
+import { readJsonBody } from "@/lib/api/requestBody";
 
 export async function POST(request: NextRequest) {
   try {
     const user = await getSessionUser();
-    if (!user) {
-      return unauthorized("Please sign in first");
-    }
+    if (!user) return unauthorized("Please sign in first");
 
-    let body: {
-      password?: unknown;
-      policy?: unknown;
-      pwaOnResume?: unknown;
-      autoTimeoutMinutes?: unknown;
-    };
-    try {
-      body = await request.json();
-    } catch {
-      return badRequest("Invalid JSON body");
-    }
+    const body = await readJsonBody<{
+      password: unknown;
+      policy: unknown;
+      pwaOnResume: unknown;
+      autoTimeoutMinutes: unknown;
+    }>(request);
+    if (!body) return badRequest("Invalid JSON body");
 
-    const { password, policy, pwaOnResume, autoTimeoutMinutes } = body;
-
+    const { password } = body;
     if (typeof password !== "string" || password.length === 0) {
       return badRequest("Lock password is required");
     }
 
-    const validPolicies = ["next_visit", "new_day", "immediate"];
-    const sanitizedPolicy =
-      typeof policy === "string" && validPolicies.includes(policy)
-        ? policy
-        : "next_visit";
-
-    const sanitizedPwaOnResume =
-      typeof pwaOnResume === "boolean" ? pwaOnResume : true;
-
-    const sanitizedAutoTimeout =
-      typeof autoTimeoutMinutes === "number" &&
-      autoTimeoutMinutes >= 0 &&
-      autoTimeoutMinutes <= 1440
-        ? Math.floor(autoTimeoutMinutes)
-        : 0;
-
+    const options = sanitizeLockOptions(body);
+    const policy = options.policy ?? DEFAULT_LOCK_POLICY;
     const result = await setupUserLock(user.id, password, {
-      policy: sanitizedPolicy,
-      pwaOnResume: sanitizedPwaOnResume,
-      autoTimeoutMinutes: sanitizedAutoTimeout,
+      policy,
+      pwaOnResume: options.pwaOnResume ?? DEFAULT_PWA_ON_RESUME,
+      autoTimeoutMinutes:
+        options.autoTimeoutMinutes ?? DEFAULT_AUTO_TIMEOUT_MINUTES,
     });
 
     const response = NextResponse.json({
       success: true,
       message: "Password lock configured successfully",
     });
-
-    const isSessionOnly = sanitizedPolicy === "next_visit";
-
-    response.cookies.set(UNLOCK_COOKIE_NAME, result.unlockToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      ...(isSessionOnly ? {} : { maxAge: 60 * 60 * 24 * 7 }),
-    });
-
+    setUnlockCookie(response, result.unlockToken, policy);
     return response;
   } catch (err) {
-    console.error("[api/lock/setup] Error setting up lock:", err);
-    return NextResponse.json(
-      {
-        success: false,
-        error:
-          err instanceof Error
-            ? err.message
-            : "Failed to configure password lock",
-      },
-      { status: 500 },
-    );
+    return lockServerError("setup", err, "Failed to configure password lock");
   }
 }

@@ -39,22 +39,10 @@ import {
 import { runAction } from "@/services/shortcuts/actionRegistry";
 import { useDialogStore } from "@/store/dialogStore";
 import {
+  CASE_CONVERTER_OPTIONS,
   HASH_ALGORITHMS,
-  type CaseConverterId,
 } from "@/services/textTools/textTools";
 import { VoiceDictationButton } from "@/components/editor/VoiceDictationButton";
-
-const CASE_OPTIONS: { id: CaseConverterId; label: string }[] = [
-  { id: "upper", label: "UPPERCASE" },
-  { id: "lower", label: "lowercase" },
-  { id: "title", label: "Title Case" },
-  { id: "sentence", label: "Sentence case" },
-  { id: "camel", label: "camelCase" },
-  { id: "pascal", label: "PascalCase" },
-  { id: "snake", label: "snake_case" },
-  { id: "kebab", label: "kebab-case" },
-  { id: "constant", label: "CONSTANT_CASE" },
-];
 
 export function ToolsMenu() {
   return (
@@ -130,7 +118,7 @@ export function ToolsMenu() {
           <CaseSensitive /> Case Converter
         </DropdownMenuSubTrigger>
         <DropdownMenuSubContent>
-          {CASE_OPTIONS.map(({ id, label }) => (
+          {CASE_CONVERTER_OPTIONS.map(({ id, label }) => (
             <DropdownMenuItem
               key={id}
               onSelect={() => runAction(`tools.case.${id}`)}

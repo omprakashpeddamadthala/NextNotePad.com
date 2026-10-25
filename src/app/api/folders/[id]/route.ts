@@ -6,7 +6,8 @@ import {
 } from "@/lib/drive/session";
 import { nodeDto, trashNode, updateNode } from "@/lib/drive/workspaceService";
 import { updateFolderSchema } from "@/lib/validation/workspaceSchemas";
-import { unauthorized, badRequest } from "@/lib/api/respond";
+import { unauthorized } from "@/lib/api/respond";
+import { parseJsonBody } from "@/lib/api/requestBody";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -17,8 +18,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const session = await getDriveSessionForRequest(request);
     if (!session) return unauthorized();
     const { id } = await params;
-    const parsed = updateFolderSchema.safeParse(await request.json());
-    if (!parsed.success) return badRequest(parsed.error);
+    const parsed = await parseJsonBody(request, updateFolderSchema);
+    if (!parsed.success) return parsed.response;
     const { ds, workspaceId } = session;
     const entry = await updateNode(ds, workspaceId, id, parsed.data);
     return NextResponse.json(await nodeDto(ds, entry, workspaceId));

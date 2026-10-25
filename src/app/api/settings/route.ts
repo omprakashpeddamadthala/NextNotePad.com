@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDriveSession, driveErrorResponse } from "@/lib/drive/session";
 import { AppConfigService, type AppConfig } from "@/lib/drive/appConfigService";
 import { updateSettingsSchema } from "@/lib/validation/workspaceSchemas";
-import { unauthorized, badRequest } from "@/lib/api/respond";
+import { unauthorized } from "@/lib/api/respond";
+import { parseJsonBody } from "@/lib/api/requestBody";
 
 function toResponse(config: AppConfig) {
   const { theme, editor } = config.settings;
@@ -32,8 +33,8 @@ export async function PUT(request: NextRequest) {
   try {
     const session = await getDriveSession();
     if (!session) return unauthorized();
-    const parsed = updateSettingsSchema.safeParse(await request.json());
-    if (!parsed.success) return badRequest(parsed.error);
+    const parsed = await parseJsonBody(request, updateSettingsSchema);
+    if (!parsed.success) return parsed.response;
     const { theme, json, recentFiles, favorites } = parsed.data;
     const config = await new AppConfigService(session.ds).update((c) => {
       if (theme !== undefined) c.settings.theme = theme;

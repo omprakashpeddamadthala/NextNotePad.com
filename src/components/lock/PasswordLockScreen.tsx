@@ -19,15 +19,7 @@ import { APP_BRAND } from "@/lib/constants/branding";
 import { fetchJson } from "@/lib/api/fetchJson";
 import { useLockStore } from "@/store/lockStore";
 import { initUserWorkspace } from "@/hooks/useAuthBootstrap";
-import type { AuthUser } from "@/store/authStore";
-
-interface UnlockApiResponse {
-  success: boolean;
-  error?: string;
-  locked?: boolean;
-  retryAfterSeconds?: number;
-  user?: AuthUser;
-}
+import { lockApi } from "@/services/lock/lockApi";
 
 export function PasswordLockScreen() {
   const [password, setPassword] = useState("");
@@ -83,18 +75,9 @@ export function PasswordLockScreen() {
 
     startTransition(async () => {
       try {
-        const res = await fetch("/api/lock/unlock", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ password }),
-        });
+        const { ok, data } = await lockApi.unlock(password);
 
-        const data: UnlockApiResponse = await res.json().catch(() => ({
-          success: false,
-          error: "Failed to parse response",
-        }));
-
-        if (res.ok && data.success && data.user) {
+        if (ok && data.success && data.user) {
           // Initialize workspace data securely
           await initUserWorkspace(data.user);
           // Update lock store state

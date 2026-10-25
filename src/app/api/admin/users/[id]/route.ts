@@ -3,7 +3,8 @@ import { getAdminUser, isBootstrapAdmin } from "@/lib/auth/admin";
 import { prisma } from "@/lib/db/prisma";
 import { updateUserSchema } from "@/lib/validation/adminSchemas";
 import { userToDto } from "@/lib/dto/userDto";
-import { badRequest, notFound, forbidden } from "@/lib/api/respond";
+import { notFound, forbidden } from "@/lib/api/respond";
+import { parseJsonBody } from "@/lib/api/requestBody";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -14,8 +15,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   if (!admin) return forbidden();
   const { id } = await params;
 
-  const parsed = updateUserSchema.safeParse(await request.json());
-  if (!parsed.success) return badRequest(parsed.error);
+  const parsed = await parseJsonBody(request, updateUserSchema);
+  if (!parsed.success) return parsed.response;
 
   const target = await prisma.user.findUnique({ where: { id } });
   if (!target) return notFound("User not found");
