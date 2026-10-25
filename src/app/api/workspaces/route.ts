@@ -8,8 +8,9 @@ import {
   setActiveWorkspace,
   workspaceToDto,
 } from "@/lib/drive/workspaceService";
-import { unauthorized, badRequest } from "@/lib/api/respond";
+import { unauthorized } from "@/lib/api/respond";
 import { createWorkspaceSchema } from "@/lib/validation/workspaceSchemas";
+import { parseJsonBody } from "@/lib/api/requestBody";
 
 export async function GET() {
   try {
@@ -41,8 +42,8 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getDriveSession();
     if (!session) return unauthorized();
-    const parsed = createWorkspaceSchema.safeParse(await request.json());
-    if (!parsed.success) return badRequest(parsed.error);
+    const parsed = await parseJsonBody(request, createWorkspaceSchema);
+    if (!parsed.success) return parsed.response;
     const { name, description } = parsed.data;
     const { ds } = session;
 

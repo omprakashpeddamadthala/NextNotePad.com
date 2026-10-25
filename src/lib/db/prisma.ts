@@ -51,13 +51,27 @@ function getOrCreatePool(): Pool {
   return pool;
 }
 
-function createClient(): PrismaClient {
-  const pool = getOrCreatePool();
-  const adapter = new PrismaPg(pool);
+function getOrCreateClient(): PrismaClient {
+  if (globalForPrisma.prisma) {
+    return globalForPrisma.prisma;
+  }
+
+  const adapter = new PrismaPg(getOrCreatePool());
   const client = new PrismaClient({ adapter });
   globalForPrisma.prisma = client;
   return client;
 }
 
-export const prisma = globalForPrisma.prisma ?? createClient();
+/**
+ * Created on first use rather than at import, so `next build` (which imports every route while
+ * collecting page data) doesn't need database credentials. A missing DATABASE_URL still fails
+ * loudly — on the first query instead of at module load.
+ */
+export const prisma: PrismaClient = new Proxy({} as PrismaClient, {
+  get(_target, property) {
+    const client = getOrCreateClient();
+    const value = Reflect.get(client, property, client);
+    return typeof value === "function" ? value.bind(client) : value;
+  },
+});
 

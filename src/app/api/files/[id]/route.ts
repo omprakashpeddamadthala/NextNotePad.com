@@ -13,7 +13,8 @@ import {
   updateNode,
 } from "@/lib/drive/workspaceService";
 import { updateFileSchema } from "@/lib/validation/workspaceSchemas";
-import { unauthorized, badRequest, notFound } from "@/lib/api/respond";
+import { unauthorized, notFound } from "@/lib/api/respond";
+import { parseJsonBody } from "@/lib/api/requestBody";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -44,8 +45,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
-    const parsed = updateFileSchema.safeParse(await request.json());
-    if (!parsed.success) return badRequest(parsed.error);
+    const parsed = await parseJsonBody(request, updateFileSchema);
+    if (!parsed.success) return parsed.response;
 
     const isContentOnly =
       parsed.data.content !== undefined &&

@@ -157,9 +157,26 @@ test("hslToHex converts correctly", () => {
   assert.equal(hslToHex("hsl(0, 0%, 0%)"), "#000000");
 });
 
-test("hexToHsl and hslToHex round-trip", () => {
-  const hex = "#3a7bd5";
-  const hsl = hexToHsl(hex);
-  const backToHex = hslToHex(hsl);
-  assert.equal(backToHex, hex);
+test("hexToHsl and hslToHex convert known colors exactly", () => {
+  assert.equal(hexToHsl("#3a7bd5"), "hsl(215, 65%, 53%)");
+  assert.equal(hexToHsl("#fff"), "hsl(0, 0%, 100%)");
+  assert.equal(hslToHex("hsl(0, 100%, 50%)"), "#ff0000");
+  assert.equal(hslToHex("hsla(120, 100%, 25%, 0.5)"), "#008000");
+});
+
+// Integer hsl() can't address all 16.7M hex colors, so a round-trip may drift by a couple of
+// units per channel (e.g. #3a7bd5 → hsl(215, 65%, 53%) → #397ad5). Assert it stays that close.
+test("hexToHsl and hslToHex round-trip within integer-HSL precision", () => {
+  const channels = (hex: string) =>
+    [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  for (const hex of ["#3a7bd5", "#ff0000", "#123456", "#abcdef", "#808080"]) {
+    const back = hslToHex(hexToHsl(hex));
+    const original = channels(hex);
+    channels(back).forEach((value, i) =>
+      assert.ok(
+        Math.abs(value - original[i]) <= 3,
+        `${hex} → ${back} drifted too far`,
+      ),
+    );
+  }
 });

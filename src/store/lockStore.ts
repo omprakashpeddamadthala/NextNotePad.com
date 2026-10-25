@@ -1,8 +1,15 @@
 import { create } from "zustand";
 import { fetchJson } from "@/lib/api/fetchJson";
+import {
+  DEFAULT_AUTO_TIMEOUT_MINUTES,
+  DEFAULT_LOCK_POLICY,
+  DEFAULT_PWA_ON_RESUME,
+  getTodayDateString,
+  type LockPolicy,
+} from "@/lib/lock/lockPolicy";
 import type { AuthUser } from "./authStore";
 
-export type LockPolicy = "next_visit" | "new_day" | "immediate";
+export { getTodayDateString, type LockPolicy };
 
 export interface LockConfig {
   enabled: boolean;
@@ -28,14 +35,6 @@ interface LockState {
   setPrivacyShieldVisible: (visible: boolean) => void;
 }
 
-export function getTodayDateString(): string {
-  const now = new Date();
-  const year = now.getUTCFullYear();
-  const month = String(now.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(now.getUTCDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
 const SESSION_STORAGE_KEY = "np_unlocked_session";
 
 function markSessionUnlocked(): void {
@@ -55,9 +54,9 @@ function clearSessionUnlocked(): void {
 export const useLockStore = create<LockState>()((set) => ({
   enabled: false,
   isLocked: false,
-  policy: "next_visit",
-  pwaOnResume: true,
-  autoTimeoutMinutes: 0,
+  policy: DEFAULT_LOCK_POLICY,
+  pwaOnResume: DEFAULT_PWA_ON_RESUME,
+  autoTimeoutMinutes: DEFAULT_AUTO_TIMEOUT_MINUTES,
   privacyShieldVisible: false,
   lastActivityAt: Date.now(),
 

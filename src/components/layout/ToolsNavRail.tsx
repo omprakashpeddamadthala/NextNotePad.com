@@ -35,8 +35,8 @@ import { useTabsStore } from "@/store/tabsStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { toast } from "sonner";
 import {
+  CASE_CONVERTER_OPTIONS,
   HASH_ALGORITHMS,
-  type CaseConverterId,
 } from "@/services/textTools/textTools";
 import {
   DropdownMenu,
@@ -48,18 +48,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-
-const CASE_OPTIONS: { id: CaseConverterId; label: string }[] = [
-  { id: "upper", label: "UPPERCASE" },
-  { id: "lower", label: "lowercase" },
-  { id: "title", label: "Title Case" },
-  { id: "sentence", label: "Sentence case" },
-  { id: "camel", label: "camelCase" },
-  { id: "pascal", label: "PascalCase" },
-  { id: "snake", label: "snake_case" },
-  { id: "kebab", label: "kebab-case" },
-  { id: "constant", label: "CONSTANT_CASE" },
-];
 
 type CategoryFilter = "all" | "code" | "text" | "crypto" | "utils";
 
@@ -293,7 +281,7 @@ export function ToolsNavRail() {
               subtitle="Upper, lower, camel, snake..."
               filter={q}
             >
-              {CASE_OPTIONS.map(({ id, label }) => (
+              {CASE_CONVERTER_OPTIONS.map(({ id, label }) => (
                 <DropdownMenuItem
                   key={id}
                   onSelect={() => runAction(`tools.case.${id}`)}
