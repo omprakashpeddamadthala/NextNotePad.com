@@ -8,8 +8,9 @@ import {
   setActiveWorkspace,
   workspaceToDto,
 } from "@/lib/drive/workspaceService";
-import { unauthorized, badRequest } from "@/lib/api/respond";
+import { unauthorized } from "@/lib/api/respond";
 import { updateWorkspaceSchema } from "@/lib/validation/workspaceSchemas";
+import { parseJsonBody } from "@/lib/api/requestBody";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -31,8 +32,8 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
     const session = await getDriveSession();
     if (!session) return unauthorized();
     const { id } = await params;
-    const parsed = updateWorkspaceSchema.safeParse(await request.json());
-    if (!parsed.success) return badRequest(parsed.error);
+    const parsed = await parseJsonBody(request, updateWorkspaceSchema);
+    if (!parsed.success) return parsed.response;
     return NextResponse.json(
       workspaceToDto(await renameWorkspace(session.ds, id, parsed.data)),
     );

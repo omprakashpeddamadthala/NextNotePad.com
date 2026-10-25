@@ -1,15 +1,17 @@
 import { SignJWT, jwtVerify } from "jose";
+import { resolveJwtSecret } from "@/lib/auth/jwtSecret";
+import { getTodayDateString } from "./lockPolicy";
+
+export { getTodayDateString };
 
 export const UNLOCK_COOKIE_NAME = "np_unlocked";
 
 function getSecretKey(): Uint8Array {
-  const secret =
-    process.env.JWT_SECRET ||
-    (process.env.DATABASE_PASSWORD
-      ? `np-lock-secret-${process.env.DATABASE_PASSWORD}`
-      : undefined) ||
-    "nextnotepad-default-lock-jwt-secret-key-32bytes";
-  return new TextEncoder().encode(secret);
+  return resolveJwtSecret({
+    name: "unlock",
+    derivedPrefix: "np-lock-secret-",
+    fallback: "nextnotepad-default-lock-jwt-secret-key-32bytes",
+  });
 }
 
 export interface UnlockTokenPayload {
@@ -17,14 +19,6 @@ export interface UnlockTokenPayload {
   unlockedAt: number;
   unlockedDate: string; // "YYYY-MM-DD"
   policy: string;
-}
-
-export function getTodayDateString(): string {
-  const now = new Date();
-  const year = now.getUTCFullYear();
-  const month = String(now.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(now.getUTCDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
 }
 
 /**

@@ -1,14 +1,15 @@
 import { SignJWT, jwtVerify } from "jose";
+import { resolveJwtSecret } from "./jwtSecret";
 
 const SESSION_COOKIE_NAME = "np_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 365;
 
 function getSecretKey(): Uint8Array {
-  const secret =
-    process.env.JWT_SECRET ||
-    (process.env.DATABASE_PASSWORD ? `np-secret-${process.env.DATABASE_PASSWORD}` : undefined) ||
-    "nextnotepad-default-session-jwt-secret-key-32bytes";
-  return new TextEncoder().encode(secret);
+  return resolveJwtSecret({
+    name: "session",
+    derivedPrefix: "np-secret-",
+    fallback: "nextnotepad-default-session-jwt-secret-key-32bytes",
+  });
 }
 
 export interface SessionPayload {

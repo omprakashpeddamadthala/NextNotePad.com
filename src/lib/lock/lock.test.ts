@@ -6,6 +6,13 @@ import {
   verifyUnlockToken,
   getTodayDateString,
 } from "./lockTokens";
+import {
+  LOCK_POLICIES,
+  isLockPolicy,
+  isSessionOnlyPolicy,
+  sanitizeLockOptions,
+} from "./lockPolicy";
+import { resolveJwtSecret } from "../auth/jwtSecret";
 
 test("hashLockPassword accepts standard ASCII characters", async () => {
   const result = await hashLockPassword("mypassword123");
@@ -155,4 +162,67 @@ test("new_day policy detects date transitions", async () => {
   const today = getTodayDateString();
   const isExpiredDay = payload.unlockedDate !== today;
   assert.equal(isExpiredDay, true, "Token with older date should be identified as expired day");
+});
+
+test("sanitizeLockOptions keeps only well-formed options", () => {
+  assert.deepEqual(
+    sanitizeLockOptions({
+      policy: "new_day",
+      pwaOnResume: false,
+      autoTimeoutMinutes: 15.9,
+    }),
+    { policy: "new_day", pwaOnResume: false, autoTimeoutMinutes: 15 },
+  );
+  assert.deepEqual(
+    sanitizeLockOptions({
+      policy: "forever",
+      pwaOnResume: "yes",
+      autoTimeoutMinutes: -1,
+    }),
+    { policy: undefined, pwaOnResume: undefined, autoTimeoutMinutes: undefined },
+  );
+  assert.equal(sanitizeLockOptions({ autoTimeoutMinutes: 1440 }).autoTimeoutMinutes, 1440);
+  assert.equal(sanitizeLockOptions({ autoTimeoutMinutes: 1441 }).autoTimeoutMinutes, undefined);
+  assert.equal(sanitizeLockOptions({ autoTimeoutMinutes: "5" }).autoTimeoutMinutes, undefined);
+});
+
+test("isLockPolicy accepts exactly the known policies", () => {
+  for (const policy of LOCK_POLICIES) assert.equal(isLockPolicy(policy), true);
+  assert.equal(isLockPolicy("NEXT_VISIT"), false);
+  assert.equal(isLockPolicy(undefined), false);
+});
+
+test("isSessionOnlyPolicy treats next_visit and missing policy as session-only", () => {
+  assert.equal(isSessionOnlyPolicy("next_visit"), true);
+  assert.equal(isSessionOnlyPolicy(undefined), true);
+  assert.equal(isSessionOnlyPolicy(""), true);
+  assert.equal(isSessionOnlyPolicy("new_day"), false);
+  assert.equal(isSessionOnlyPolicy("immediate"), false);
+});
+
+test("getTodayDateString uses the UTC calendar day", () => {
+  assert.equal(getTodayDateString(new Date("2026-01-05T23:59:59Z")), "2026-01-05");
+  assert.equal(getTodayDateString(new Date("2026-12-31T00:00:00-05:00")), "2026-12-31");
+});
+
+test("resolveJwtSecret preserves the legacy key derivation order", () => {
+  const saved = { jwt: process.env.JWT_SECRET, db: process.env.DATABASE_PASSWORD };
+  const decode = (bytes: Uint8Array) => new TextDecoder().decode(bytes);
+  const opts = { name: "test", derivedPrefix: "np-test-", fallback: "default-key" };
+  try {
+    process.env.JWT_SECRET = "explicit";
+    process.env.DATABASE_PASSWORD = "db";
+    assert.equal(decode(resolveJwtSecret(opts)), "explicit");
+
+    delete process.env.JWT_SECRET;
+    assert.equal(decode(resolveJwtSecret(opts)), "np-test-db");
+
+    delete process.env.DATABASE_PASSWORD;
+    assert.equal(decode(resolveJwtSecret(opts)), "default-key");
+  } finally {
+    if (saved.jwt === undefined) delete process.env.JWT_SECRET;
+    else process.env.JWT_SECRET = saved.jwt;
+    if (saved.db === undefined) delete process.env.DATABASE_PASSWORD;
+    else process.env.DATABASE_PASSWORD = saved.db;
+  }
 });

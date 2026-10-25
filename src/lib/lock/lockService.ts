@@ -3,17 +3,15 @@ import { hashLockPassword, verifyLockPassword } from "./passwordHash";
 import {
   signUnlockToken,
   verifyUnlockToken,
-  getTodayDateString,
   UNLOCK_COOKIE_NAME,
 } from "./lockTokens";
-
-export interface LockConfigDto {
-  enabled: boolean;
-  isLocked: boolean;
-  policy: "next_visit" | "new_day" | "immediate";
-  pwaOnResume: boolean;
-  autoTimeoutMinutes: number;
-}
+import {
+  DEFAULT_AUTO_TIMEOUT_MINUTES,
+  DEFAULT_LOCK_POLICY,
+  DEFAULT_PWA_ON_RESUME,
+  getTodayDateString,
+  type LockOptions,
+} from "./lockPolicy";
 
 export interface UserLockRecord {
   id: string;
@@ -101,13 +99,18 @@ export async function getUserLockRecord(userId: string): Promise<UserLockRecord 
 }
 
 /**
- * Checks whether a user is currently locked.
+ * Checks whether a user is currently locked. Pass `preloadedRecord` when the caller already
+ * fetched it (e.g. to report lock settings) to avoid a second identical query.
  */
 export async function isUserLocked(
-  user: { id: string; lockEnabled?: boolean; lockPolicy?: string },
+  user: { id: string },
   cookieStore?: { get: (name: string) => { value: string } | undefined },
+  preloadedRecord?: UserLockRecord | null,
 ): Promise<{ isLocked: boolean; reason?: string }> {
-  const record = await getUserLockRecord(user.id);
+  const record =
+    preloadedRecord !== undefined
+      ? preloadedRecord
+      : await getUserLockRecord(user.id);
   if (!record || !record.lockEnabled) {
     return { isLocked: false };
   }
@@ -122,7 +125,7 @@ export async function isUserLocked(
     return { isLocked: true, reason: "invalid_unlock_token" };
   }
 
-  const policy = (record.lockPolicy as LockConfigDto["policy"]) || "next_visit";
+  const policy = record.lockPolicy || DEFAULT_LOCK_POLICY;
 
   // New day policy: lock when visiting on the next day
   if (policy === "new_day") {
@@ -141,19 +144,15 @@ export async function isUserLocked(
 export async function setupUserLock(
   userId: string,
   password: string,
-  options?: {
-    policy?: string;
-    pwaOnResume?: boolean;
-    autoTimeoutMinutes?: number;
-  },
+  options?: LockOptions,
 ): Promise<{ success: boolean; unlockToken: string }> {
   await ensureLockSchema();
 
   const { hash, salt } = await hashLockPassword(password);
-  const policy = options?.policy || "next_visit";
-  const pwaOnResume =
-    options?.pwaOnResume !== undefined ? options.pwaOnResume : true;
-  const autoTimeoutMinutes = options?.autoTimeoutMinutes ?? 0;
+  const policy = options?.policy || DEFAULT_LOCK_POLICY;
+  const pwaOnResume = options?.pwaOnResume ?? DEFAULT_PWA_ON_RESUME;
+  const autoTimeoutMinutes =
+    options?.autoTimeoutMinutes ?? DEFAULT_AUTO_TIMEOUT_MINUTES;
 
   await prisma.$executeRawUnsafe(
     `UPDATE "User"
@@ -190,11 +189,7 @@ export async function changeUserLockPassword(
   userId: string,
   currentPassword: string,
   newPassword: string,
-  options?: {
-    policy?: string;
-    pwaOnResume?: boolean;
-    autoTimeoutMinutes?: number;
-  },
+  options?: LockOptions,
 ): Promise<{ success: boolean; error?: string; unlockToken?: string }> {
   const user = await getUserLockRecord(userId);
   if (!user || !user.lockPasswordHash || !user.lockPasswordSalt) {
@@ -212,11 +207,8 @@ export async function changeUserLockPassword(
   }
 
   const { hash, salt } = await hashLockPassword(newPassword);
-  const policy = options?.policy || user.lockPolicy || "next_visit";
-  const pwaOnResume =
-    options?.pwaOnResume !== undefined
-      ? options.pwaOnResume
-      : user.lockPwaOnResume;
+  const policy = options?.policy || user.lockPolicy || DEFAULT_LOCK_POLICY;
+  const pwaOnResume = options?.pwaOnResume ?? user.lockPwaOnResume;
   const autoTimeoutMinutes =
     options?.autoTimeoutMinutes ?? user.lockAutoTimeoutMinutes;
 
@@ -288,11 +280,7 @@ export async function disableUserLock(
  */
 export async function updateLockSettings(
   userId: string,
-  options: {
-    policy?: string;
-    pwaOnResume?: boolean;
-    autoTimeoutMinutes?: number;
-  },
+  options: LockOptions,
 ): Promise<{ success: boolean }> {
   await ensureLockSchema();
 
@@ -393,7 +381,7 @@ export async function verifyAndUnlock(
 
   const unlockToken = await signUnlockToken({
     userId,
-    policy: user.lockPolicy || "next_visit",
+    policy: user.lockPolicy || DEFAULT_LOCK_POLICY,
   });
 
   return { success: true, unlockToken };
