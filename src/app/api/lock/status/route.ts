@@ -25,8 +25,8 @@ export async function GET() {
       enabled: record?.lockEnabled ?? false,
       isLocked: lockStatus.isLocked,
       policy: record?.lockPolicy || "next_visit",
-      pwaOnResume: record?.pwaOnResume ?? true,
-      autoTimeoutMinutes: record?.autoTimeoutMinutes ?? 0,
+      pwaOnResume: record?.lockPwaOnResume ?? true,
+      autoTimeoutMinutes: record?.lockAutoTimeoutMinutes ?? 0,
     });
   } catch (err) {
     console.error("[api/lock/status] Error checking lock status:", err);

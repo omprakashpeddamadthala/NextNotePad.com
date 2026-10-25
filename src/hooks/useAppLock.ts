@@ -18,7 +18,8 @@ export function useAppLock(): void {
   const setPrivacyShieldVisible = useLockStore((s) => s.setPrivacyShieldVisible);
   const authStatus = useAuthStore((s) => s.status);
 
-  const lastActivityTimeRef = useRef(Date.now());
+  // Set when idle tracking starts (Date.now() is not allowed during render).
+  const lastActivityTimeRef = useRef(0);
   const backgroundedAtRef = useRef<number | null>(null);
   const unlockedDateRef = useRef(getTodayDateString());
 
@@ -33,6 +34,7 @@ export function useAppLock(): void {
   // Activity tracking for idle auto-lock
   useEffect(() => {
     if (!enabled || isLocked || autoTimeoutMinutes <= 0) return;
+    lastActivityTimeRef.current = Date.now();
 
     const events = ["mousemove", "keydown", "touchstart", "scroll", "click"];
     events.forEach((ev) =>

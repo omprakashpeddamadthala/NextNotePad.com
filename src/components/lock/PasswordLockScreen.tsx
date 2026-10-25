@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AppLogo } from "@/components/ui/AppLogo";
 import { APP_BRAND } from "@/lib/constants/branding";
+import { fetchJson } from "@/lib/api/fetchJson";
 import { useLockStore } from "@/store/lockStore";
 import { initUserWorkspace } from "@/hooks/useAuthBootstrap";
 import type { AuthUser } from "@/store/authStore";
