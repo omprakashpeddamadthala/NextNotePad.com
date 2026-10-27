@@ -52,3 +52,4 @@ next-env.d.ts
 
 # BMAD-METHOD generated planning/implementation artifacts
 /_bmad-output/
+scripts/seo/keywords/.cache/
