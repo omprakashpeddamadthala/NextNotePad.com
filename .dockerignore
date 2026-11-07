@@ -24,3 +24,6 @@ _bmad-output
 npm-debug.log*
 coverage
 README.md
+
+# Marketing assets (videos) — not needed at runtime
+marketing

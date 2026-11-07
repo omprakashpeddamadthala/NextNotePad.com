@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>NextNotePad Promo</title>
+<!--
+  45-second Instagram promo for NextNotePad.com.
+  Deterministic: nothing animates on its own. `window.render(t)` draws the frame
+  at time t (seconds) and render.mjs steps through it at 30 fps.
+  Open in a browser with ?play to preview in real time.
+  Stage is 1080x1920 (9:16). Key content stays inside y = 285..1635 so the
+  centre crop works as a 4:5 feed post too.
+-->
+<style>
+  :root {
+    --bg: #0c101c;
+    --ink: #f4f6fb;
+    --muted: #9aa4bd;
+    --blue: #2b78e4;
+    --blue2: #5fa2ff;
+    --gold: #f5b234;
+    --card: #141a2b;
+    --line: #26304a;
+    --red: #ff5d6c;
+    --green: #3fd28b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--bg); }
+  body { font-family: "Inter", "Liberation Sans", sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .mono { font-family: "JetBrains Mono", "DejaVu Sans Mono", monospace; }
+
+  #stage { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--bg); }
+  .blob { position: absolute; border-radius: 50%; filter: blur(120px); opacity: .55; }
+  #b1 { width: 900px; height: 900px; background: #1d4fa8; }
+  #b2 { width: 700px; height: 700px; background: #7a4c06; opacity: .45; }
+  #b3 { width: 600px; height: 600px; background: #2b2f8f; opacity: .4; }
+  #grid {
+    position: absolute; inset: 0;
+    background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  /* persistent brand bug */
+  #bug { position: absolute; top: 300px; left: 0; right: 0; display: flex; justify-content: center; align-items: center; gap: 14px; font-weight: 700; font-size: 30px; letter-spacing: .5px; color: #dfe5f3; }
+  #bug img { width: 46px; height: 46px; border-radius: 11px; }
+  #progress { position: absolute; left: 90px; right: 90px; top: 1610px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.08); overflow: hidden; }
+  #progress i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--blue), var(--gold)); }
+
+  .scene { position: absolute; inset: 0; opacity: 0; will-change: transform, opacity; }
+  .head { position: absolute; top: 400px; left: 70px; right: 70px; text-align: center; }
+  .kicker { display: inline-block; font-size: 28px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; color: var(--gold); margin-bottom: 18px; }
+  .title { font-family: "Inter Display", "Inter", sans-serif; font-size: 84px; line-height: 1.04; font-weight: 800; letter-spacing: -2px; }
+  .title em { font-style: normal; background: linear-gradient(90deg, var(--blue2), var(--gold)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .body { position: absolute; top: 660px; left: 70px; right: 70px; height: 860px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .caption { position: absolute; top: 1530px; left: 60px; right: 60px; text-align: center; font-size: 34px; font-weight: 500; color: var(--muted); }
+  .caption b { color: var(--ink); font-weight: 700; }
+
+  .chip { display: inline-flex; align-items: center; gap: 10px; padding: 14px 26px; border-radius: 999px; background: rgba(255,255,255,.07); border: 1.5px solid rgba(255,255,255,.14); font-size: 32px; font-weight: 600; }
+  .chips { display: flex; flex-wrap: wrap; gap: 18px; justify-content: center; }
+  kbd { font-family: "JetBrains Mono", monospace; font-size: 28px; padding: 6px 14px; border-radius: 8px; background: #222b42; border: 1.5px solid #3a4562; border-bottom-width: 4px; color: #e6ebf7; }
+
+  /* ---------- editor window mock (Notepad++-ish chrome, square corners) ---------- */
+  .win { width: 940px; background: var(--w-bg, #fff); color: var(--w-fg, #000); border: 2px solid var(--w-border, #c4c4c4); box-shadow: 0 40px 120px rgba(0,0,0,.55); font-size: 22px; overflow: hidden; }
+  .win .menubar { display: flex; gap: 22px; padding: 10px 18px; background: var(--w-panel, #f2f2f2); border-bottom: 1px solid var(--w-border, #c4c4c4); font-size: 21px; }
+  .win .menubar span:first-child { font-weight: 700; color: var(--w-accent, #2b78e4); }
+  .win .tabs { display: flex; background: var(--w-tab-in, #e8e8e8); border-bottom: 1px solid var(--w-border, #c4c4c4); }
+  .win .tab { padding: 10px 22px; border-right: 1px solid var(--w-border, #c4c4c4); font-size: 20px; opacity: .7; }
+  .win .tab.on { background: var(--w-bg, #fff); opacity: 1; border-top: 3px solid var(--w-accent, #2b78e4); font-weight: 600; }
+  .win .code { display: flex; padding: 16px 0; min-height: 420px; font-family: "JetBrains Mono", monospace; font-size: 27px; line-height: 1.6; }
+  .win .gutter { width: 74px; text-align: right; padding-right: 18px; color: var(--w-ln, #787878); }
+  .win pre { font: inherit; white-space: pre; flex: 1; padding-left: 10px; border-left: 1px solid var(--w-border, #c4c4c4); }
+  .win .status { display: flex; background: var(--w-status, #e0e0e0); color: var(--w-status-fg, #000); font-size: 19px; border-top: 1px solid var(--w-border, #c4c4c4); }
+  .win .status span { padding: 7px 18px; border-right: 1px solid var(--w-border, #c4c4c4); }
+  .win .status span:first-child { flex: 1; }
+  .k { color: var(--t-kw, #0000ff); font-weight: 600; }
+  .s { color: var(--t-str, #808080); }
+  .n { color: var(--t-num, #ff8000); }
+  .c { color: var(--t-com, #008000); font-style: italic; }
+  .f { color: var(--t-fn, #795e26); }
+  .caret { display: inline-block; width: 3px; height: 1.15em; vertical-align: -0.2em; background: currentColor; margin-left: 1px; }
+
+  .theme-pill { margin-top: 34px; font-size: 40px; font-weight: 700; padding: 14px 34px; border-radius: 999px; background: rgba(255,255,255,.08); border: 1.5px solid rgba(255,255,255,.18); min-width: 420px; text-align: center; }
+  .dots { display: flex; gap: 14px; margin-top: 26px; }
+  .dots i { width: 18px; height: 18px; border-radius: 50%; background: rgba(255,255,255,.18); }
+  .dots i.on { background: var(--gold); }
+
+  /* ---------- explorer ---------- */
+  .explorer { width: 900px; display: flex; gap: 0; background: #151b2d; border: 2px solid var(--line); box-shadow: 0 40px 120px rgba(0,0,0,.5); }
+  .tree { width: 430px; padding: 22px 0; border-right: 2px solid var(--line); font-size: 29px; }
+  .tree .ws { margin: 0 22px 18px; padding: 12px 18px; background: #1f2740; border: 1.5px solid #34406a; font-weight: 600; display: flex; justify-content: space-between; }
+  .tree .row { padding: 8px 22px; display: flex; gap: 14px; align-items: center; white-space: nowrap; }
+  .tree .row.sel { background: rgba(43,120,228,.28); box-shadow: inset 4px 0 var(--blue); }
+  .ico { width: 30px; text-align: center; }
+  .side { flex: 1; padding: 30px; display: flex; flex-direction: column; gap: 18px; justify-content: center; }
+  .feat { display: flex; align-items: center; gap: 18px; font-size: 31px; font-weight: 600; padding: 16px 20px; background: rgba(255,255,255,.04); border: 1.5px solid rgba(255,255,255,.09); }
+  .feat i { font-style: normal; width: 52px; height: 52px; display: grid; place-items: center; border-radius: 12px; background: rgba(245,178,52,.15); color: var(--gold); font-size: 28px; }
+
+  /* ---------- command palette ---------- */
+  .palette { width: 900px; background: #171d30; border: 2px solid #34406a; box-shadow: 0 40px 120px rgba(0,0,0,.6); }
+  .palette .q { padding: 26px 30px; font-size: 38px; border-bottom: 2px solid #2a3452; display: flex; gap: 16px; align-items: center; }
+  .palette .q .gt { color: var(--gold); font-weight: 700; }
+  .palette .item { padding: 20px 30px; font-size: 32px; display: flex; justify-content: space-between; align-items: center; color: #cfd6e8; }
+  .palette .item.on { background: var(--blue); color: #fff; }
+  .palette .item small { font-family: "JetBrains Mono", monospace; font-size: 24px; opacity: .7; }
+
+  /* ---------- tools grid ---------- */
+  .tools { display: grid; grid-template-columns: repeat(3, 290px); gap: 22px; }
+  .tool { height: 170px; background: linear-gradient(160deg, #1b2440, #131a2c); border: 1.5px solid #2c3757; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 12px; }
+  .tool .g { font-family: "JetBrains Mono", monospace; font-size: 42px; font-weight: 700; color: var(--blue2); }
+  .tool:nth-child(3n+2) .g { color: var(--gold); }
+  .tool:nth-child(3n) .g { color: #8be0b4; }
+  .tool span { font-size: 27px; font-weight: 600; color: #dfe5f3; }
+
+  /* ---------- AI ---------- */
+  .ai { width: 920px; display: flex; flex-direction: column; gap: 26px; }
+  .ai .box { padding: 30px 34px; font-size: 38px; line-height: 1.4; border: 2px solid; min-height: 170px; }
+  .ai .before { border-color: rgba(255,93,108,.5); background: rgba(255,93,108,.08); }
+  .ai .before u { text-decoration: wavy underline var(--red); text-underline-offset: 8px; }
+  .ai .after { border-color: rgba(63,210,139,.5); background: rgba(63,210,139,.08); }
+  .ai .lbl { font-size: 24px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px; display: block; }
+  .ai .before .lbl { color: var(--red); } .ai .after .lbl { color: var(--green); }
+  .ai .btn { align-self: center; padding: 16px 34px; background: linear-gradient(90deg, #6d4bff, var(--blue)); font-size: 32px; font-weight: 700; border-radius: 999px; }
+  .mic { display: flex; align-items: center; gap: 26px; justify-content: center; margin-top: 10px; }
+  .mic .m { width: 92px; height: 92px; border-radius: 50%; background: var(--red); display: grid; place-items: center; }
+  .wave { display: flex; gap: 8px; align-items: center; height: 90px; }
+  .wave i { width: 10px; border-radius: 5px; background: #ffb3ba; }
+
+  /* ---------- diff / markdown ---------- */
+  .split { width: 940px; display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 2px solid var(--line); background: #121828; box-shadow: 0 40px 120px rgba(0,0,0,.5); }
+  .split .pane { padding: 18px 0; font-family: "JetBrains Mono", monospace; font-size: 25px; line-height: 1.75; }
+  .split .pane + .pane { border-left: 2px solid var(--line); }
+  .split .ph { font-family: "Inter", sans-serif; font-size: 22px; font-weight: 700; color: var(--muted); padding: 0 20px 10px; letter-spacing: 2px; text-transform: uppercase; }
+  .split .ln { padding: 0 20px; white-space: pre; }
+  .split .del { background: rgba(255,93,108,.18); color: #ffc2c8; }
+  .split .add { background: rgba(63,210,139,.18); color: #c3f5da; }
+  .md { width: 940px; margin-top: 26px; display: grid; grid-template-columns: 1fr 1fr; border: 2px solid var(--line); background: #121828; }
+  .md > div { padding: 22px 26px; }
+  .md .src { font-family: "JetBrains Mono", monospace; font-size: 24px; line-height: 1.7; color: #b9c3dc; border-right: 2px solid var(--line); white-space: pre; }
+  .md .out { background: #fff; color: #111; font-size: 26px; line-height: 1.5; }
+  .md .out h3 { font-size: 36px; margin-bottom: 6px; }
+  .md .out li { margin-left: 30px; }
+
+  /* ---------- privacy cards ---------- */
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; width: 940px; }
+  .card { padding: 34px 30px; background: linear-gradient(160deg, #1b2440, #121829); border: 1.5px solid #2c3757; min-height: 330px; }
+  .card .ci { width: 84px; height: 84px; border-radius: 20px; display: grid; place-items: center; margin-bottom: 22px; }
+  .card h4 { font-size: 38px; font-weight: 800; margin-bottom: 10px; letter-spacing: -.5px; }
+  .card p { font-size: 27px; color: var(--muted); line-height: 1.35; }
+
+  /* ---------- hook / brand / CTA ---------- */
+  .big { position: absolute; left: 60px; right: 60px; top: 640px; text-align: center; font-family: "Inter Display", "Inter", sans-serif; font-weight: 800; letter-spacing: -3px; }
+  .strike { position: relative; display: inline-block; }
+  .strike::after { content: ""; position: absolute; left: -10px; right: -10px; top: 52%; height: 12px; background: var(--red); transform-origin: left; transform: scaleX(var(--sx, 0)); border-radius: 6px; }
+  .logo { width: 300px; height: 300px; border-radius: 68px; box-shadow: 0 0 0 2px rgba(255,255,255,.08), 0 30px 120px rgba(43,120,228,.45); }
+  .cta { display: inline-block; margin-top: 50px; padding: 30px 64px; font-size: 48px; font-weight: 800; border-radius: 999px; background: linear-gradient(90deg, var(--blue), #4e8ff0); box-shadow: 0 20px 60px rgba(43,120,228,.5); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="blob" id="b1"></div>
+  <div class="blob" id="b2"></div>
+  <div class="blob" id="b3"></div>
+  <div id="grid"></div>
+  <div id="bug"><img src="logo.png" alt="" />NextNotePad.com</div>
+
+  <!-- 1. HOOK -->
+  <section class="scene" data-start="0" data-end="3.6" data-noin>
+    <div class="big" style="top:560px">
+      <div data-at="0.05" style="font-size:96px">Still installing</div>
+      <div data-at="0.35" style="font-size:96px">a <span class="strike" id="strike">desktop notepad</span>?</div>
+      <div data-at="1.7" data-anim="pop" style="font-size:120px;margin-top:60px"><em style="font-style:normal;background:linear-gradient(90deg,var(--blue2),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent">Stop.</em></div>
+      <div data-at="2.2" style="font-size:52px;font-weight:600;letter-spacing:-1px;color:var(--muted);margin-top:20px">Open a tab instead.</div>
+    </div>
+  </section>
+
+  <!-- 2. BRAND -->
+  <section class="scene" data-start="3.6" data-end="7.2">
+    <div class="body" style="top:440px;height:1060px">
+      <img class="logo" src="logo.png" alt="" data-at="0.05" data-anim="pop" />
+      <div data-at="0.4" style="font-family:'Inter Display';font-size:100px;font-weight:800;letter-spacing:-3px;margin-top:50px">NextNotePad<span style="color:var(--gold)">.com</span></div>
+      <div data-at="0.7" style="font-size:42px;color:var(--muted);margin-top:14px;text-align:center">Code, notes &amp; tools — right in your browser</div>
+      <div class="chips" style="margin-top:56px">
+        <span class="chip" data-at="1.1" data-anim="pop">Free</span>
+        <span class="chip" data-at="1.3" data-anim="pop">Zero install</span>
+        <span class="chip" data-at="1.5" data-anim="pop">Works offline</span>
+        <span class="chip" data-at="1.7" data-anim="pop">No account needed</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. EDITOR -->
+  <section class="scene" data-start="7.2" data-end="12">
+    <div class="head"><div class="kicker" data-at="0">Monaco editor</div><div class="title" data-at="0.1">The <em>VS Code engine</em>.<br/>In a browser tab.</div></div>
+    <div class="body">
+      <div class="win" data-at="0.3">
+        <div class="menubar"><span>N</span><span>File</span><span>Edit</span><span>Search</span><span>View</span><span>Language</span><span>Tools</span><span>Help</span></div>
+        <div class="tabs"><div class="tab on">app.js</div><div class="tab">notes.md</div><div class="tab">config.json</div></div>
+        <div class="code"><div class="gutter" id="g1"></div><pre id="code1"></pre></div>
+        <div class="status"><span>JavaScript</span><span id="lncol">Ln 1, Col 1</span><span>UTF-8</span><span>Saved ✓</span></div>
+      </div>
+    </div>
+    <div class="caption" data-at="1.2">Syntax highlighting for <b>30 languages</b> · tabs · autosave</div>
+  </section>
+
+  <!-- 4. THEMES -->
+  <section class="scene" data-start="12" data-end="16.2">
+    <div class="head"><div class="kicker" data-at="0">Make it yours</div><div class="title" data-at="0.1"><em>9 themes</em>, one click.</div></div>
+    <div class="body">
+      <div class="win" id="themewin" data-at="0.2">
+        <div class="menubar"><span>N</span><span>File</span><span>Edit</span><span>Search</span><span>View</span><span>Settings</span></div>
+        <div class="tabs"><div class="tab on">server.py</div><div class="tab">todo.txt</div></div>
+        <div class="code" style="min-height:360px"><div class="gutter">1<br/>2<br/>3<br/>4<br/>5<br/>6</div><pre><span class="c"># Simple greeting server</span>
+<span class="k">def</span> <span class="f">greet</span>(name):
+    msg = <span class="s">f"Hello, {name}!"</span>
+    <span class="k">return</span> msg * <span class="n">3</span>
+
+<span class="f">print</span>(greet(<span class="s">"world"</span>))</pre></div>
+        <div class="status"><span>Python</span><span>Ln 6, Col 24</span><span>UTF-8</span></div>
+      </div>
+      <div class="theme-pill" id="themename" data-at="0.3">Classic Light</div>
+      <div class="dots" id="themedots" data-at="0.3"></div>
+    </div>
+  </section>
+
+  <!-- 5. ORGANIZE -->
+  <section class="scene" data-start="16.2" data-end="20.6">
+    <div class="head"><div class="kicker" data-at="0">Stay organized</div><div class="title" data-at="0.1">Folders, tabs &amp;<br/><em>workspaces</em>.</div></div>
+    <div class="body">
+      <div class="explorer" data-at="0.25">
+        <div class="tree">
+          <div class="ws"><span>💼 Work</span><span style="color:var(--muted)">▾</span></div>
+          <div class="row" data-at="0.4"><span class="ico">📂</span>Projects</div>
+          <div class="row" data-at="0.5" style="padding-left:62px"><span class="ico">📄</span>roadmap.md</div>
+          <div class="row" data-at="0.6" style="padding-left:62px"><span class="ico">📄</span>api.json</div>
+          <div class="row" data-at="0.7"><span class="ico">📂</span>Daily Notes</div>
+          <div class="row sel" data-at="0.8" style="padding-left:62px"><span class="ico">📝</span>2026-11-07.md</div>
+          <div class="row" data-at="0.9"><span class="ico">⭐</span>Favorites</div>
+          <div class="row" data-at="1.0"><span class="ico">🗑️</span>Recycle Bin</div>
+        </div>
+        <div class="side">
+          <div class="feat" data-at="1.0" data-anim="left"><i>▤</i>Split editor</div>
+          <div class="feat" data-at="1.2" data-anim="left"><i>◷</i>Daily notes</div>
+          <div class="feat" data-at="1.4" data-anim="left"><i>★</i>Favorites</div>
+          <div class="feat" data-at="1.6" data-anim="left"><i>↺</i>Restore deleted</div>
+          <div class="feat" data-at="1.8" data-anim="left"><i>⇩</i>ZIP export</div>
+        </div>
+      </div>
+    </div>
+    <div class="caption" data-at="1.4">Separate workspaces for <b>work</b>, <b>personal</b> &amp; <b>study</b></div>
+  </section>
+
+  <!-- 6. FIND -->
+  <section class="scene" data-start="20.6" data-end="24.8">
+    <div class="head"><div class="kicker" data-at="0">Keyboard first</div><div class="title" data-at="0.1">Find <em>anything</em>,<br/>instantly.</div></div>
+    <div class="body">
+      <div class="palette" data-at="0.25">
+        <div class="q"><span class="gt">&gt;</span><span id="pq"></span><span class="caret" id="pcaret" style="height:44px"></span></div>
+        <div class="item on" data-at="1.0">Format Document <small>Shift+Alt+F</small></div>
+        <div class="item" data-at="1.1">Format JSON <small>Tools</small></div>
+        <div class="item" data-at="1.2">Find in Files <small>Ctrl+Shift+F</small></div>
+        <div class="item" data-at="1.3">Toggle Word Wrap <small>Alt+Z</small></div>
+        <div class="item" data-at="1.4">Open Today's Note <small>Daily</small></div>
+      </div>
+      <div class="chips" style="margin-top:46px">
+        <span class="chip" data-at="1.6" data-anim="pop"><kbd>Ctrl P</kbd> Quick Open</span>
+        <span class="chip" data-at="1.8" data-anim="pop"><kbd>Ctrl ⇧ P</kbd> Commands</span>
+        <span class="chip" data-at="2.0" data-anim="pop"><kbd>Ctrl H</kbd> Replace</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. DEV TOOLS -->
+  <section class="scene" data-start="24.8" data-end="29.2">
+    <div class="head"><div class="kicker" data-at="0">Built-in dev tools</div><div class="title" data-at="0.1">Stop googling<br/><em>"json formatter"</em>.</div></div>
+    <div class="body">
+      <div class="tools">
+        <div class="tool" data-at="0.30" data-anim="pop"><div class="g">{ }</div><span>Format JSON</span></div>
+        <div class="tool" data-at="0.38" data-anim="pop"><div class="g">&lt;/&gt;</div><span>XML · HTML · CSS</span></div>
+        <div class="tool" data-at="0.46" data-anim="pop"><div class="g">B64</div><span>Base64</span></div>
+        <div class="tool" data-at="0.54" data-anim="pop"><div class="g">#</div><span>SHA hashes</span></div>
+        <div class="tool" data-at="0.62" data-anim="pop"><div class="g">JWT</div><span>Decode JWT</span></div>
+        <div class="tool" data-at="0.70" data-anim="pop"><div class="g">id</div><span>UUIDs</span></div>
+        <div class="tool" data-at="0.78" data-anim="pop"><div class="g">%20</div><span>URL encode</span></div>
+        <div class="tool" data-at="0.86" data-anim="pop"><div class="g">⏱</div><span>Timestamps</span></div>
+        <div class="tool" data-at="0.94" data-anim="pop"><div class="g">Aa</div><span>Case convert</span></div>
+        <div class="tool" data-at="1.02" data-anim="pop"><div class="g">↕</div><span>Sort lines</span></div>
+        <div class="tool" data-at="1.10" data-anim="pop"><div class="g">≠</div><span>Remove dupes</span></div>
+        <div class="tool" data-at="1.18" data-anim="pop"><div class="g">∑</div><span>Text stats</span></div>
+      </div>
+    </div>
+    <div class="caption" data-at="1.5">Your text never goes to a <b>random website</b></div>
+  </section>
+
+  <!-- 8. AI + VOICE -->
+  <section class="scene" data-start="29.2" data-end="33.6">
+    <div class="head"><div class="kicker" data-at="0">AI writing help</div><div class="title" data-at="0.1">Fix grammar<br/>in <em>one click</em>.</div></div>
+    <div class="body">
+      <div class="ai">
+        <div class="box before" data-at="0.25"><span class="lbl">Before</span>i <u>has went</u> to the meeting yesterday <u>and it were</u> grate</div>
+        <div class="btn" data-at="0.55" data-anim="pop">✨ Fix Grammar &amp; Spelling</div>
+        <div class="box after" data-at="0.8"><span class="lbl">After</span><span id="aiout"></span><span class="caret" id="aicaret"></span></div>
+        <div class="mic" data-at="2.3">
+          <div class="m"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></div>
+          <div class="wave" id="wave"></div>
+          <div style="font-size:34px;font-weight:700">Voice typing</div>
+        </div>
+      </div>
+    </div>
+    <div class="caption" data-at="1.6">Grammar fixes · Text → Markdown · <b>Voice dictation</b></div>
+  </section>
+
+  <!-- 9. DIFF + MARKDOWN -->
+  <section class="scene" data-start="33.6" data-end="37.6">
+    <div class="head"><div class="kicker" data-at="0">Compare &amp; preview</div><div class="title" data-at="0.1"><em>Diff</em> checker +<br/>Markdown preview.</div></div>
+    <div class="body">
+      <div class="split" data-at="0.25">
+        <div class="pane"><div class="ph">v1.txt</div>
+          <div class="ln">price: 10</div>
+          <div class="ln del" data-at="0.6" data-anim="fade">- tax: 0.05</div>
+          <div class="ln">ship: free</div>
+          <div class="ln del" data-at="0.75" data-anim="fade">- status: draft</div>
+        </div>
+        <div class="pane"><div class="ph">v2.txt</div>
+          <div class="ln">price: 10</div>
+          <div class="ln add" data-at="0.6" data-anim="fade">+ tax: 0.08</div>
+          <div class="ln">ship: free</div>
+          <div class="ln add" data-at="0.75" data-anim="fade">+ status: live</div>
+        </div>
+      </div>
+      <div class="md" data-at="1.1">
+        <div class="src"># Launch 🚀
+- Write docs
+- **Ship it**</div>
+        <div class="out"><h3>Launch 🚀</h3><ul><li>Write docs</li><li><b>Ship it</b></li></ul></div>
+      </div>
+    </div>
+    <div class="caption" data-at="1.5">Side-by-side or inline · <b>split editor</b> · full-page reading view</div>
+  </section>
+
+  <!-- 10. PRIVACY + SYNC -->
+  <section class="scene" data-start="37.6" data-end="41.6">
+    <div class="head"><div class="kicker" data-at="0">Private by design</div><div class="title" data-at="0.1">Your notes.<br/><em>Your rules.</em></div></div>
+    <div class="body">
+      <div class="cards">
+        <div class="card" data-at="0.3" data-anim="pop">
+          <div class="ci" style="background:rgba(63,210,139,.15)"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#3fd28b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l20 20M8.5 16.5a5 5 0 0 1 7 0M2 8.8a15 15 0 0 1 4.2-2.6M10.7 5.1A15 15 0 0 1 22 8.8M5 12.9a10 10 0 0 1 5.2-2.8M16.9 10.9A10 10 0 0 1 19 12.9M12 20h.01"/></svg></div>
+          <h4>Works offline</h4><p>Guest mode keeps everything in your browser.</p></div>
+        <div class="card" data-at="0.5" data-anim="pop">
+          <div class="ci" style="background:rgba(245,178,52,.15)"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#f5b234" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+          <h4>AES-256 lock</h4><p>Encrypt any file or folder with a passphrase.</p></div>
+        <div class="card" data-at="0.7" data-anim="pop">
+          <div class="ci" style="background:rgba(95,162,255,.15)"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#5fa2ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H7a5 5 0 1 1 1.2-9.86A6 6 0 0 1 19.5 11 4 4 0 0 1 17.5 19z"/><path d="M12 12v5M9.5 14.5 12 12l2.5 2.5"/></svg></div>
+          <h4>Your Google Drive</h4><p>Sign in to sync. Files live in <i>your</i> Drive, not ours.</p></div>
+        <div class="card" data-at="0.9" data-anim="pop">
+          <div class="ci" style="background:rgba(176,132,255,.15)"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#b084ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4M12 7v6M9.5 10.5 12 13l2.5-2.5"/></svg></div>
+          <h4>Install as an app</h4><p>A PWA with its own window and icon.</p></div>
+      </div>
+    </div>
+    <div class="caption" data-at="1.4">Plus an <b>app password lock</b> with auto-lock</div>
+  </section>
+
+  <!-- 11. CTA -->
+  <section class="scene" data-start="41.6" data-end="45.2" data-noout>
+    <div class="body" style="top:420px;height:1100px">
+      <img class="logo" src="logo.png" alt="" style="width:240px;height:240px;border-radius:54px" data-at="0.05" data-anim="pop" />
+      <div data-at="0.3" style="font-family:'Inter Display';font-size:110px;font-weight:800;letter-spacing:-3px;margin-top:44px">NextNotePad<span style="color:var(--gold)">.com</span></div>
+      <div data-at="0.55" style="font-size:46px;font-weight:600;color:var(--muted);margin-top:16px;text-align:center;line-height:1.35">Free. No install. No sign-up.<br/>Just open it and write.</div>
+      <div class="cta" id="cta" data-at="0.9" data-anim="pop">Try it free →</div>
+      <div data-at="1.3" style="font-size:36px;font-weight:700;color:var(--gold);margin-top:40px;letter-spacing:1px">🔗 Link in bio</div>
+    </div>
+  </section>
+
+  <div id="progress"><i></i></div>
+</div>
+
+<script>
+(() => {
+  const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+  const easeOut = (x) => 1 - Math.pow(1 - clamp(x), 3);
+  const easeBack = (x) => { x = clamp(x); const c = 1.7; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+  const DURATION = 45;
+
+  const scenes = [...document.querySelectorAll(".scene")].map((el) => ({
+    el,
+    start: +el.dataset.start,
+    end: +el.dataset.end,
+    noin: el.hasAttribute("data-noin"),
+    noout: el.hasAttribute("data-noout"),
+    items: [...el.querySelectorAll("[data-at]")].map((n) => ({ n, at: +n.dataset.at, anim: n.dataset.anim || "up" })),
+  }));
+
+  // ---- typed code (scene 3) ----
+  const CODE = [
+    ["c", "// Hello from NextNotePad"], ["", "\n"],
+    ["k", "const"], ["", " notes = ["], ["s", "'ideas'"], ["", ", "], ["s", "'todo'"], ["", "];\n"],
+    ["", "\n"],
+    ["k", "function"], ["", " "], ["f", "save"], ["", "(text) {\n"],
+    ["", "  "], ["k", "return"], ["", " drive."], ["f", "write"], ["", "(text, "], ["n", "5"], ["", ");\n"],
+    ["", "}"],
+  ];
+  const CODE_LEN = CODE.reduce((a, [, s]) => a + s.length, 0);
+  const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  function typed(segs, n, caretOn) {
+    let out = "", left = n;
+    for (const [cls, s] of segs) {
+      if (left <= 0) break;
+      const part = esc(s.slice(0, left)); left -= s.length;
+      out += cls ? `<span class="${cls}">${part}</span>` : part;
+    }
+    return out + (caretOn ? '<span class="caret"></span>' : "");
+  }
+  const code1 = document.getElementById("code1"), g1 = document.getElementById("g1"), lncol = document.getElementById("lncol");
+
+  // ---- themes (from src/lib/monaco/themes) ----
+  const THEMES = [
+    { name: "Classic Light (Notepad++)", bg: "#ffffff", fg: "#000000", panel: "#f2f2f2", border: "#c4c4c4", accent: "#2b78e4", tabIn: "#e8e8e8", status: "#e0e0e0", statusFg: "#000", ln: "#787878", kw: "#000080", str: "#008000", num: "#0000ff", com: "#808080", fn: "#795e26" },
+    { name: "Dracula", bg: "#282a36", fg: "#f8f8f2", panel: "#21222c", border: "#44475a", accent: "#bd93f9", tabIn: "#21222c", status: "#191a21", statusFg: "#f8f8f2", ln: "#6272a4", kw: "#ff79c6", str: "#f1fa8c", num: "#bd93f9", com: "#6272a4", fn: "#50fa7b" },
+    { name: "Monokai", bg: "#272822", fg: "#f8f8f2", panel: "#1e1f1c", border: "#3e3d32", accent: "#a6e22e", tabIn: "#1e1f1c", status: "#414339", statusFg: "#f8f8f2", ln: "#90908a", kw: "#f92672", str: "#e6db74", num: "#ae81ff", com: "#75715e", fn: "#a6e22e" },
+    { name: "Nord", bg: "#2e3440", fg: "#d8dee9", panel: "#3b4252", border: "#4c566a", accent: "#88c0d0", tabIn: "#3b4252", status: "#3b4252", statusFg: "#d8dee9", ln: "#616e88", kw: "#81a1c1", str: "#a3be8c", num: "#b48ead", com: "#616e88", fn: "#88c0d0" },
+    { name: "One Dark", bg: "#282c34", fg: "#abb2bf", panel: "#21252b", border: "#181a1f", accent: "#61afef", tabIn: "#21252b", status: "#21252b", statusFg: "#9da5b4", ln: "#495162", kw: "#c678dd", str: "#98c379", num: "#d19a66", com: "#5c6370", fn: "#61afef" },
+    { name: "Solarized", bg: "#fdf6e3", fg: "#657b83", panel: "#eee8d5", border: "#d3cbb7", accent: "#268bd2", tabIn: "#eee8d5", status: "#eee8d5", statusFg: "#586e75", ln: "#93a1a1", kw: "#859900", str: "#2aa198", num: "#d33682", com: "#93a1a1", fn: "#268bd2" },
+    { name: "Notepad Dark", bg: "#1e1e1e", fg: "#dcdcdc", panel: "#2b2b2b", border: "#3c3c3c", accent: "#3794ff", tabIn: "#2b2b2b", status: "#007acc", statusFg: "#fff", ln: "#858585", kw: "#569cd6", str: "#d69d85", num: "#b5cea8", com: "#57a64a", fn: "#dcdcaa" },
+    { name: "VS Code", bg: "#1f1f1f", fg: "#cccccc", panel: "#181818", border: "#2b2b2b", accent: "#0078d4", tabIn: "#181818", status: "#181818", statusFg: "#ccc", ln: "#6e7681", kw: "#569cd6", str: "#ce9178", num: "#b5cea8", com: "#6a9955", fn: "#dcdcaa" },
+    { name: "Notepad Light", bg: "#ffffff", fg: "#1e1e1e", panel: "#f3f3f3", border: "#d4d4d4", accent: "#005fb8", tabIn: "#ececec", status: "#f3f3f3", statusFg: "#333", ln: "#999", kw: "#0000ff", str: "#a31515", num: "#098658", com: "#008000", fn: "#795e26" },
+  ];
+  const themewin = document.getElementById("themewin"), themename = document.getElementById("themename"), themedots = document.getElementById("themedots");
+  themedots.innerHTML = THEMES.map(() => "<i></i>").join("");
+  // scene 3 window uses the Classic Light colours
+  function applyTheme(el, th) {
+    const v = { "--w-bg": th.bg, "--w-fg": th.fg, "--w-panel": th.panel, "--w-border": th.border, "--w-accent": th.accent, "--w-tab-in": th.tabIn, "--w-status": th.status, "--w-status-fg": th.statusFg, "--w-ln": th.ln, "--t-kw": th.kw, "--t-str": th.str, "--t-num": th.num, "--t-com": th.com, "--t-fn": th.fn };
+    for (const k in v) el.style.setProperty(k, v[k]);
+  }
+  applyTheme(document.querySelector('[data-start="7.2"] .win'), THEMES[0]);
+
+  // ---- AI output ----
+  const AI_TEXT = "I went to the meeting yesterday, and it was great.";
+  const aiout = document.getElementById("aiout"), aicaret = document.getElementById("aicaret");
+  const wave = document.getElementById("wave");
+  wave.innerHTML = Array.from({ length: 22 }, () => "<i></i>").join("");
+  const waveBars = [...wave.children];
+
+  const pq = document.getElementById("pq"), pcaret = document.getElementById("pcaret");
+  const strike = document.getElementById("strike");
+  const cta = document.getElementById("cta");
+  const progress = document.querySelector("#progress i");
+  const b1 = document.getElementById("b1"), b2 = document.getElementById("b2"), b3 = document.getElementById("b3");
+
+  function render(t) {
+    // background drift
+    b1.style.transform = `translate(${-250 + Math.sin(t * 0.35) * 160}px, ${-200 + Math.cos(t * 0.27) * 140}px)`;
+    b2.style.transform = `translate(${520 + Math.cos(t * 0.3) * 150}px, ${1250 + Math.sin(t * 0.4) * 160}px)`;
+    b3.style.transform = `translate(${380 + Math.sin(t * 0.22 + 1) * 220}px, ${700 + Math.cos(t * 0.33) * 220}px)`;
+    progress.style.width = `${clamp(t / DURATION) * 100}%`;
+
+    for (const s of scenes) {
+      const local = t - s.start;
+      const vis = t >= s.start - 0.001 && t < s.end;
+      if (!vis) { s.el.style.opacity = 0; s.el.style.visibility = "hidden"; continue; }
+      s.el.style.visibility = "visible";
+      const pin = s.noin ? 1 : easeOut(local / 0.35);
+      const pout = s.noout ? 0 : easeOut((t - (s.end - 0.3)) / 0.3);
+      s.el.style.opacity = Math.min(pin, 1 - pout);
+      s.el.style.transform = `translateY(${(1 - pin) * 60 - pout * 60}px) scale(${1 - pout * 0.04})`;
+      for (const it of s.items) {
+        const p = (local - it.at) / 0.45;
+        if (it.anim === "pop") {
+          const e = easeBack(p);
+          it.n.style.opacity = clamp(p * 2.5);
+          it.n.style.transform = `scale(${0.6 + 0.4 * e})`;
+        } else if (it.anim === "left") {
+          const e = easeOut(p);
+          it.n.style.opacity = e;
+          it.n.style.transform = `translateX(${(1 - e) * 60}px)`;
+        } else if (it.anim === "fade") {
+          it.n.style.opacity = easeOut(p);
+        } else {
+          const e = easeOut(p);
+          it.n.style.opacity = e;
+          it.n.style.transform = `translateY(${(1 - e) * 40}px)`;
+        }
+      }
+    }
+
+    // hook strike-through
+    strike.style.setProperty("--sx", easeOut((t - 1.15) / 0.35));
+
+    // scene 3: typing
+    {
+      const local = t - 7.2;
+      const n = Math.floor(clamp((local - 0.7) / 3.0) * CODE_LEN);
+      const caretOn = Math.floor(t * 2.5) % 2 === 0 || n < CODE_LEN;
+      code1.innerHTML = typed(CODE, n, caretOn);
+      const shown = CODE.map(([, s]) => s).join("").slice(0, n);
+      const lines = shown.split("\n");
+      g1.innerHTML = Array.from({ length: Math.max(1, lines.length) }, (_, i) => i + 1).join("<br/>");
+      lncol.textContent = `Ln ${lines.length}, Col ${lines[lines.length - 1].length + 1}`;
+    }
+
+    // scene 4: theme cycling
+    {
+      const local = t - 12;
+      const idx = Math.min(THEMES.length - 1, Math.max(0, Math.floor((local - 0.45) / 0.38)));
+      applyTheme(themewin, THEMES[idx]);
+      themename.textContent = THEMES[idx].name;
+      [...themedots.children].forEach((d, i) => d.classList.toggle("on", i === idx));
+    }
+
+    // scene 6: palette query
+    {
+      const local = t - 20.6;
+      const q = "format";
+      pq.textContent = q.slice(0, Math.floor(clamp((local - 0.45) / 0.5) * q.length));
+      pcaret.style.opacity = Math.floor(t * 2.5) % 2 === 0 ? 1 : 0;
+    }
+
+    // scene 8: AI streaming + voice wave
+    {
+      const local = t - 29.2;
+      const n = Math.floor(clamp((local - 1.0) / 1.1) * AI_TEXT.length);
+      aiout.textContent = AI_TEXT.slice(0, n);
+      aicaret.style.opacity = n < AI_TEXT.length || Math.floor(t * 2.5) % 2 === 0 ? 1 : 0;
+      waveBars.forEach((b, i) => {
+        const h = 16 + Math.abs(Math.sin(t * 9 + i * 0.7) * Math.cos(t * 4.3 + i * 1.3)) * 70;
+        b.style.height = `${h}px`;
+      });
+    }
+
+    // CTA pulse
+    {
+      const local = t - 41.6;
+      if (local > 1.4) {
+        const pulse = 1 + Math.sin((local - 1.4) * 5) * 0.035;
+        cta.style.transform = `scale(${pulse})`;
+      }
+    }
+  }
+
+  window.render = render;
+  window.DURATION = DURATION;
+  window.ready = document.fonts.ready.then(() => Promise.all([...document.images].map((i) => i.decode().catch(() => {}))));
+  if (location.search.includes("play")) {
+    const t0 = performance.now();
+    const loop = () => { render(((performance.now() - t0) / 1000) % DURATION); requestAnimationFrame(loop); };
+    loop();
+  } else {
+    render(0);
+  }
+})();
+</script>
+</body>
+</html>
