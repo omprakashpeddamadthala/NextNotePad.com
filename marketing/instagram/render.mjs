@@ -1,6 +1,7 @@
 // Renders promo.html to MP4 videos for Instagram.
 //
-//   node marketing/instagram/render.mjs            # full render (reel + feed + cover)
+//   node marketing/instagram/capture/capture.cjs   # 1. record live footage (app running on :3000)
+//   node marketing/instagram/render.mjs            # 2. full render (reel + feed + cover)
 //   node marketing/instagram/render.mjs --stills   # only key-frame PNGs for review
 //
 // Needs: Playwright (Chromium), ffmpeg, python3 + numpy (for the soundtrack).
@@ -19,6 +20,16 @@ fs.mkdirSync(out, { recursive: true });
 const FPS = 30;
 const stillsOnly = process.argv.includes("--stills");
 
+// Index the live footage recorded by capture/capture.cjs for promo.html.
+const framesDir = path.join(dir, "capture", "frames");
+const clips = {};
+for (const name of fs.readdirSync(framesDir)) {
+  const f = path.join(framesDir, name, "clip.json");
+  if (fs.existsSync(f)) clips[name] = { shots: JSON.parse(fs.readFileSync(f, "utf8")).shots };
+}
+if (!Object.keys(clips).length) throw new Error("No footage: run capture/capture.cjs first (app must be running).");
+fs.writeFileSync(path.join(framesDir, "clips.js"), "window.CLIPS = " + JSON.stringify(clips) + ";\n");
+
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1080, height: 1920 }, deviceScaleFactor: 1 });
 await page.goto("file://" + path.join(dir, "promo.html"));
@@ -31,7 +42,7 @@ const frameAt = async (t, type = "jpeg") => {
 };
 
 if (stillsOnly) {
-  const times = [1, 2.6, 5.6, 10.8, 13.2, 15.6, 19.5, 23.5, 27.8, 32.5, 36.5, 40.5, 44];
+  const times = [2.6, 5.6, 7.4, 9.8, 12.6, 14.8, 17.5, 22.2, 25.6, 29.2, 32.6, 36, 38.8, 40.9, 44];
   for (const t of times) fs.writeFileSync(path.join(out, `still-${String(t).padStart(4, "0")}.png`), await frameAt(t, "png"));
   await browser.close();
   console.log(`wrote ${times.length} stills to ${out}`);
@@ -39,7 +50,7 @@ if (stillsOnly) {
 }
 
 // Cover image (shown on the profile grid) — the brand reveal frame.
-fs.writeFileSync(path.join(out, "cover.jpg"), await frameAt(6.6));
+fs.writeFileSync(path.join(out, "cover.jpg"), await frameAt(9.8));
 
 // Soundtrack
 const wav = path.join(out, "music.wav");

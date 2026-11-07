@@ -1,6 +1,8 @@
 # Instagram promo — NextNotePad.com
 
-A 45-second promo video, generated from code (no screen recording needed).
+A 45-second promo built from **live screen footage of the real app**: a Playwright
+script drives NextNotePad (guest mode), records each feature as a frame sequence,
+and the frames are composited into a branded vertical video.
 
 | File | Use |
 |---|---|
@@ -11,30 +13,38 @@ A 45-second promo video, generated from code (no screen recording needed).
 
 ## Storyboard (45 s)
 
-| Time | Scene |
-|---|---|
-| 0–3.6 s | Hook — "Still installing a desktop notepad? Stop. Open a tab instead." |
-| 3.6–7.2 s | Brand reveal — Free · Zero install · Works offline · No account needed |
-| 7.2–12 s | Monaco (VS Code) editor typing code, 30 languages, tabs, autosave |
-| 12–16.2 s | Cycles through all 9 themes |
-| 16.2–20.6 s | Explorer: folders, workspaces, daily notes, favorites, recycle bin, split editor, ZIP export |
-| 20.6–24.8 s | Command palette, Quick Open, Find & Replace |
-| 24.8–29.2 s | Developer tools grid (JSON/XML/HTML/CSS format, Base64, SHA, JWT, UUID, URL, timestamps, case, sort, dedupe, stats) |
-| 29.2–33.6 s | AI grammar fix (streaming) + voice dictation |
-| 33.6–37.6 s | Diff checker + Markdown preview |
-| 37.6–41.6 s | Offline guest mode, AES-256 file lock, Google Drive sync, installable PWA, app password lock |
-| 41.6–45 s | Call to action — "Try it free →  Link in bio" |
+| Time | Scene | Live footage |
+|---|---|---|
+| 0–3.4 s | Hook — "Still installing a desktop notepad? Stop." | — |
+| 3.4–6.6 s | Brand reveal | — |
+| 6.6–11 s | Monaco editor | New file `app.js`, code typed live with highlighting, saved |
+| 11–15.6 s | 9 themes | Command Palette → `Theme:` commands cycling every theme |
+| 15.6–19.6 s | Organize | New folder, Today's Note, View → Split Editor |
+| 19.6–23 s | Search | Quick Open (Ctrl+P), Find in Files |
+| 23–27 s | Dev tools | Dev Toolkit → Format JSON, scroll the tool list, Generate UUID |
+| 27–30.2 s | AI | Fix Grammar & Spelling → Fix with Gemini |
+| 30.2–34.2 s | Markdown | MD viewer ↔ source, typed line appears rendered |
+| 34.2–36.8 s | Diff | Diff Checker between two tabs |
+| 36.8–41.6 s | Privacy | Right-click → Lock (AES-256 passphrase) → locked file |
+| 41.6–45 s | Call to action | — |
+
+The AI scene uses a canned response for `/api/ai/correct` during capture (no API key
+in the capture environment); every other screen is the app's real behaviour.
 
 ## Re-rendering
 
 Requires Playwright (Chromium), `ffmpeg`, and `python3` with `numpy`.
 
 ```bash
-node marketing/instagram/render.mjs --stills   # key frames only, for a quick review
-node marketing/instagram/render.mjs            # full render (~5 min)
+npm run dev                                         # app on http://localhost:3000
+node marketing/instagram/capture/capture.cjs        # record all clips (or name some: editor themes …)
+node marketing/instagram/render.mjs --stills        # key frames only, for a quick review
+node marketing/instagram/render.mjs                 # full render (~5 min)
 ```
 
-- `promo.html` — the animation. Open `promo.html?play` in a browser to preview it live.
-  Edit text, timings (`data-start` / `data-end` / `data-at`) or colours there.
+- `capture/capture.cjs` — one function per clip; `capture/lib.cjs` has the recorder
+  (fake cursor, click rings, typing). Monaco is served from `node_modules` during capture.
+- `promo.html` — composition. Scene timing via `data-start`/`data-end`, camera moves via
+  `data-cam` (`[time, zoom, focusX, focusY]` in app pixels).
 - `music.py` — original synthesised 120 BPM backing track (royalty-free, no samples).
-- Keep key content between y = 285 and 1635 so the 4:5 crop still works.
+- Raw frames (`capture/frames/`, ~50 MB) are not committed; re-run the capture to regenerate.
