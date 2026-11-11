@@ -12,7 +12,7 @@ function getSecretKey(): Uint8Array {
   });
 }
 
-export interface SessionPayload {
+interface SessionPayload {
   userId: string;
 }
 

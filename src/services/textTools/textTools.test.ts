@@ -64,8 +64,6 @@ test("Unix timestamp conversion recognizes 12-digit millisecond values", () => {
   assert.equal(unixToIsoDate("946684800"), "2000-01-01T00:00:00.000Z");
 });
 
-// --- New tests ---
-
 test("sort/dedupe/reverse preserve CRLF line endings", () => {
   assert.equal(
     sortLinesAscending("banana\r\napple\r\ncherry"),

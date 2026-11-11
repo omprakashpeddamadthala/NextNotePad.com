@@ -6,12 +6,12 @@ import type { AuthUser } from "@/store/authStore";
  * can show the server's own error message, e.g. "Current lock password is incorrect."); only
  * network failures reject.
  */
-export interface LockApiResult<T> {
+interface LockApiResult<T> {
   ok: boolean;
   data: Partial<T> & { error?: string };
 }
 
-export interface LockStatusResponse {
+interface LockStatusResponse {
   authenticated: boolean;
   enabled: boolean;
   isLocked: boolean;
@@ -20,7 +20,7 @@ export interface LockStatusResponse {
   autoTimeoutMinutes: number;
 }
 
-export interface UnlockResponse {
+interface UnlockResponse {
   success: boolean;
   locked: boolean;
   retryAfterSeconds?: number;

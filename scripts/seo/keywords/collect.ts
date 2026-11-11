@@ -30,12 +30,12 @@ export interface CachedResponse {
   suggestions: string[];
 }
 
-export function cacheFile(locale: string, query: string): string {
+function cacheFile(locale: string, query: string): string {
   const safe = query.replace(/[^a-z0-9+]+/gi, "_").slice(0, 120);
   return path.join(CACHE_DIR, locale, `${safe}.json`);
 }
 
-export function buildQueries(): {
+function buildQueries(): {
   query: string;
   seed: string;
   category: string;

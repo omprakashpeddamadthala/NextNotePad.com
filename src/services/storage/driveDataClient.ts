@@ -20,19 +20,19 @@ export interface WorkspaceListResponse {
   activeWorkspaceId: string | null;
 }
 
-export interface WorkspaceTreeResponse {
+interface WorkspaceTreeResponse {
   nodes: WorkspaceNode[];
   hasAnyHistory: boolean;
   workspaceId: string;
 }
 
-export interface AllWorkspaceTreesResponse {
+interface AllWorkspaceTreesResponse {
   workspaces: CachedWorkspaceRecord[];
   activeWorkspaceId: string | null;
   trees: Record<string, WorkspaceTreeResponse>;
 }
 
-export interface SearchableDriveFile {
+interface SearchableDriveFile {
   id: string;
   name: string;
   path: string;

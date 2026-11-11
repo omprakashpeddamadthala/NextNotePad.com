@@ -19,7 +19,7 @@ const SCRYPT_COST = 16384;
 const SCRYPT_BLOCK_SIZE = 8;
 const SCRYPT_PARALLELIZATION = 1;
 
-export interface PasswordHashResult {
+interface PasswordHashResult {
   hash: string;
   salt: string;
 }

@@ -2,7 +2,7 @@ import { useTabsStore } from "@/store/tabsStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import type { FileNode, Tab } from "@/types/file";
 
-export interface ActiveFileInfo {
+interface ActiveFileInfo {
   tab: Tab | null;
   file: FileNode | null;
 }

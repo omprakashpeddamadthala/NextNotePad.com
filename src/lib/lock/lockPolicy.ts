@@ -7,7 +7,7 @@ export type LockPolicy = (typeof LOCK_POLICIES)[number];
 export const DEFAULT_LOCK_POLICY: LockPolicy = "next_visit";
 export const DEFAULT_PWA_ON_RESUME = true;
 export const DEFAULT_AUTO_TIMEOUT_MINUTES = 0;
-export const MAX_AUTO_TIMEOUT_MINUTES = 24 * 60;
+const MAX_AUTO_TIMEOUT_MINUTES = 24 * 60;
 
 export interface LockOptions {
   policy?: LockPolicy;

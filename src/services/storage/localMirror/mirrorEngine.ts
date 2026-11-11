@@ -36,7 +36,7 @@ export class PermissionLostError extends Error {
   }
 }
 
-export interface ReconcileInput {
+interface ReconcileInput {
   dir: FileSystemDirectoryHandle;
   manifest: Manifest;
   plan: Map<string, MirrorTarget>;
@@ -52,7 +52,7 @@ export interface ReconcileInput {
   onProgress?: (done: number, total: number) => void;
 }
 
-export interface ReconcileResult {
+interface ReconcileResult {
   failed: number;
   changes: number;
 }

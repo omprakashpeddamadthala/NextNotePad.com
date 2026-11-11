@@ -79,7 +79,7 @@ export async function searchWorkspace(
   return results;
 }
 
-export interface ReplaceSummary {
+interface ReplaceSummary {
   filesChanged: number;
   replacements: number;
 }

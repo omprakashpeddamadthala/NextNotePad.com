@@ -17,7 +17,7 @@ export function isOfflineError(error: unknown): boolean {
   );
 }
 
-export interface RequestOptions extends RequestInit {
+interface RequestOptions extends RequestInit {
   action: string;
   timeoutMs?: number;
   background?: boolean;

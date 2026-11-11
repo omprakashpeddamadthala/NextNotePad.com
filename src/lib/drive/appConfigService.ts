@@ -81,7 +81,7 @@ function migrateAppConfig(raw: unknown): AppConfig {
   return appConfigSchema.parse(current);
 }
 
-export type AppConfigPatch = (config: AppConfig) => AppConfig | void;
+type AppConfigPatch = (config: AppConfig) => AppConfig | void;
 
 interface CacheEntry {
   fileId: string;

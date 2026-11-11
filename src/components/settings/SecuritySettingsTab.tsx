@@ -63,13 +63,11 @@ export function SecuritySettingsTab() {
       .catch(() => {});
   }, [authStatus, setLockConfig]);
 
-  // Setup form state
   const [setupPassword, setSetupPassword] = useState("");
   const [setupConfirm, setSetupConfirm] = useState("");
   const [setupShowPassword, setSetupShowPassword] = useState(false);
   const [setupError, setSetupError] = useState<string | null>(null);
 
-  // Change password form state
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -77,7 +75,6 @@ export function SecuritySettingsTab() {
   const [showChangeFields, setShowChangeFields] = useState(false);
   const [changeError, setChangeError] = useState<string | null>(null);
 
-  // Disable lock form state
   const [showDisableDialog, setShowDisableDialog] = useState(false);
   const [disablePassword, setDisablePassword] = useState("");
   const [disableError, setDisableError] = useState<string | null>(null);
@@ -116,7 +113,6 @@ export function SecuritySettingsTab() {
     );
   }
 
-  // Handle enabling / setting up lock password
   const handleSetupLock = (e: React.FormEvent) => {
     e.preventDefault();
     if (!setupPassword) {
@@ -158,7 +154,6 @@ export function SecuritySettingsTab() {
     });
   };
 
-  // Handle changing policy or options
   const handleUpdateOptions = (patch: LockOptions) => {
     startTransition(async () => {
       try {
@@ -176,7 +171,6 @@ export function SecuritySettingsTab() {
     });
   };
 
-  // Handle changing password
   const handleChangePassword = (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentPassword) {
@@ -215,7 +209,6 @@ export function SecuritySettingsTab() {
     });
   };
 
-  // Handle disabling lock
   const handleDisableLock = (e: React.FormEvent) => {
     e.preventDefault();
     if (!disablePassword) {
@@ -244,7 +237,6 @@ export function SecuritySettingsTab() {
 
   return (
     <div className="space-y-6">
-      {/* Overview status card */}
       <div className="rounded-xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs backdrop-blur-xs">
         <div className="flex items-center justify-between gap-4 pb-4 border-b border-border/60">
           <div className="flex items-center gap-3">
@@ -298,7 +290,6 @@ export function SecuritySettingsTab() {
           )}
         </div>
 
-        {/* User account association info */}
         {user && (
           <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground px-1">
             <span>Associated Account:</span>
@@ -307,7 +298,6 @@ export function SecuritySettingsTab() {
         )}
       </div>
 
-      {/* Setup Form (when lock is not yet enabled) */}
       {!enabled && (
         <div className="rounded-xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs backdrop-blur-xs">
           <div className="mb-4 pb-3 border-b border-border/60">
@@ -406,10 +396,8 @@ export function SecuritySettingsTab() {
         </div>
       )}
 
-      {/* Lock Configuration Options (when lock is enabled) */}
       {enabled && (
         <div className="space-y-4">
-          {/* Locking Policy */}
           <div className="rounded-xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs backdrop-blur-xs">
             <div className="mb-4 pb-3 border-b border-border/60">
               <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -480,7 +468,6 @@ export function SecuritySettingsTab() {
                 </Select>
               </div>
 
-              {/* PWA Reopen Switch */}
               <div className="flex items-center justify-between gap-4 rounded-lg border border-border/50 bg-background/50 p-3.5">
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-2">
@@ -506,7 +493,6 @@ export function SecuritySettingsTab() {
                 />
               </div>
 
-              {/* Inactivity Timeout */}
               <div className="space-y-2 rounded-lg border border-border/50 bg-background/50 p-3.5">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
@@ -555,7 +541,6 @@ export function SecuritySettingsTab() {
             </div>
           </div>
 
-          {/* Change Password / Disable Section */}
           <div className="rounded-xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs backdrop-blur-xs">
             <div className="mb-4 pb-3 border-b border-border/60 flex items-center justify-between">
               <div>
@@ -723,7 +708,6 @@ export function SecuritySettingsTab() {
                 </form>
               )}
 
-              {/* Disable Lock Form */}
               {showDisableDialog && (
                 <form
                   onSubmit={handleDisableLock}

@@ -10,7 +10,7 @@ import {
   type WorkspaceListResponse,
 } from "@/services/storage/driveDataClient";
 
-export interface WorkspaceRecord {
+interface WorkspaceRecord {
   id: string;
   name: string;
   description: string | null;

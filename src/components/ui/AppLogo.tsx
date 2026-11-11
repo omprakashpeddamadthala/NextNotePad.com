@@ -4,7 +4,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { APP_BRAND } from "@/lib/constants/branding";
 
-export interface AppLogoProps {
+interface AppLogoProps {
   size?: "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | number;
   showText?: boolean;
   showDomain?: boolean;

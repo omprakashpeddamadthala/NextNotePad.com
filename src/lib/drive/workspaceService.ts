@@ -37,7 +37,7 @@ export class AppError extends Error {
   }
 }
 
-export interface WorkspaceRecordDto {
+interface WorkspaceRecordDto {
   id: string;
   name: string;
   description: string | null;
@@ -106,7 +106,7 @@ export function entryToNodeDto(
     encryptionIv: e.appProperties[P.iv] ?? null,
   };
 }
-export type NodeDto = ReturnType<typeof entryToNodeDto>;
+type NodeDto = ReturnType<typeof entryToNodeDto>;
 
 export function fileProps(input: {
   language?: string;
@@ -461,7 +461,7 @@ export async function resolveRequestWorkspace(
   return (await getWorkspace(ds, workspaceId)).id;
 }
 
-export interface NodePatch {
+interface NodePatch {
   name?: string;
   parentId?: string | null;
   content?: string;

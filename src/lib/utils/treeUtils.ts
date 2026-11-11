@@ -16,7 +16,7 @@ function getChildren(nodes: NodeMap, parentId: string | null): WorkspaceNode[] {
   return children;
 }
 
-export interface FlatTreeRow {
+interface FlatTreeRow {
   node: WorkspaceNode;
   depth: number;
 }

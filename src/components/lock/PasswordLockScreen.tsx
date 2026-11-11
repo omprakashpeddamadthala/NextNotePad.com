@@ -31,12 +31,10 @@ export function PasswordLockScreen() {
   const inputRef = useRef<HTMLInputElement>(null);
   const countdownTimerRef = useRef<number | null>(null);
 
-  // Focus input automatically on mount
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
-  // Countdown timer for lockout
   useEffect(() => {
     if (lockoutCountdown === null || lockoutCountdown <= 0) {
       if (countdownTimerRef.current) {
@@ -78,9 +76,7 @@ export function PasswordLockScreen() {
         const { ok, data } = await lockApi.unlock(password);
 
         if (ok && data.success && data.user) {
-          // Initialize workspace data securely
           await initUserWorkspace(data.user);
-          // Update lock store state
           useLockStore.getState().unlock(data.user);
         } else {
           setError(data.error || "Incorrect password. Please try again.");
@@ -123,13 +119,11 @@ export function PasswordLockScreen() {
       aria-label="Application Password Lock"
       className="bg-[#0a0d1a] text-foreground fixed inset-0 z-50 flex h-full min-h-screen w-full flex-col items-center justify-between overflow-y-auto px-4 py-8 sm:px-6 select-none"
     >
-      {/* Background ambient lighting */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 size-[500px] rounded-full bg-gradient-to-b from-amber-500/10 via-primary/5 to-transparent blur-3xl"
       />
 
-      {/* Top brand header */}
       <header className="relative flex flex-col items-center gap-2 pt-2">
         <div className="flex items-center gap-2">
           <AppLogo size="md" showText={false} showDomain={false} />
@@ -143,7 +137,6 @@ export function PasswordLockScreen() {
         </div>
       </header>
 
-      {/* Center lock card */}
       <main className="relative my-auto w-full max-w-sm">
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
           <div className="flex flex-col items-center text-center">
@@ -257,7 +250,6 @@ export function PasswordLockScreen() {
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="relative text-center text-[11px] text-white/40">
         <span>{APP_BRAND.name}</span>
         <span className="mx-1.5">•</span>
