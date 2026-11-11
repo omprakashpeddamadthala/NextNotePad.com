@@ -2,7 +2,7 @@ import { prisma } from "@/lib/db/prisma";
 
 const SINGLETON_ID = "singleton";
 
-export interface EffectiveAiConfig {
+interface EffectiveAiConfig {
   geminiApiKey: string | null;
   geminiModel: string | null;
   agentRouterApiKey: string | null;
@@ -35,7 +35,7 @@ export async function getAiConfigStatus(): Promise<AiConfigStatus> {
   };
 }
 
-export interface AiConfigUpdate {
+interface AiConfigUpdate {
   geminiApiKey?: string | null;
   geminiModel?: string | null;
   agentRouterApiKey?: string | null;

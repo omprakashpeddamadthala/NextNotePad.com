@@ -258,7 +258,7 @@ export async function deleteCloudFolder(folderId: string): Promise<void> {
   }
 }
 
-export interface ImportNodeInput {
+interface ImportNodeInput {
   id: string;
   parentId: string | null;
   name: string;

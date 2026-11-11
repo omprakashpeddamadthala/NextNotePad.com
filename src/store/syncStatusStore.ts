@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type SyncPhase = "saved" | "saving" | "offline" | "failed";
+type SyncPhase = "saved" | "saving" | "offline" | "failed";
 
 interface SyncStatusState {
   failed: Record<string, string>;

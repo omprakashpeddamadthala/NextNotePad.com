@@ -14,7 +14,7 @@ function getSecretKey(): Uint8Array {
   });
 }
 
-export interface UnlockTokenPayload {
+interface UnlockTokenPayload {
   userId: string;
   unlockedAt: number;
   unlockedDate: string; // "YYYY-MM-DD"

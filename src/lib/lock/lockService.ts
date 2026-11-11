@@ -53,7 +53,6 @@ async function ensureLockSchema(): Promise<void> {
   };
 
   try {
-    // PostgreSQL native ADD COLUMN IF NOT EXISTS
     await runSql(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "lockEnabled" BOOLEAN NOT NULL DEFAULT false;`);
     await runSql(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "lockPasswordHash" TEXT;`);
     await runSql(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "lockPasswordSalt" TEXT;`);
@@ -317,7 +316,6 @@ export async function verifyAndUnlock(
     return { success: false, error: "Application lock is not enabled for this user." };
   }
 
-  // Rate limiting check
   if (user.lockLockedUntil && new Date(user.lockLockedUntil) > new Date()) {
     const waitMs = new Date(user.lockLockedUntil).getTime() - Date.now();
     const waitSec = Math.max(1, Math.ceil(waitMs / 1000));
@@ -369,7 +367,6 @@ export async function verifyAndUnlock(
     };
   }
 
-  // On successful unlock, reset failed attempts and generate unlock token
   await prisma.$executeRawUnsafe(
     `UPDATE "User"
      SET "lockFailedAttempts" = 0,

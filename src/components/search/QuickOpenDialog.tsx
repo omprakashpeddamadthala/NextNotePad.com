@@ -27,7 +27,7 @@ import { toast } from "sonner";
 import { FolderGit2 } from "lucide-react";
 import type { FileNode } from "@/types/file";
 
-export interface SearchableFile {
+interface SearchableFile {
   id: string;
   name: string;
   path: string;

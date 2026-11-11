@@ -1,4 +1,4 @@
-export interface LanguageDef {
+interface LanguageDef {
   id: string;
   label: string;
   extensions: string[];

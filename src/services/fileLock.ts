@@ -43,7 +43,7 @@ async function lockSingleFile(id: string, passphrase: string): Promise<boolean> 
   return true;
 }
 
-export type UnlockResult =
+type UnlockResult =
   | { status: "unlocked"; plaintext: string }
   | { status: "wrong-passphrase" }
   | { status: "not-locked" };

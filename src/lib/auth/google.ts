@@ -46,7 +46,7 @@ export function buildGoogleAuthUrl(state: string): string {
   return `${GOOGLE_AUTH_ENDPOINT}?${params.toString()}`;
 }
 
-export interface GoogleTokens {
+interface GoogleTokens {
   access_token: string;
   refresh_token?: string;
   expires_in: number;
@@ -70,7 +70,7 @@ export async function exchangeCodeForTokens(code: string): Promise<GoogleTokens>
   return res.json();
 }
 
-export interface GoogleProfile {
+interface GoogleProfile {
   sub: string;
   email: string;
   name?: string;

@@ -123,7 +123,7 @@ export const caseConverters = {
       .join("_"),
 } as const;
 
-export type CaseConverterId = keyof typeof caseConverters;
+type CaseConverterId = keyof typeof caseConverters;
 
 const CASE_CONVERTER_LABELS: Record<CaseConverterId, string> = {
   upper: "UPPERCASE",
@@ -247,7 +247,7 @@ export function spacesToTabs(text: string): string {
   return text.replace(new RegExp(` {${INDENT_WIDTH}}`, "g"), "\t");
 }
 
-export interface TextStats {
+interface TextStats {
   characters: number;
   charactersNoSpaces: number;
   words: number;

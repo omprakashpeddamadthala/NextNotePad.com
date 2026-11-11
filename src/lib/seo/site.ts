@@ -14,7 +14,7 @@ export const SITE_NAME = "NextNotePad";
 export type SiteSection =
   "product" | "use-cases" | "compare" | "guides" | "help";
 
-export interface SitePage {
+interface SitePage {
   /** Route path, always starting with "/". */
   path: string;
   /** Title segment; the root layout template appends " — NextNotePad". */

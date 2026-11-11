@@ -31,7 +31,6 @@ export function useAppLock(): void {
     }
   }, [recordActivity]);
 
-  // Activity tracking for idle auto-lock
   useEffect(() => {
     if (!enabled || isLocked || autoTimeoutMinutes <= 0) return;
     lastActivityTimeRef.current = Date.now();
@@ -76,7 +75,6 @@ export function useAppLock(): void {
         // Immediately shield the UI from the OS application switcher preview
         setPrivacyShieldVisible(true);
       } else if (document.visibilityState === "visible") {
-        // App resumed into foreground
         setPrivacyShieldVisible(false);
 
         if (isLocked) return;
@@ -93,7 +91,6 @@ export function useAppLock(): void {
           }
         }
 
-        // PWA resume lock
         if (isPWA() && pwaOnResume && bgTime) {
           const awayDuration = Date.now() - bgTime;
           if (awayDuration >= PWA_BACKGROUND_LOCK_THRESHOLD_MS) {
@@ -124,7 +121,6 @@ export function useAppLock(): void {
     };
   }, [enabled, isLocked, policy, pwaOnResume, authStatus, lock, setPrivacyShieldVisible]);
 
-  // Keyboard shortcut Ctrl+Alt+L for immediate lock
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (

@@ -38,7 +38,7 @@ The UI deliberately avoids the "modern SaaS code editor" look — square corners
 | AI Text Engine | Google Gemini (`@google/genai`) & Claude via AgentRouter |
 | Import/export | JSZip, FileSaver, DOMPurify, `marked` (Markdown) |
 
-> ⚠️ This project pins **Next.js 15 / Prisma 7**, both recent major versions with breaking changes from their older, more widely-known APIs. See `AGENTS.md` — before making changes, read the matching guide under `node_modules/next/dist/docs/`.
+> ⚠️ This project pins **Next.js 15 / Prisma 7**, both recent major versions with breaking changes from their older, more widely-known APIs. Before making changes, read the matching guide under `node_modules/next/dist/docs/`.
 
 ## Getting started
 
