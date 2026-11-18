@@ -152,7 +152,7 @@ For every task:
 
 ---
 
-## 9. Current task — System Design section (waiting for approval)
+## 9. Current task — System Design section (approved and completed 2026-11-18)
 
 **Goal:** Add a "System Design" learning section to nextnotepad.com, inspired by the *structure* of designed-to-scale.vercel.app, with extra concepts explained from a **Java / Spring Boot** point of view, and a **System Design** link in the site nav bar.
 

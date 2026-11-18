@@ -11,6 +11,8 @@ import {
 } from "./site";
 import { breadcrumbJsonLd, homeJsonLd, serializeJsonLd } from "./jsonLd";
 import sitemap from "../../app/sitemap";
+import { CONCEPTS, conceptPath } from "../systemDesign/concepts";
+import { conceptTitle } from "../systemDesign/seo";
 import robots from "../../app/robots";
 
 // The root layout appends " — NextNotePad" to every content-page title.
@@ -114,6 +116,7 @@ test("sitemap lists the homepage and every registered page exactly once", () => 
   const expected = [
     absoluteUrl("/"),
     ...SITE_PAGES.map((p) => absoluteUrl(p.path)),
+    ...CONCEPTS.map((c) => absoluteUrl(conceptPath(c.slug))),
   ];
   assert.deepEqual([...urls].sort(), [...expected].sort());
   for (const url of urls)
@@ -160,4 +163,29 @@ test("serialized JSON-LD cannot break out of its script tag", () => {
       "</script>",
     ),
   );
+});
+
+test("system design concept pages have unique slugs and search-friendly metadata", () => {
+  const pageTitles = new Set(
+    [HOME_PAGE.title, ...SITE_PAGES.map((p) => p.title + TITLE_SUFFIX)].map(
+      (t) => t.toLowerCase(),
+    ),
+  );
+  const slugs = new Set<string>();
+  for (const concept of CONCEPTS) {
+    assert.match(concept.slug, /^[a-z0-9]+(-[a-z0-9]+)*$/, concept.slug);
+    assert.ok(!slugs.has(concept.slug), `duplicate slug ${concept.slug}`);
+    slugs.add(concept.slug);
+
+    const title = conceptTitle(concept) + TITLE_SUFFIX;
+    assert.ok(title.length <= MAX_TITLE, `title too long: ${title}`);
+    assert.ok(!pageTitles.has(title.toLowerCase()), `duplicate title ${title}`);
+    pageTitles.add(title.toLowerCase());
+
+    const d = concept.summary;
+    assert.ok(
+      d.length >= MIN_DESCRIPTION && d.length <= MAX_DESCRIPTION,
+      `${concept.slug} summary length ${d.length}`,
+    );
+  }
 });

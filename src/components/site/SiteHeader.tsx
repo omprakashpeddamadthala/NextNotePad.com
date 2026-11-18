@@ -6,6 +6,7 @@ const NAV = [
   { href: "/developers", label: "Developers" },
   { href: "/notepad-plus-plus-alternative", label: "vs Notepad++" },
   { href: "/guides", label: "Guides" },
+  { href: "/system-design", label: "System Design" },
   { href: "/faq", label: "FAQ" },
 ];
 
@@ -28,9 +29,9 @@ export function SiteHeader() {
         </Link>
         <nav
           aria-label="Main"
-          className="order-last -mx-2 w-full overflow-x-auto sm:order-none sm:mx-0 sm:w-auto sm:flex-1"
+          className="order-last -mx-2 w-full sm:order-none sm:mx-0 sm:w-auto sm:flex-1"
         >
-          <ul className="flex items-center gap-1 text-sm whitespace-nowrap">
+          <ul className="flex flex-wrap items-center gap-1 text-sm whitespace-nowrap">
             {NAV.map((item) => (
               <li key={item.href}>
                 <Link

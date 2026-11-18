@@ -12,7 +12,7 @@ export const SITE_URL = (
 export const SITE_NAME = "NextNotePad";
 
 export type SiteSection =
-  "product" | "use-cases" | "compare" | "guides" | "help";
+  "product" | "use-cases" | "compare" | "guides" | "learn" | "help";
 
 interface SitePage {
   /** Route path, always starting with "/". */
@@ -134,6 +134,18 @@ export const SITE_PAGES: SitePage[] = [
     lastReviewed: "2026-10-27",
     changeFrequency: "monthly",
     priority: 0.6,
+  },
+  {
+    path: "/system-design",
+    title: "System Design Concepts with Java Spring Boot Examples",
+    description:
+      "Learn system design concepts like caching, load balancing, sharding, queues and circuit breakers, each with a Java Spring Boot example you can reuse.",
+    navLabel: "System Design",
+    section: "learn",
+    primaryKeyword: "system design spring boot",
+    lastReviewed: "2026-11-18",
+    changeFrequency: "monthly",
+    priority: 0.7,
   },
   {
     path: "/faq",

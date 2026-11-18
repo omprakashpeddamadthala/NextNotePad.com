@@ -6,13 +6,14 @@ const GROUPS: { section: SiteSection; heading: string }[] = [
   { section: "use-cases", heading: "Use cases" },
   { section: "compare", heading: "Compare" },
   { section: "guides", heading: "Guides" },
+  { section: "learn", heading: "Learn" },
   { section: "help", heading: "Help" },
 ];
 
 export function SiteFooter() {
   return (
     <footer className="mt-20 border-t border-slate-200 bg-slate-50">
-      <div className="mx-auto grid max-w-5xl grid-cols-2 gap-8 px-4 py-10 text-sm sm:grid-cols-3 sm:px-6 lg:grid-cols-5">
+      <div className="mx-auto grid max-w-5xl grid-cols-2 gap-8 px-4 py-10 text-sm sm:grid-cols-3 sm:px-6 lg:grid-cols-6">
         {GROUPS.map(({ section, heading }) => (
           <div key={section}>
             <h2 className="font-semibold text-slate-900">{heading}</h2>
