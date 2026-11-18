@@ -7,6 +7,8 @@ import { MonacoEditorWrapper } from "./MonacoEditorWrapper";
 import { SplitEditor } from "./SplitEditor";
 import { DiffTabView } from "./DiffTabView";
 import { EditorWelcome } from "./EditorWelcome";
+import { MobileReadView } from "./MobileReadView";
+import { MobileCopyButton } from "./MobileCopyButton";
 import { SkeletonText } from "@/components/ui/skeleton";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useTabsStore } from "@/store/tabsStore";
@@ -16,6 +18,7 @@ import { useMarkdownFullPageViewStore } from "@/store/markdownFullPageViewStore"
 import { useAdminViewStore } from "@/store/adminViewStore";
 import { useAuthStore } from "@/store/authStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
+import { useIsMobile } from "@/hooks/useMediaQuery";
 
 const MarkdownPreview = dynamic(() => import("./MarkdownPreview").then((m) => m.MarkdownPreview), {
   ssr: false,
@@ -53,6 +56,8 @@ export function EditorArea() {
   const setMarkdownEditing = useUIStore((s) => s.setMarkdownEditing);
   const authStatus = useAuthStore((s) => s.status);
   const workspaceReady = useAuthStore((s) => s.workspaceReady);
+  const isMobile = useIsMobile();
+  const mobileReadMode = useUIStore((s) => s.mobileReadMode);
 
   const activeTab = tabs.find((t) => t.id === activeTabId);
   const activeNode = useWorkspaceStore((s) => (activeTab ? s.nodes[activeTab.fileId] : undefined));
@@ -71,6 +76,9 @@ export function EditorArea() {
     isEditingMarkdown &&
     !activeNode.locked;
 
+  const showMobileReadView =
+    isMobile && mobileReadMode && !isMarkdown && activeNode?.type === "file" && !activeNode.locked;
+
   const workspaceLoading = authStatus === "loading" || (authStatus === "authenticated" && !workspaceReady);
 
   useEffect(() => {
@@ -88,7 +96,7 @@ export function EditorArea() {
       className="flex h-full min-h-0 flex-col outline-none"
     >
       {!adminViewOpen && <EditorTabs />}
-      <div className="min-h-0 flex-1">
+      <div className="relative min-h-0 flex-1">
         {adminViewOpen ? (
           <AdminView />
         ) : workspaceLoading ? (
@@ -112,9 +120,13 @@ export function EditorArea() {
             onEdit={() => setMarkdownEditing(activeTab.fileId, true)}
             showClose={false}
           />
+        ) : showMobileReadView ? (
+          <MobileReadView key={activeTab.fileId} fileId={activeTab.fileId} />
         ) : isSplitView && splitView ? (
           <SplitEditor split={splitView} />
         ) : (
+          <>
+          {isMobile && <MobileCopyButton />}
           <ResizablePanelGroup orientation="horizontal">
             <ResizablePanel defaultSize={showMarkdownPreview ? "50%" : "100%"} minSize="20%">
               <MonacoEditorWrapper
@@ -133,6 +145,7 @@ export function EditorArea() {
               </>
             )}
           </ResizablePanelGroup>
+          </>
         )}
       </div>
     </div>

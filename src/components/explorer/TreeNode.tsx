@@ -20,6 +20,7 @@ import { getFileIcon } from "@/lib/fileIcons";
 import { cn } from "@/lib/utils";
 import type { WorkspaceNode } from "@/types/file";
 import { useWorkspaceStore } from "@/store/workspaceStore";
+import { useUIStore } from "@/store/uiStore";
 import { useExplorerSelectionStore } from "@/store/explorerSelectionStore";
 import { useRecentFilesStore } from "@/store/recentFilesStore";
 import {
@@ -99,6 +100,7 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
       return;
     }
     openFileForUser(node.id);
+    useUIStore.getState().setMobileSidebarOpen(false);
   }
 
   function handleDragStart(e: React.DragEvent) {

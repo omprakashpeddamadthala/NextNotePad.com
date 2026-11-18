@@ -7,7 +7,6 @@ import { useActiveFile } from "@/hooks/useActiveFile";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useDialogStore } from "@/store/dialogStore";
 import { useApiActivityStore } from "@/store/apiActivityStore";
-import { useIsMobile } from "@/hooks/useMediaQuery";
 import { countNodes } from "@/lib/utils/treeUtils";
 
 function Segment({
@@ -56,33 +55,7 @@ export function StatusBar() {
   const { file } = useActiveFile();
   const nodes = useWorkspaceStore((s) => s.nodes);
   const openDialog = useDialogStore((s) => s.openDialog);
-  const isMobile = useIsMobile();
   const stats = countNodes(nodes);
-
-  if (isMobile) {
-    return (
-      <div
-        role="status"
-        aria-label="Status bar"
-      className="np-statusbar-gradient flex min-h-6 shrink-0 items-center justify-between border-t border-white/8 pb-[env(safe-area-inset-bottom)] text-[11px] text-[var(--np-statusbar-fg)] select-none"
-      >
-        <button
-          type="button"
-          onClick={() => openDialog("workspaceStats")}
-          className="truncate px-2.5 text-[11px] font-medium transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-white/30 active:bg-white/15"
-          title="Workspace statistics"
-        >
-          {stats.files} file{stats.files === 1 ? "" : "s"}, {stats.folders}{" "}
-          folder{stats.folders === 1 ? "" : "s"}
-        </button>
-        {file && (
-          <span className="shrink-0 truncate px-2.5 font-mono">
-            Ln {line}, Col {column}
-          </span>
-        )}
-      </div>
-    );
-  }
 
   return (
     <div

@@ -16,6 +16,7 @@ import { useRecentFilesStore } from "@/store/recentFilesStore";
 import { useTabsStore } from "@/store/tabsStore";
 import { useAuthStore } from "@/store/authStore";
 import { useMultiWorkspaceStore } from "@/store/multiWorkspaceStore";
+import { useIsMobile } from "@/hooks/useMediaQuery";
 import * as cloudRepo from "@/services/storage/cloudWorkspaceRepository";
 import {
   getCachedDriveFileIndexSync,
@@ -41,6 +42,7 @@ export function QuickOpenDialog() {
   const open = useDialogStore((s) => s.open.quickOpen);
   const setDialogOpen = useDialogStore((s) => s.setDialogOpen);
   const setOpen = (v: boolean) => setDialogOpen("quickOpen", v);
+  const isMobile = useIsMobile();
 
   const nodes = useWorkspaceStore((s) => s.nodes);
   const recent = useRecentFilesStore((s) => s.recent);
@@ -234,9 +236,23 @@ export function QuickOpenDialog() {
       onOpenChange={setOpen}
       title="Quick Open — Search Files"
       description="Search and open files across all your workspaces"
+      className={
+        isMobile
+          ? "top-[calc(0.5rem+env(safe-area-inset-top))] max-w-[calc(100%-1rem)] rounded-2xl!"
+          : undefined
+      }
     >
-      <CommandInput placeholder="Search files across all workspaces… (e.g. env, .ts, README)" />
-      <CommandList>
+      <CommandInput
+        className={isMobile ? "text-base" : undefined}
+        placeholder={
+          isMobile
+            ? "Search all notes…"
+            : "Search files across all workspaces… (e.g. env, .ts, README)"
+        }
+      />
+      <CommandList
+        className={isMobile ? "max-h-[calc(100dvh-7rem)]" : undefined}
+      >
         <CommandEmpty>No files found matching your search.</CommandEmpty>
         <CommandGroup heading="Files across all workspaces">
           {files.map((file) => {

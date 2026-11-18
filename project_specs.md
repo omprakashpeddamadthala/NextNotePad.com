@@ -115,7 +115,52 @@ For every task:
 
 ---
 
-## 8. Current task — Codebase cleanup (approved and completed 2026-11-11)
+## 9. Current task — Mobile UI/UX upgrade (approved 2026-11-18)
+
+**Goal:** On phones (screens under 768px wide) the app should feel like a polished native notes app: every option easy to find, quick workspace switching, quick file search, a clean reading view, and easy text selection and copy. **Desktop layout is not changed.**
+
+### What's wrong today
+| Area | Problem |
+|---|---|
+| Workspaces | There is **no workspace switcher on phones** — it only exists in the desktop sidebar. |
+| Search | Quick Open (find a file) is buried inside the Search menu. |
+| Menu | The "Menu" sheet is a 3×3 grid of desktop dropdown menus (File, Edit, Encoding…). Hard to tap, options hidden two levels deep. |
+| Reading / copying | Notes open in the code editor. Selecting text with a finger is fiddly and there is no Copy button. |
+| Top bar | Two similar icons (explorer + menu) on the left; title says "Editing locally" even for Drive files. |
+
+### Planned changes (phones only)
+1. **New top bar** — left: Files button. Middle: note name + workspace name (tap to switch workspace). Right: Search button and a "More" button.
+2. **Bottom action bar** (thumb-friendly) — 4 large buttons: **Files**, **Search**, **New note**, **Copy all**. Sits above the phone's home bar.
+3. **Workspace switcher sheet** — a bottom sheet listing all workspaces with a check mark on the active one, one tap to switch, plus "New workspace". Uses the existing workspace store/actions, no new API.
+4. **Search** — the Search button opens the existing Quick Open dialog full-screen on phones, with a larger input that is focused immediately and larger result rows.
+5. **Files drawer** — the existing explorer drawer gets the workspace switcher at the top and bigger touch targets for New file / New folder.
+6. **Read / Edit toggle** — a button on the top bar switches the open note between:
+   - **Edit** (the current editor), and
+   - **Read** — clean, wrapped text in a readable font where you can long-press to select any text normally (Markdown files show the existing Markdown preview).
+7. **Copy** — "Copy all" copies the whole note; in the editor, when text is selected, a small floating **Copy** button appears. A short "Copied" toast confirms it.
+8. **"More" sheet redesign** — replace the 3×3 dropdown grid with a clean, grouped list of large rows with icons and labels:
+   - *Note:* Rename, Save/Download, Lock, Find & Replace, Word wrap, Markdown preview
+   - *Workspace:* Switch, Export/Import, Recycle Bin, Stats
+   - *App:* Settings, Command Palette, Install app, Account / Sign in, About
+   Each row calls an action that already exists (registered actions / dialog store).
+
+### Files likely touched
+- `src/components/layout/AppShell.tsx`, `MobileAppBar.tsx`, `MobileMenuSheet.tsx`
+- New (one component per file): `MobileBottomBar.tsx`, `MobileWorkspaceSheet.tsx`, `MobileReadView.tsx`, `MobileCopyButton.tsx`
+- `src/components/explorer/FileExplorer.tsx`, `src/components/search/QuickOpenDialog.tsx` (mobile styles only)
+- `src/store/uiStore.ts` (add "workspace sheet open" and "read mode" flags)
+
+### Not changed
+- Desktop layout, APIs, database, auth, Drive storage.
+
+### Done when
+- `npx tsc --noEmit`, `npm run lint`, `npm run build` pass; existing `npm run test:*` pass
+- In the browser at phone size (390×844), as guest: switch workspace, search and open a file, create a note, toggle Read/Edit, select and copy text, copy all, open every "More" item — no console errors
+- Desktop (1440px) looks and works exactly as before
+
+---
+
+## 8. Previous task — Codebase cleanup (approved and completed 2026-11-11)
 
 **Goal:** Remove what isn't needed. The app must look and behave exactly the same. No API, database, auth, routing or UI changes.
 

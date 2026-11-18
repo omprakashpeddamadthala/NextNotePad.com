@@ -8,6 +8,9 @@ interface UIState {
   sidebarVisible: boolean;
   mobileSidebarOpen: boolean;
   mobileMenuSheetOpen: boolean;
+  mobileWorkspaceSheetOpen: boolean;
+  mobileReadMode: boolean;
+  explorerShowTrash: boolean;
   bottomPanelVisible: boolean;
   activeBottomTab: BottomPanelTab;
   isSplitView: boolean;
@@ -23,6 +26,9 @@ interface UIActions {
   setMobileSidebarOpen: (open: boolean) => void;
   toggleMobileSidebar: () => void;
   setMobileMenuSheetOpen: (open: boolean) => void;
+  setMobileWorkspaceSheetOpen: (open: boolean) => void;
+  toggleMobileReadMode: () => void;
+  setExplorerShowTrash: (show: boolean) => void;
   setBottomPanelVisible: (visible: boolean) => void;
   setActiveBottomTab: (tab: BottomPanelTab) => void;
   setSplitView: (isSplit: boolean) => void;
@@ -39,6 +45,9 @@ export const useUIStore = create<UIState & UIActions>()(
       sidebarVisible: true,
       mobileSidebarOpen: false,
       mobileMenuSheetOpen: false,
+      mobileWorkspaceSheetOpen: false,
+      mobileReadMode: false,
+      explorerShowTrash: false,
       bottomPanelVisible: false,
       activeBottomTab: "search",
       isSplitView: false,
@@ -52,6 +61,9 @@ export const useUIStore = create<UIState & UIActions>()(
       setMobileSidebarOpen: (mobileSidebarOpen) => set({ mobileSidebarOpen }),
       toggleMobileSidebar: () => set((state) => ({ mobileSidebarOpen: !state.mobileSidebarOpen })),
       setMobileMenuSheetOpen: (mobileMenuSheetOpen) => set({ mobileMenuSheetOpen }),
+      setMobileWorkspaceSheetOpen: (mobileWorkspaceSheetOpen) => set({ mobileWorkspaceSheetOpen }),
+      toggleMobileReadMode: () => set((state) => ({ mobileReadMode: !state.mobileReadMode })),
+      setExplorerShowTrash: (explorerShowTrash) => set({ explorerShowTrash }),
       setBottomPanelVisible: (bottomPanelVisible) => set({ bottomPanelVisible }),
       setActiveBottomTab: (activeBottomTab) => set({ activeBottomTab }),
       setSplitView: (isSplitView) => set({ isSplitView }),
@@ -75,6 +87,7 @@ export const useUIStore = create<UIState & UIActions>()(
         bottomPanelVisible: state.bottomPanelVisible,
         showHiddenFiles: state.showHiddenFiles,
         toolsRailVisible: state.toolsRailVisible,
+        mobileReadMode: state.mobileReadMode,
       }),
     },
   ),
