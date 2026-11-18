@@ -6,6 +6,7 @@ import { duplicateNode } from "@/services/fileOperations";
 import { formatActiveEditor } from "@/services/formatting/formatActiveEditor";
 import { useRegisterAction } from "@/hooks/useRegisterAction";
 import { toggleFindWidget } from "@/lib/monaco/findWidget";
+import { copyText } from "@/services/copyNote";
 
 interface UseMonacoGlobalActionsParams {
   registerGlobalActions: boolean | undefined;
@@ -59,6 +60,20 @@ export function useMonacoGlobalActions({
     "edit.copy",
     () => {
       if (registerGlobalActions) editorRef.current?.getAction("editor.action.clipboardCopyAction")?.run();
+    },
+    [registerGlobalActions],
+  );
+  useRegisterAction(
+    "edit.copySelection",
+    () => {
+      if (!registerGlobalActions) return;
+      const editor = editorRef.current;
+      const model = editor?.getModel();
+      const text = (editor?.getSelections() ?? [])
+        .map((range) => model?.getValueInRange(range) ?? "")
+        .filter(Boolean)
+        .join("\n");
+      if (text) void copyText(text, "Selection copied");
     },
     [registerGlobalActions],
   );

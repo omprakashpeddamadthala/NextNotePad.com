@@ -5,6 +5,8 @@ import dynamic from "next/dynamic";
 import { MenuBar } from "./MenuBar";
 import { MobileAppBar } from "./MobileAppBar";
 import { MobileMenuSheet } from "./MobileMenuSheet";
+import { MobileBottomBar } from "./MobileBottomBar";
+import { MobileWorkspaceSheet } from "@/components/workspace/MobileWorkspaceSheet";
 import { StatusBar } from "./StatusBar";
 import {
   ResizablePanelGroup,
@@ -150,6 +152,7 @@ export function AppShell() {
         <>
           <MobileAppBar />
           <MobileMenuSheet />
+          <MobileWorkspaceSheet />
         </>
       ) : (
         <MenuBar />
@@ -170,6 +173,8 @@ export function AppShell() {
           <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
             <SheetContent
               side="left"
+              showCloseButton={false}
+              aria-describedby={undefined}
               className="w-[min(88vw,22rem)] gap-0 p-0 sm:max-w-sm"
             >
               <SheetHeader className="sr-only">
@@ -234,7 +239,7 @@ export function AppShell() {
         </div>
       )}
 
-      <StatusBar />
+      {isMobile ? <MobileBottomBar /> : <StatusBar />}
 
       <SettingsDialog />
       <QuickOpenDialog />
