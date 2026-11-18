@@ -149,3 +149,38 @@ For every task:
 - All `npm run test:*` unit tests pass (text-tools, lock, local-mirror, dictation, seo)
 - `npm run build` passes
 - `npm run dev` starts and the editor, explorer, menus, settings dialog and command palette open with no console errors
+
+---
+
+## 9. Current task — System Design section (waiting for approval)
+
+**Goal:** Add a "System Design" learning section to nextnotepad.com, inspired by the *structure* of designed-to-scale.vercel.app, with extra concepts explained from a **Java / Spring Boot** point of view, and a **System Design** link in the site nav bar.
+
+**Who uses it:** Developers preparing for system-design interviews or learning how to build scalable backends in Spring Boot. Public, no login.
+
+**Important limits**
+- The reference site could not be opened from this cloud session (network blocks it). Its exact topic list still needs to be confirmed — either allow the site in the session's network settings or paste the topic list.
+- We will **not** copy its text, diagrams or styling word-for-word (that is someone else's work). We write our own original explanations covering the same kinds of topics, in NextNotePad's existing site style.
+
+**Pages (all public, server-rendered, under `src/app/(site)/system-design/`)**
+| Page | Purpose |
+|---|---|
+| `/system-design` | Hub: intro + grid of concept cards grouped by category |
+| `/system-design/[slug]` | One concept: what it is, when to use it, trade-offs, a simple diagram, and a "In Spring Boot" section with a short Java code sample and the libraries to use |
+
+**Planned concepts (~24)**
+- *Fundamentals:* scalability (vertical vs horizontal), latency vs throughput, CAP theorem, consistency models
+- *Traffic:* load balancing, API gateway (Spring Cloud Gateway), rate limiting (Bucket4j / Resilience4j), CDN
+- *Data:* caching (Spring Cache + Redis), database indexing, replication, sharding/partitioning, SQL vs NoSQL, connection pooling (HikariCP)
+- *Async:* message queues (Kafka / RabbitMQ with Spring), event-driven architecture, idempotency, outbox pattern
+- *Resilience:* circuit breaker, retries & timeouts (Resilience4j), bulkhead
+- *Architecture:* microservices vs monolith, service discovery (Eureka), distributed transactions / Saga, observability (Actuator, Micrometer, tracing)
+
+**Nav bar:** add "System Design" to `SiteHeader.tsx` `NAV` list. Also add the pages to `sitemap.ts`.
+
+**Data:** concepts live in one TypeScript file (`src/lib/systemDesign/concepts.ts`). No database, no API routes, no auth, no third-party services.
+
+**Done when**
+- `npx tsc --noEmit`, `npm run lint`, `npm run format:check`, `npm run test:seo`, `npm run build` pass
+- `npm run dev`: nav link works, hub and every concept page render with no console errors, on desktop and phone width
+- Existing editor and site pages unchanged
