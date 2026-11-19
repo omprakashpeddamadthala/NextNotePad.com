@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Pin, FileDiff } from "lucide-react";
+import { X, Pin, FileDiff, FileDown, Printer, FileClock } from "lucide-react";
 import { createElement } from "react";
 import { getFileIcon } from "@/lib/fileIcons";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,9 @@ import {
 import type { Tab, WorkspaceNode } from "@/types/file";
 import { useTabsStore } from "@/store/tabsStore";
 import { useDiffViewStore } from "@/store/diffViewStore";
+import { downloadNote } from "@/services/noteExport/downloadNote";
+import { printNote } from "@/services/noteExport/printNote";
+import { useVersionHistoryStore } from "@/store/versionHistoryStore";
 
 interface TabItemProps {
   tab: Tab;
@@ -118,6 +121,16 @@ export function TabItem({
       <ContextMenuContent className="w-48">
         <ContextMenuItem onSelect={() => pinTab(tab.id, !tab.pinned)}>
           {tab.pinned ? "Unpin Tab" : "Pin Tab"}
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem onSelect={() => useVersionHistoryStore.getState().openFor(tab.fileId)}>
+          <FileClock /> Version History…
+        </ContextMenuItem>
+        <ContextMenuItem onSelect={() => void downloadNote(tab.fileId)}>
+          <FileDown /> Download
+        </ContextMenuItem>
+        <ContextMenuItem onSelect={() => void printNote(tab.fileId)}>
+          <Printer /> Print…
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onSelect={() => closeTab(tab.id)}>

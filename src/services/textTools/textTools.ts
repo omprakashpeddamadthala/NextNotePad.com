@@ -258,10 +258,15 @@ interface TextStats {
 
 const WORDS_PER_MINUTE = 200;
 
+/** Words are runs of non-whitespace, the same rule word processors use. */
+export function countWords(text: string): number {
+  const matches = text.match(/\S+/g);
+  return matches ? matches.length : 0;
+}
+
 export function computeTextStats(text: string): TextStats {
-  const trimmed = text.trim();
   const { lines } = splitPreservingEol(text);
-  const words = trimmed.length === 0 ? 0 : trimmed.split(/\s+/).length;
+  const words = countWords(text);
   return {
     characters: text.length,
     charactersNoSpaces: text.replace(/\s/g, "").length,

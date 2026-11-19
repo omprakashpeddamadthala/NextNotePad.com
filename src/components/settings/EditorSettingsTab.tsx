@@ -9,6 +9,7 @@ import {
   Map,
   Space,
   Brackets,
+  SpellCheck,
   MousePointer2,
   Minus,
   Plus,
@@ -387,6 +388,12 @@ def calculate_metrics(items: list[dict]) -> float:
               label: "Auto-Close Brackets",
               desc: "Automatically insert closing quotes, brackets, and braces",
               icon: Brackets,
+            },
+            {
+              key: "spellCheck" as const,
+              label: "Spell Check",
+              desc: "Underline misspelled English words in text and Markdown notes. Downloads a 550 KB dictionary once.",
+              icon: SpellCheck,
             },
           ].map((item) => {
             const Icon = item.icon;

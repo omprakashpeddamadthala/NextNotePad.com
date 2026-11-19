@@ -1,6 +1,13 @@
 import { create } from "zustand";
 
-type DialogName = "commandPalette" | "quickOpen" | "settings" | "about" | "exportImport" | "workspaceStats";
+type DialogName =
+  | "commandPalette"
+  | "quickOpen"
+  | "settings"
+  | "about"
+  | "exportImport"
+  | "workspaceStats"
+  | "templates";
 
 interface DialogState {
   open: Record<DialogName, boolean>;
@@ -19,6 +26,7 @@ const initialOpen: Record<DialogName, boolean> = {
   about: false,
   exportImport: false,
   workspaceStats: false,
+  templates: false,
 };
 
 export const useDialogStore = create<DialogState & DialogActions>()((set) => ({

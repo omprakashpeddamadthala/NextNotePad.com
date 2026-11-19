@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { zustandLocalStorage } from "@/services/storage/localStorageService";
 
 type BottomPanelTab = "search" | "console";
+export type TreeViewLayout = "full" | "side";
 
 interface UIState {
   sidebarVisible: boolean;
@@ -10,6 +11,12 @@ interface UIState {
   mobileMenuSheetOpen: boolean;
   mobileWorkspaceSheetOpen: boolean;
   mobileReadMode: boolean;
+  /** Hides everything but the text. Not saved between visits. */
+  focusMode: boolean;
+  /** Tree view for JSON, XML and YAML notes. Remembered between visits. */
+  treeViewVisible: boolean;
+  /** "full" covers the text in the same tab; "side" shows the tree beside the text. */
+  treeViewLayout: TreeViewLayout;
   explorerShowTrash: boolean;
   bottomPanelVisible: boolean;
   activeBottomTab: BottomPanelTab;
@@ -28,6 +35,12 @@ interface UIActions {
   setMobileMenuSheetOpen: (open: boolean) => void;
   setMobileWorkspaceSheetOpen: (open: boolean) => void;
   toggleMobileReadMode: () => void;
+  toggleFocusMode: () => void;
+  setFocusMode: (focusMode: boolean) => void;
+  toggleTreeView: () => void;
+  setTreeViewVisible: (visible: boolean) => void;
+  /** Opens the tree in this layout, or closes it if it is already open that way. */
+  toggleTreeViewLayout: (layout: TreeViewLayout) => void;
   setExplorerShowTrash: (show: boolean) => void;
   setBottomPanelVisible: (visible: boolean) => void;
   setActiveBottomTab: (tab: BottomPanelTab) => void;
@@ -47,6 +60,9 @@ export const useUIStore = create<UIState & UIActions>()(
       mobileMenuSheetOpen: false,
       mobileWorkspaceSheetOpen: false,
       mobileReadMode: false,
+      focusMode: false,
+      treeViewVisible: false,
+      treeViewLayout: "full",
       explorerShowTrash: false,
       bottomPanelVisible: false,
       activeBottomTab: "search",
@@ -63,6 +79,15 @@ export const useUIStore = create<UIState & UIActions>()(
       setMobileMenuSheetOpen: (mobileMenuSheetOpen) => set({ mobileMenuSheetOpen }),
       setMobileWorkspaceSheetOpen: (mobileWorkspaceSheetOpen) => set({ mobileWorkspaceSheetOpen }),
       toggleMobileReadMode: () => set((state) => ({ mobileReadMode: !state.mobileReadMode })),
+      toggleFocusMode: () => set((state) => ({ focusMode: !state.focusMode })),
+      setFocusMode: (focusMode) => set({ focusMode }),
+      toggleTreeView: () => set((state) => ({ treeViewVisible: !state.treeViewVisible })),
+      setTreeViewVisible: (treeViewVisible) => set({ treeViewVisible }),
+      toggleTreeViewLayout: (layout) =>
+        set((state) => ({
+          treeViewVisible: !(state.treeViewVisible && state.treeViewLayout === layout),
+          treeViewLayout: layout,
+        })),
       setExplorerShowTrash: (explorerShowTrash) => set({ explorerShowTrash }),
       setBottomPanelVisible: (bottomPanelVisible) => set({ bottomPanelVisible }),
       setActiveBottomTab: (activeBottomTab) => set({ activeBottomTab }),
@@ -88,6 +113,8 @@ export const useUIStore = create<UIState & UIActions>()(
         showHiddenFiles: state.showHiddenFiles,
         toolsRailVisible: state.toolsRailVisible,
         mobileReadMode: state.mobileReadMode,
+        treeViewVisible: state.treeViewVisible,
+        treeViewLayout: state.treeViewLayout,
       }),
     },
   ),

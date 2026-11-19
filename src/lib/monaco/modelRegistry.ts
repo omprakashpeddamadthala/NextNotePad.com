@@ -7,6 +7,15 @@ interface Entry {
 }
 
 const registry = new Map<string, Entry>();
+const createdListeners = new Set<(fileId: string, model: MonacoEditorNS.ITextModel) => void>();
+
+/** Calls back when a note's model is created, e.g. when its editor finishes loading. */
+export function onModelCreated(
+  listener: (fileId: string, model: MonacoEditorNS.ITextModel) => void,
+): () => void {
+  createdListeners.add(listener);
+  return () => createdListeners.delete(listener);
+}
 
 export function getModel(fileId: string): MonacoEditorNS.ITextModel | undefined {
   return registry.get(fileId)?.model;
@@ -23,6 +32,7 @@ export function getOrCreateModel(
   const uri = monaco.Uri.parse(`inmemory://notepad-web/${fileId}`);
   const model = monaco.editor.getModel(uri) ?? monaco.editor.createModel(content, language, uri);
   registry.set(fileId, { model, lastSavedValue: content });
+  createdListeners.forEach((listener) => listener(fileId, model));
   return model;
 }
 

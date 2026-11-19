@@ -5,6 +5,7 @@ import { Copy } from "lucide-react";
 import { SkeletonText } from "@/components/ui/skeleton";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { copyNote, readNoteContent } from "@/services/copyNote";
+import { countWords } from "@/services/textTools/textTools";
 
 interface MobileReadViewProps {
   fileId: string;
@@ -46,7 +47,7 @@ export function MobileReadView({ fileId }: MobileReadViewProps) {
     );
   }
 
-  const lineCount = content === "" ? 0 : content.split("\n").length;
+  const wordCount = countWords(content);
 
   return (
     <article
@@ -56,8 +57,8 @@ export function MobileReadView({ fileId }: MobileReadViewProps) {
       <div className="mx-auto max-w-2xl px-5 pt-5 pb-10">
         <div className="text-muted-foreground mb-4 flex items-center justify-between gap-3 text-[11px] font-medium tracking-wide uppercase">
           <span>
-            {lineCount} line{lineCount === 1 ? "" : "s"} · {content.length}{" "}
-            characters
+            {wordCount.toLocaleString()} word{wordCount === 1 ? "" : "s"} ·{" "}
+            {content.length.toLocaleString()} characters
           </span>
           <button
             type="button"

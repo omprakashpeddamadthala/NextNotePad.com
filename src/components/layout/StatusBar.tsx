@@ -49,8 +49,17 @@ function ApiActivitySegment() {
 }
 
 export function StatusBar() {
-  const { line, column, selectionLength, totalLines, insertMode, eol } =
-    useEditorStatusStore();
+  const {
+    line,
+    column,
+    selectionLength,
+    totalLines,
+    insertMode,
+    eol,
+    words,
+    characters,
+    selectionWords,
+  } = useEditorStatusStore();
   const zoomLevel = useSettingsStore((s) => s.settings.zoomLevel);
   const { file } = useActiveFile();
   const nodes = useWorkspaceStore((s) => s.nodes);
@@ -76,6 +85,19 @@ export function StatusBar() {
         <ApiActivitySegment />
         {file && (
           <>
+            {!file.locked && (
+              <Segment
+                title={
+                  selectionWords > 0
+                    ? "Words selected / total words"
+                    : "Words and characters in this note"
+                }
+              >
+                {selectionWords > 0
+                  ? `${selectionWords.toLocaleString()} of ${words.toLocaleString()} words`
+                  : `${words.toLocaleString()} word${words === 1 ? "" : "s"} · ${characters.toLocaleString()} char${characters === 1 ? "" : "s"}`}
+              </Segment>
+            )}
             <Segment title="Cursor position">
               Ln {line}, Col {column}
               {selectionLength > 0 ? ` (${selectionLength} sel)` : ""}

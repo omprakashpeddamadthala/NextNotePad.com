@@ -74,7 +74,8 @@ including the brand suffix, descriptions 70–160 characters, uniqueness and one
 
 | URL | Title | H1 |
 |---|---|---|
-| `/` | NextNotePad — Free Online Notepad and Text Editor in Your Browser | (editor; see §2) |
+| `/` | Free Online Notepad — No Sign-Up, Saves to Google Drive \| NextNotePad | A free online notepad that keeps your notes yours (below the editor, option B) |
+| `/best-online-notepad` | Best Online Notepad: How to Choose the Right One — NextNotePad | The best online notepad: how to choose the right one |
 | `/features` | Features: Tabs, Folders, Drive Sync, Diff and More — NextNotePad | NextNotePad features |
 | `/notepad-plus-plus-alternative` | Notepad++ Alternative That Runs in Your Browser — NextNotePad | A Notepad++ alternative that runs in your browser |
 | `/developers` | Online Notepad for Developers: Formatters and Diff — NextNotePad | An online notepad for developers |

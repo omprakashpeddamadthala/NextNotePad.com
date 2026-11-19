@@ -6,6 +6,7 @@ import {
   ChevronsDownUp,
   FilePlus,
   FolderPlus,
+  LayoutTemplate,
   Layers,
   Trash2,
   X,
@@ -17,6 +18,7 @@ import { RecycleBinPanel } from "@/components/trash/RecycleBinPanel";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useTrashStore } from "@/store/trashStore";
 import { useUIStore } from "@/store/uiStore";
+import { useDialogStore } from "@/store/dialogStore";
 import { useAuthStore } from "@/store/authStore";
 import { useMultiWorkspaceStore } from "@/store/multiWorkspaceStore";
 import { useCreateAndRename } from "@/hooks/useCreateAndRename";
@@ -100,6 +102,12 @@ export function FileExplorer() {
               label="New Folder"
               size="touch"
               onClick={() => createFolderAndRename(targetParentId)}
+            />
+            <ToolbarButton
+              icon={LayoutTemplate}
+              label="New from Template"
+              size="touch"
+              onClick={() => useDialogStore.getState().openDialog("templates")}
             />
             <ToolbarButton
               icon={ChevronsDownUp}

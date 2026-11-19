@@ -32,6 +32,8 @@ import { useAuthBootstrap } from "@/hooks/useAuthBootstrap";
 import { GlobalActionsRegistrar } from "./GlobalActionsRegistrar";
 import { ApiLoadingBar } from "./ApiLoadingBar";
 import { CenterApiLoader } from "./CenterApiLoader";
+import { DriveLoadingScreen } from "./DriveLoadingScreen";
+import { FocusModeExit } from "./FocusModeExit";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useAutoSyncNotes } from "@/hooks/useAutoSyncNotes";
 import { useLocalMirror } from "@/hooks/useLocalMirror";
@@ -73,6 +75,20 @@ const ExportImportDialog = dynamic(
   () =>
     import("@/components/dialogs/ExportImportDialog").then(
       (m) => m.ExportImportDialog,
+    ),
+  { ssr: false },
+);
+const VersionHistoryDialog = dynamic(
+  () =>
+    import("@/components/dialogs/VersionHistoryDialog").then(
+      (m) => m.VersionHistoryDialog,
+    ),
+  { ssr: false },
+);
+const TemplatesDialog = dynamic(
+  () =>
+    import("@/components/dialogs/TemplatesDialog").then(
+      (m) => m.TemplatesDialog,
     ),
   { ssr: false },
 );
@@ -133,7 +149,17 @@ export function AppShell() {
   const toolsRailVisible = useUIStore((s) => s.toolsRailVisible);
   const mobileSidebarOpen = useUIStore((s) => s.mobileSidebarOpen);
   const setMobileSidebarOpen = useUIStore((s) => s.setMobileSidebarOpen);
+  const focusMode = useUIStore((s) => s.focusMode);
   const isMobile = useIsMobile();
+
+  // Focus mode hides the surroundings instead of re-rendering the editor, so
+  // the open note, cursor and undo history stay exactly as they were.
+  const showSidebar = sidebarVisible && !focusMode;
+  const showToolsRail = toolsRailVisible && !focusMode;
+  const showBottomPanel = bottomPanelVisible && !focusMode;
+  const editorFrameClass = focusMode
+    ? "animate-in fade-in mx-auto h-full w-full max-w-4xl pt-6 duration-300"
+    : "h-full";
 
   return (
     <div className="bg-background text-foreground flex h-full min-h-0 flex-1 flex-col">
@@ -146,25 +172,28 @@ export function AppShell() {
       <GlobalActionsRegistrar />
       <ApiLoadingBar />
       <CenterApiLoader />
+      <DriveLoadingScreen />
       <DictationOverlay />
 
       {isMobile ? (
         <>
-          <MobileAppBar />
+          {!focusMode && <MobileAppBar />}
           <MobileMenuSheet />
           <MobileWorkspaceSheet />
         </>
       ) : (
-        <MenuBar />
+        !focusMode && <MenuBar />
       )}
 
       {isMobile ? (
         <div className="min-h-0 flex-1">
           <div className="flex h-full flex-col">
             <div className="min-h-0 flex-1">
-              <EditorArea />
+              <div className={editorFrameClass}>
+                <EditorArea />
+              </div>
             </div>
-            {bottomPanelVisible && (
+            {showBottomPanel && (
               <div className="h-1/2 shrink-0 border-t">
                 <BottomPanel />
               </div>
@@ -187,7 +216,7 @@ export function AppShell() {
       ) : (
         <div className="bg-background flex min-h-0 flex-1 overflow-hidden">
           <ResizablePanelGroup orientation="horizontal">
-            {sidebarVisible && (
+            {showSidebar && (
               <>
                 <ResizablePanel
                   defaultSize="260px"
@@ -203,12 +232,14 @@ export function AppShell() {
             <ResizablePanel>
               <ResizablePanelGroup orientation="vertical">
                 <ResizablePanel
-                  defaultSize={bottomPanelVisible ? "70%" : "100%"}
+                  defaultSize={showBottomPanel ? "70%" : "100%"}
                   minSize="30%"
                 >
-                  <EditorArea />
+                  <div className={editorFrameClass}>
+                    <EditorArea />
+                  </div>
                 </ResizablePanel>
-                {bottomPanelVisible && (
+                {showBottomPanel && (
                   <>
                     <ResizableHandle withHandle />
                     <ResizablePanel
@@ -222,7 +253,7 @@ export function AppShell() {
                 )}
               </ResizablePanelGroup>
             </ResizablePanel>
-            {toolsRailVisible && (
+            {showToolsRail && (
               <>
                 <ResizableHandle withHandle />
                 <ResizablePanel
@@ -239,7 +270,8 @@ export function AppShell() {
         </div>
       )}
 
-      {isMobile ? <MobileBottomBar /> : <StatusBar />}
+      {!focusMode && (isMobile ? <MobileBottomBar /> : <StatusBar />)}
+      {focusMode && <FocusModeExit />}
 
       <SettingsDialog />
       <QuickOpenDialog />
@@ -247,6 +279,8 @@ export function AppShell() {
       <AboutDialog />
       <ExportImportDialog />
       <WorkspaceStatsDialog />
+      <TemplatesDialog />
+      <VersionHistoryDialog />
       <SyncOfflineFilesDialog />
       <LockUnlockDialog />
       <CreateWorkspaceModal />

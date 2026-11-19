@@ -53,3 +53,6 @@ next-env.d.ts
 # BMAD-METHOD generated planning/implementation artifacts
 /_bmad-output/
 scripts/seo/keywords/.cache/
+
+# monaco editor files copied from node_modules by scripts/copy-monaco.mjs
+/public/monaco/

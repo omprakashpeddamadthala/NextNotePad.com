@@ -9,7 +9,13 @@ import {
   SITE_URL,
   absoluteUrl,
 } from "./site";
-import { breadcrumbJsonLd, homeJsonLd, serializeJsonLd } from "./jsonLd";
+import {
+  breadcrumbJsonLd,
+  faqJsonLd,
+  homeJsonLd,
+  serializeJsonLd,
+} from "./jsonLd";
+import { HOME_FAQ } from "./homeFaq";
 import sitemap from "../../app/sitemap";
 import robots from "../../app/robots";
 
@@ -141,6 +147,18 @@ test("homepage structured data makes no unverifiable claims", () => {
   ]) {
     assert.ok(!json.includes(banned), `homepage JSON-LD contains "${banned}"`);
   }
+});
+
+test("homepage FAQ structured data matches the visible questions", () => {
+  const data = faqJsonLd(HOME_FAQ) as {
+    "@type": string;
+    mainEntity: { name: string; acceptedAnswer: { text: string } }[];
+  };
+  assert.equal(data["@type"], "FAQPage");
+  assert.deepEqual(
+    data.mainEntity.map((q) => [q.name, q.acceptedAnswer.text]),
+    HOME_FAQ.map((q) => [q.question, q.answer]),
+  );
 });
 
 test("breadcrumbs resolve every ancestor of nested pages", () => {

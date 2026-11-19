@@ -5,6 +5,7 @@ import {
   caseConverters,
   collapseBlankLines,
   computeTextStats,
+  countWords,
   decimalToBinary,
   decimalToHex,
   hexToDecimal,
@@ -141,6 +142,14 @@ test("computeTextStats reports 0 for empty text", () => {
   assert.equal(stats.words, 0);
   assert.equal(stats.lines, 0);
   assert.equal(stats.readingTimeSecs, 0);
+});
+
+test("countWords counts runs of non-whitespace", () => {
+  assert.equal(countWords(""), 0);
+  assert.equal(countWords("   \n\t "), 0);
+  assert.equal(countWords("hello"), 1);
+  assert.equal(countWords("  hello   world \n again\t"), 3);
+  assert.equal(countWords("it's a well-known fact"), 4);
 });
 
 test("hexToHsl converts correctly", () => {

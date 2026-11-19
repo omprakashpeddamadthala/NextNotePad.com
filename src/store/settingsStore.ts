@@ -30,7 +30,15 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
 
       setTheme: (theme) => set({ theme }),
 
-      resetSettings: () => set({ settings: DEFAULT_SETTINGS }),
+      // Your own templates and dictionary words are content, not preferences, so a reset keeps them.
+      resetSettings: () =>
+        set((state) => ({
+          settings: {
+            ...DEFAULT_SETTINGS,
+            userTemplates: state.settings.userTemplates,
+            spellCheckWords: state.settings.spellCheckWords,
+          },
+        })),
 
       zoomIn: () =>
         set((state) => ({
@@ -54,6 +62,15 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
     {
       name: "np-settings",
       storage: createJSONStorage(() => zustandLocalStorage),
+      // Settings saved by an older version lack newer keys; fill them from the defaults.
+      merge: (persisted, current) => {
+        const saved = (persisted ?? {}) as Partial<SettingsState>;
+        return {
+          ...current,
+          ...saved,
+          settings: { ...DEFAULT_SETTINGS, ...saved.settings },
+        };
+      },
     },
   ),
 );

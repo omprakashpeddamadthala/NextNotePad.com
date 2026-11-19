@@ -126,12 +126,10 @@ async function auditPage(
     }
   }
 
-  // The editor at "/" is a client app; its words live in the app, not the HTML.
-  if (url !== SITE_URL) {
-    const words = visibleWordCount(html);
-    if (words < MIN_WORDS)
-      report(url, "warn", `thin content: ${words} words in <main>`);
-  }
+  // On "/", <main> is the server-rendered description below the editor.
+  const words = visibleWordCount(html);
+  if (words < MIN_WORDS)
+    report(url, "warn", `thin content: ${words} words in <main>`);
 
   return all(html, /<a [^>]*href="(\/[^"#?]*)"/gi);
 }

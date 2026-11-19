@@ -18,6 +18,14 @@ export type EncodingName =
   | "ASCII"
   | "ISO-8859-1";
 
+export interface UserTemplate {
+  id: string;
+  name: string;
+  /** File extension for notes made from it, e.g. "md" or "txt". */
+  extension: string;
+  content: string;
+}
+
 export interface EditorSettings {
   fontFamily: string;
   fontSize: number;
@@ -37,4 +45,9 @@ export interface EditorSettings {
   aiProvider: AiProvider;
   /** Auto-correct voice typing (grammar, fillers, spoken punctuation). */
   dictationAutoCorrect: boolean;
+  /** Underline misspelled words in plain-text and Markdown notes. */
+  spellCheck: boolean;
+  /** Words added to the personal spell-check dictionary. */
+  spellCheckWords: string[];
+  userTemplates: UserTemplate[];
 }

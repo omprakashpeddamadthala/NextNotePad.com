@@ -19,6 +19,8 @@ const eslintConfig = defineConfig([
     "src/generated/**",
     ".kilo/**",
     ".claude/**",
+    // Monaco editor files copied from node_modules by scripts/copy-monaco.mjs.
+    "public/monaco/**",
   ]),
 ]);
 

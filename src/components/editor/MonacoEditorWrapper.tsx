@@ -55,6 +55,8 @@ import { useExplorerSelectionStore } from "@/store/explorerSelectionStore";
 import { formatActiveEditor } from "@/services/formatting/formatActiveEditor";
 import { toggleBookmark, nextBookmarkLine } from "@/lib/monaco/bookmarks";
 import { closeFindWidget, toggleFindWidget } from "@/lib/monaco/findWidget";
+import { attachSpellCheck } from "@/lib/monaco/spellcheck";
+import { loadMonacoReact } from "@/lib/monaco/loadMonacoReact";
 import { runAction } from "@/services/shortcuts/actionRegistry";
 import { usePendingGotoStore } from "@/store/pendingGotoStore";
 import { useMarkdownPreviewContentStore } from "@/store/markdownPreviewContentStore";
@@ -63,9 +65,10 @@ import { useMonacoTextToolActions } from "@/hooks/useMonacoTextToolActions";
 import { useMonacoAiActions } from "@/hooks/useMonacoAiActions";
 import { useVoiceDictationTarget } from "@/hooks/useVoiceDictationTarget";
 import { useIsMobile } from "@/hooks/useMediaQuery";
+import { countWords } from "@/services/textTools/textTools";
 
 const Editor = dynamic(
-  () => import("@monaco-editor/react").then((m) => m.default),
+  () => loadMonacoReact().then((m) => m.default),
   {
     ssr: false,
     loading: () => (
@@ -140,6 +143,34 @@ export function MonacoEditorWrapper({
   );
 
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Debounced so counting a large note never slows down typing.
+  function scheduleWordCount() {
+    if (countTimerRef.current) clearTimeout(countTimerRef.current);
+    countTimerRef.current = setTimeout(() => {
+      const editor = editorRef.current;
+      const model = editor?.getModel();
+      if (!editor || !model) return;
+      const selection = editor.getSelection();
+      const selectionWords =
+        selection && !selection.isEmpty()
+          ? countWords(model.getValueInRange(selection))
+          : 0;
+      setStatus({
+        words: countWords(model.getValue()),
+        characters: model.getValueLength(),
+        selectionWords,
+      });
+    }, 250);
+  }
+
+  useEffect(
+    () => () => {
+      if (countTimerRef.current) clearTimeout(countTimerRef.current);
+    },
+    [],
+  );
 
   function scheduleAutoSave(id: string, tid: string) {
     const autoSave = useSettingsStore.getState().settings.autoSave;
@@ -279,6 +310,7 @@ export function MonacoEditorWrapper({
       selectionLength: 0,
       eol: model.getValue().includes("\r\n") ? "CRLF" : "LF",
     });
+    scheduleWordCount();
   }
 
   useEffect(() => {
@@ -311,6 +343,9 @@ export function MonacoEditorWrapper({
     editorRef.current = editor;
     monacoRef.current = monaco;
 
+    const detachSpellCheck = attachSpellCheck(monaco, editor);
+    editor.onDidDispose(detachSpellCheck);
+
     const initialModel = editor.getModel();
     void switchToFile(fileId, tabId).then(() => {
       if (initialModel && initialModel !== editorRef.current?.getModel())
@@ -326,7 +361,10 @@ export function MonacoEditorWrapper({
       if (dirty) scheduleAutoSave(id, tid);
       const model = modelRegistry.getModel(id);
       if (model) pushMarkdownPreviewContent(id, model);
+      scheduleWordCount();
     });
+
+    editor.onDidChangeCursorSelection(() => scheduleWordCount());
 
     editor.onDidChangeCursorPosition((e) => {
       const model = editor.getModel();
@@ -356,6 +394,11 @@ export function MonacoEditorWrapper({
 
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF, () =>
       toggleFindWidget(editor),
+    );
+    // Replaces Monaco's "insert line above" so the app shortcut runs only once.
+    editor.addCommand(
+      monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.Enter,
+      () => runAction("view.toggleFocusMode"),
     );
 
     const editorDom = editor.getDomNode();

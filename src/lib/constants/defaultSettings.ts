@@ -19,6 +19,9 @@ export const DEFAULT_SETTINGS: EditorSettings = {
   zoomLevel: 0,
   aiProvider: "gemini",
   dictationAutoCorrect: true,
+  spellCheck: false,
+  spellCheckWords: [],
+  userTemplates: [],
 };
 
 export const AUTO_SAVE_INTERVALS_MS: Record<string, number> = {
