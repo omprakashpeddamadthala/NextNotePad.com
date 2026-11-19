@@ -64,6 +64,18 @@ export const SITE_PAGES: SitePage[] = [
     priority: 0.8,
   },
   {
+    path: "/best-online-notepad",
+    title: "Best Online Notepad: How to Choose the Right One",
+    description:
+      "A fair comparison of online notepads: browser-only pads, shareable notepads, note apps and NextNotePad. Where each stores your notes and when to pick it.",
+    navLabel: "Best online notepad",
+    section: "compare",
+    primaryKeyword: "best online notepad",
+    lastReviewed: "2026-11-19",
+    changeFrequency: "monthly",
+    priority: 0.8,
+  },
+  {
     path: "/developers",
     title: "Online Notepad for Developers: Formatters and Diff",
     description:
@@ -143,7 +155,7 @@ export const SITE_PAGES: SitePage[] = [
     navLabel: "FAQ",
     section: "help",
     primaryKeyword: "online notepad faq",
-    lastReviewed: "2026-10-27",
+    lastReviewed: "2026-11-19",
     changeFrequency: "monthly",
     priority: 0.6,
   },
@@ -151,7 +163,8 @@ export const SITE_PAGES: SitePage[] = [
 
 export const HOME_PAGE = {
   path: "/",
-  title: "NextNotePad — Free Online Notepad and Text Editor in Your Browser",
+  title:
+    "Free Online Notepad — No Sign-Up, Saves to Google Drive | NextNotePad",
   description:
     "Write and save notes in your browser with no install and no account needed. Tabs, folders, autosave, syntax highlighting and optional Google Drive storage.",
   primaryKeyword: "online notepad",

@@ -23,6 +23,12 @@ export interface DriveEntry {
   trashed: boolean;
 }
 
+export interface DriveRevision {
+  id: string;
+  modifiedTime: number;
+  size: number;
+}
+
 export class DriveNotFoundError extends Error {
   constructor(id: string) {
     super(`Drive entry ${id} not found`);
@@ -293,6 +299,48 @@ export class DriveService {
     });
     entryInFlight.set(key, request);
     return request;
+  }
+
+  /**
+   * Earlier versions Drive kept of a file, newest first. Drive decides how
+   * long to keep them (about 30 days / 100 versions for non-Google files).
+   */
+  async listRevisions(id: string): Promise<DriveRevision[]> {
+    try {
+      const res = await withRetry(() =>
+        this.drive.revisions.list({
+          fileId: id,
+          pageSize: 200,
+          fields: "revisions(id,modifiedTime,size)",
+        }),
+      );
+      return (res.data.revisions ?? [])
+        .filter((r) => r.id)
+        .map((r) => ({
+          id: r.id as string,
+          modifiedTime: r.modifiedTime ? Date.parse(r.modifiedTime) : 0,
+          size: Number(r.size ?? 0),
+        }))
+        .sort((a, b) => b.modifiedTime - a.modifiedTime);
+    } catch (err) {
+      if (isNotFound(err)) throw new DriveNotFoundError(id);
+      throw err;
+    }
+  }
+
+  async readRevisionText(id: string, revisionId: string): Promise<string> {
+    try {
+      const res = await withRetry(() =>
+        this.drive.revisions.get(
+          { fileId: id, revisionId, alt: "media" },
+          { responseType: "text" },
+        ),
+      );
+      return typeof res.data === "string" ? res.data : "";
+    } catch (err) {
+      if (isNotFound(err)) throw new DriveNotFoundError(`${id}@${revisionId}`);
+      throw err;
+    }
   }
 
   async readText(id: string): Promise<string> {

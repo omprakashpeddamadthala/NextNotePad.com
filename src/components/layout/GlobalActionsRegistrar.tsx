@@ -10,6 +10,17 @@ import { useCreateAndRename } from "@/hooks/useCreateAndRename";
 import { useNewNodeTargetParentId } from "@/hooks/useNewNodeTargetParentId";
 import { importNativeFiles } from "@/services/fileOperations";
 import { openDiffCheckerForActiveTab } from "@/services/diffChecker";
+import { downloadNote } from "@/services/noteExport/downloadNote";
+import { printNote } from "@/services/noteExport/printNote";
+import { useVersionHistoryStore } from "@/store/versionHistoryStore";
+import { useWorkspaceStore } from "@/store/workspaceStore";
+import { treeFormatFor } from "@/services/treeView/parseNote";
+import { toast } from "sonner";
+
+function activeFileId(): string | null {
+  const { tabs, activeTabId } = useTabsStore.getState();
+  return tabs.find((t) => t.id === activeTabId)?.fileId ?? null;
+}
 
 export function GlobalActionsRegistrar() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -31,6 +42,47 @@ export function GlobalActionsRegistrar() {
   useRegisterAction("file.closeAllTabs", () => useTabsStore.getState().closeAll(), []);
   useRegisterAction("tabs.next", () => useTabsStore.getState().nextTab(), []);
   useRegisterAction("tabs.previous", () => useTabsStore.getState().previousTab(), []);
+  useRegisterAction(
+    "file.download",
+    () => {
+      const id = activeFileId();
+      if (id) void downloadNote(id);
+    },
+    [],
+  );
+  useRegisterAction(
+    "file.print",
+    () => {
+      const id = activeFileId();
+      if (id) void printNote(id);
+    },
+    [],
+  );
+  useRegisterAction(
+    "file.versionHistory",
+    () => {
+      const id = activeFileId();
+      if (id) useVersionHistoryStore.getState().openFor(id);
+    },
+    [],
+  );
+  useRegisterAction(
+    "view.toggleTreeView",
+    () => {
+      const ui = useUIStore.getState();
+      const id = activeFileId();
+      const node = id ? useWorkspaceStore.getState().nodes[id] : undefined;
+      const supported = node?.type === "file" && treeFormatFor(node.language, node.name);
+      if (!supported && !ui.treeViewVisible) {
+        toast.info("Tree view works with JSON, XML and YAML notes.");
+        return;
+      }
+      ui.toggleTreeView();
+    },
+    [],
+  );
+  useRegisterAction("view.toggleFocusMode", () => useUIStore.getState().toggleFocusMode(), []);
+
   useRegisterAction("tabs.reopenClosed", () => useTabsStore.getState().reopenClosed(), []);
 
   useRegisterAction("view.zoomIn", () => useSettingsStore.getState().zoomIn(), []);

@@ -8,6 +8,7 @@ import { SkeletonText } from "@/components/ui/skeleton";
 import { LoadFailure } from "@/components/ui/load-failure";
 import { useIsMobile } from "@/hooks/useMediaQuery";
 import { handleMonacoBeforeMount } from "@/lib/monaco/setupMonaco";
+import { loadMonacoReact } from "@/lib/monaco/loadMonacoReact";
 import { THEME_MODULES } from "@/lib/monaco/themes";
 import { useSettingsStore } from "@/store/settingsStore";
 import { useTabsStore } from "@/store/tabsStore";
@@ -16,7 +17,7 @@ import { useDiffViewStore, type DiffView } from "@/store/diffViewStore";
 import { getActiveRepository } from "@/services/storage/activeRepository";
 import * as modelRegistry from "@/lib/monaco/modelRegistry";
 
-const MonacoDiffEditor = dynamic(() => import("@monaco-editor/react").then((m) => m.DiffEditor), {
+const MonacoDiffEditor = dynamic(() => loadMonacoReact().then((m) => m.DiffEditor), {
   ssr: false,
   loading: () => (
     <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Loading diff editor…</div>

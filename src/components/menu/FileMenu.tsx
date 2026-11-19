@@ -12,6 +12,10 @@ import {
   Upload,
   History,
   CalendarDays,
+  FileDown,
+  Printer,
+  LayoutTemplate,
+  FileClock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { TopMenu } from "./TopMenu";
@@ -57,6 +61,9 @@ export function FileMenu() {
           {SHORTCUT_BY_ACTION["file.newFolder"].keys}
         </DropdownMenuShortcut>
       </DropdownMenuItem>
+      <DropdownMenuItem onSelect={() => openDialog("templates")}>
+        <LayoutTemplate /> New from Template…
+      </DropdownMenuItem>
       <DropdownMenuItem onSelect={() => runAction("file.open")}>
         <FolderOpen /> Open / Import File…
         <DropdownMenuShortcut>
@@ -84,6 +91,15 @@ export function FileMenu() {
         <DropdownMenuShortcut>
           {SHORTCUT_BY_ACTION["file.saveAs"].keys}
         </DropdownMenuShortcut>
+      </DropdownMenuItem>
+      <DropdownMenuItem onSelect={() => runAction("file.versionHistory")}>
+        <FileClock /> Version History…
+      </DropdownMenuItem>
+      <DropdownMenuItem onSelect={() => runAction("file.download")}>
+        <FileDown /> Download Note
+      </DropdownMenuItem>
+      <DropdownMenuItem onSelect={() => runAction("file.print")}>
+        <Printer /> Print…
       </DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem onSelect={() => runAction("file.closeTab")}>

@@ -17,6 +17,11 @@ import {
   Trash2,
   BarChart3,
   ArrowDownUp,
+  FileDown,
+  Printer,
+  Focus,
+  FileClock,
+  ListTree,
 } from "lucide-react";
 import {
   Sheet,
@@ -44,6 +49,7 @@ import { useLockDialogStore } from "@/store/lockDialogStore";
 import { useExplorerSelectionStore } from "@/store/explorerSelectionStore";
 import { useActiveFile } from "@/hooks/useActiveFile";
 import { runAction } from "@/services/shortcuts/actionRegistry";
+import { treeFormatFor } from "@/services/treeView/parseNote";
 
 interface MenuRowProps {
   icon: LucideIcon;
@@ -172,6 +178,38 @@ export function MobileMenuSheet() {
                 icon={CopyPlus}
                 label="Duplicate"
                 onClick={() => run(() => runAction("file.saveAs"))}
+              />
+              {!file.locked && treeFormatFor(file.language, file.name) && (
+                <MenuRow
+                  icon={ListTree}
+                  label="Tree view"
+                  hint="Browse and search keys and values"
+                  onClick={() => run(() => runAction("view.toggleTreeView"))}
+                />
+              )}
+              <MenuRow
+                icon={FileClock}
+                label="Version history"
+                hint="See and restore earlier versions"
+                onClick={() => run(() => runAction("file.versionHistory"))}
+              />
+              <MenuRow
+                icon={FileDown}
+                label="Download"
+                hint="Save a copy to this device"
+                onClick={() => run(() => runAction("file.download"))}
+              />
+              <MenuRow
+                icon={Printer}
+                label="Print"
+                hint="Or save as PDF"
+                onClick={() => run(() => runAction("file.print"))}
+              />
+              <MenuRow
+                icon={Focus}
+                label="Focus mode"
+                hint="Just you and your text"
+                onClick={() => run(() => runAction("view.toggleFocusMode"))}
               />
               <MenuRow
                 icon={FileLock2}

@@ -18,6 +18,7 @@ import {
 import { useSettingsStore } from "@/store/settingsStore";
 import type { AutoSaveMode, EncodingName } from "@/types/settings";
 import { LANGUAGES } from "@/lib/constants/languages";
+import { TemplatesSettingsSection } from "./TemplatesSettingsSection";
 import { LocalFolderSyncSection } from "./LocalFolderSyncSection";
 
 const AUTO_SAVE_OPTIONS: { value: AutoSaveMode; label: string; desc: string }[] = [
@@ -198,6 +199,8 @@ export function GeneralSettingsTab() {
           />
         </div>
       </div>
+
+      <TemplatesSettingsSection />
 
       <LocalFolderSyncSection />
     </div>

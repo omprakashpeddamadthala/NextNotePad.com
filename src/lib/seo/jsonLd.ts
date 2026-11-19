@@ -112,6 +112,20 @@ export function articleJsonLd(path: string): JsonLdNode {
   };
 }
 
+export function faqJsonLd(
+  items: { question: string; answer: string }[],
+): JsonLdNode {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: { "@type": "Answer", text: item.answer },
+    })),
+  };
+}
+
 /** Escapes "<" so content can never close the surrounding <script> tag. */
 export function serializeJsonLd(data: JsonLdNode): string {
   return JSON.stringify(data).replace(/</g, "\\u003c");

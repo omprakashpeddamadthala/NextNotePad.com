@@ -28,7 +28,7 @@ These are the claims the site may make. Anything not on this list must not appea
 | Voice typing | `dictation/*` | Browser speech recognition. |
 | ZIP export/import | `zipService.ts` | Works in both modes. |
 | PWA install | `manifest.ts`, `public/sw.js` | |
-| Offline | `public/sw.js` | **Limited**: Monaco loads from a CDN that the service worker does not cache, so claim only that guest notes are stored locally. |
+| Offline | `public/sw.js`, `scripts/copy-monaco.mjs` | **After the first online visit.** Monaco is served from `/monaco/<version>/vs` and cached by the service worker (2026-11-19). Sign-in, AI tools and version history still need a connection. |
 
 Not supported (do not target): sharing by link, collaboration, rich text, drawing/handwriting, PDF/Word export,
 reminders, a browser extension, running code, per-file download.
@@ -91,8 +91,8 @@ Not available, so not assessed: Core Web Vitals field data (CrUX), Search Consol
 3. **Privacy policy and terms pages** (owner-written legal text). Needed for Google OAuth verification and trust.
 4. **Unauthenticated AI endpoints** (`/api/ai/*`): anyone can call them and spend the Gemini/Claude quota. Not an
    SEO issue, but a cost and abuse risk worth fixing (require a session or rate-limit).
-5. **Offline claim gap**: self-host Monaco (`loader.config({ monaco })`) and cache it in the service worker; then
-   "works offline" becomes true and is a strong differentiator in this market.
+5. ~~**Offline claim gap**~~: done 2026-11-19. Monaco is self-hosted and cached by the service worker, so "works
+   offline after the first visit" is now true.
 6. Manifest `screenshots` uses the square icon as `wide`; replace with real screenshots (also improves the install UI).
 7. Core Web Vitals: measure with PageSpeed Insights/CrUX after deploy; the editor route is ~960 KB of JS before
    Monaco, so watch INP/LCP there.

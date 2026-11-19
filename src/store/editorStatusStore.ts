@@ -7,6 +7,10 @@ interface EditorStatusState {
   totalLines: number;
   insertMode: boolean;
   eol: "LF" | "CRLF";
+  words: number;
+  characters: number;
+  /** Word count of the selection; 0 when nothing is selected. */
+  selectionWords: number;
 }
 
 interface EditorStatusActions {
@@ -21,6 +25,9 @@ const initial: EditorStatusState = {
   totalLines: 1,
   insertMode: true,
   eol: "LF",
+  words: 0,
+  characters: 0,
+  selectionWords: 0,
 };
 
 export const useEditorStatusStore = create<EditorStatusState & EditorStatusActions>()(

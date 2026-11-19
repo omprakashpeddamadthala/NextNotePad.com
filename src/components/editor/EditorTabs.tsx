@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { RotateCcw, Undo2, Redo2, Save, WrapText, Eye, Pencil } from "lucide-react";
+import { RotateCcw, Undo2, Redo2, Save, WrapText, Eye, Pencil, ListTree, Copy, Columns2 } from "lucide-react";
 import { TabItem } from "./TabItem";
 import { ToolbarButton } from "@/components/layout/ToolbarButton";
 import { useTabsStore } from "@/store/tabsStore";
@@ -10,7 +10,10 @@ import { useRecentFilesStore } from "@/store/recentFilesStore";
 import { useDiffViewStore } from "@/store/diffViewStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { useUIStore } from "@/store/uiStore";
+import { useIsMobile } from "@/hooks/useMediaQuery";
 import { runAction } from "@/services/shortcuts/actionRegistry";
+import { treeFormatFor } from "@/services/treeView/parseNote";
+import { copyNote } from "@/services/copyNote";
 
 export function EditorTabs() {
   const tabs = useTabsStore((s) => s.tabs);
@@ -27,6 +30,13 @@ export function EditorTabs() {
   const settings = useSettingsStore((s) => s.settings);
   const updateSettings = useSettingsStore((s) => s.updateSettings);
 
+  const treeViewVisible = useUIStore((s) => s.treeViewVisible);
+  const treeViewLayout = useUIStore((s) => s.treeViewLayout);
+  const toggleTreeViewLayout = useUIStore((s) => s.toggleTreeViewLayout);
+  const setTreeViewVisible = useUIStore((s) => s.setTreeViewVisible);
+  const isMobile = useIsMobile();
+  // Phones always show the full tree, whatever layout was last used.
+  const treeBeside = treeViewVisible && treeViewLayout === "side" && !isMobile;
   const markdownEditingFileIds = useUIStore((s) => s.markdownEditingFileIds);
   const setMarkdownEditing = useUIStore((s) => s.setMarkdownEditing);
 
@@ -97,6 +107,40 @@ export function EditorTabs() {
               }
             }}
           />
+        )}
+        {activeNode?.type === "file" && !activeNode.locked && treeFormatFor(activeNode.language, activeNode.name) && (
+          <>
+            {treeViewVisible && !treeBeside && (
+              <ToolbarButton
+                icon={Pencil}
+                label="Edit Text"
+                size="compact"
+                onClick={() => setTreeViewVisible(false)}
+              />
+            )}
+            <ToolbarButton
+              icon={ListTree}
+              label="Tree View (Alt+T)"
+              active={treeViewVisible && !treeBeside}
+              size="compact"
+              onClick={() => (isMobile ? runAction("view.toggleTreeView") : toggleTreeViewLayout("full"))}
+            />
+            {!isMobile && (
+              <ToolbarButton
+                icon={Columns2}
+                label="Side by Side"
+                active={treeBeside}
+                size="compact"
+                onClick={() => toggleTreeViewLayout("side")}
+              />
+            )}
+            <ToolbarButton
+              icon={Copy}
+              label="Copy Note"
+              size="compact"
+              onClick={() => void copyNote(activeNode.id)}
+            />
+          </>
         )}
         <ToolbarButton
           icon={Undo2}

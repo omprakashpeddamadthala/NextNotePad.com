@@ -19,7 +19,16 @@ import { useAdminViewStore } from "@/store/adminViewStore";
 import { useAuthStore } from "@/store/authStore";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useIsMobile } from "@/hooks/useMediaQuery";
+import { treeFormatFor } from "@/services/treeView/parseNote";
 
+const TreeViewPanel = dynamic(() => import("./TreeViewPanel").then((m) => m.TreeViewPanel), {
+  ssr: false,
+  loading: () => (
+    <div className="h-full border-l px-4 py-3">
+      <SkeletonText lines={8} />
+    </div>
+  ),
+});
 const MarkdownPreview = dynamic(() => import("./MarkdownPreview").then((m) => m.MarkdownPreview), {
   ssr: false,
   loading: () => (
@@ -58,6 +67,10 @@ export function EditorArea() {
   const workspaceReady = useAuthStore((s) => s.workspaceReady);
   const isMobile = useIsMobile();
   const mobileReadMode = useUIStore((s) => s.mobileReadMode);
+  const focusMode = useUIStore((s) => s.focusMode);
+  const treeViewVisible = useUIStore((s) => s.treeViewVisible);
+  const setTreeViewVisible = useUIStore((s) => s.setTreeViewVisible);
+  const treeViewLayout = useUIStore((s) => s.treeViewLayout);
 
   const activeTab = tabs.find((t) => t.id === activeTabId);
   const activeNode = useWorkspaceStore((s) => (activeTab ? s.nodes[activeTab.fileId] : undefined));
@@ -81,6 +94,12 @@ export function EditorArea() {
 
   const workspaceLoading = authStatus === "loading" || (authStatus === "authenticated" && !workspaceReady);
 
+  const treeFormat =
+    activeNode?.type === "file" && !activeNode.locked ? treeFormatFor(activeNode.language, activeNode.name) : null;
+  const showTreeView = treeViewVisible && treeFormat !== null && !isSplitView && !focusMode && !workspaceLoading;
+  // Phones are too narrow for side by side, so they always get the full tree.
+  const treeBeside = showTreeView && treeViewLayout === "side" && !isMobile;
+
   useEffect(() => {
     if (workspaceLoading || !isSplitView || splitView || tabs.length === 0 || !activeTabId) return;
     const other = tabs.find((t) => t.id !== activeTabId) ?? tabs[0];
@@ -95,7 +114,7 @@ export function EditorArea() {
       tabIndex={-1}
       className="flex h-full min-h-0 flex-col outline-none"
     >
-      {!adminViewOpen && <EditorTabs />}
+      {!adminViewOpen && !focusMode && <EditorTabs />}
       <div className="relative min-h-0 flex-1">
         {adminViewOpen ? (
           <AdminView />
@@ -128,7 +147,7 @@ export function EditorArea() {
           <>
           {isMobile && <MobileCopyButton />}
           <ResizablePanelGroup orientation="horizontal">
-            <ResizablePanel defaultSize={showMarkdownPreview ? "50%" : "100%"} minSize="20%">
+            <ResizablePanel defaultSize={showMarkdownPreview || treeBeside ? "55%" : "100%"} minSize="20%">
               <MonacoEditorWrapper
                 key="primary-pane"
                 fileId={activeTab.fileId}
@@ -144,8 +163,33 @@ export function EditorArea() {
                 </ResizablePanel>
               </>
             )}
+            {treeBeside && treeFormat && (
+              <>
+                <ResizableHandle />
+                <ResizablePanel defaultSize="45%" minSize="20%">
+                  <TreeViewPanel
+                    key={activeTab.fileId}
+                    fileId={activeTab.fileId}
+                    format={treeFormat}
+                    beside
+                    onClose={() => setTreeViewVisible(false)}
+                  />
+                </ResizablePanel>
+              </>
+            )}
           </ResizablePanelGroup>
           </>
+        )}
+        {/* The tree covers the editor in the same tab; the editor stays mounted so "Show in text" can jump. */}
+        {showTreeView && !treeBeside && treeFormat && activeTab && (
+          <div className="bg-background animate-in fade-in absolute inset-0 z-10 duration-150">
+            <TreeViewPanel
+              key={activeTab.fileId}
+              fileId={activeTab.fileId}
+              format={treeFormat}
+              onClose={() => setTreeViewVisible(false)}
+            />
+          </div>
         )}
       </div>
     </div>

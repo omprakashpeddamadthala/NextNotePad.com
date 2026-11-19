@@ -52,11 +52,13 @@ const FAQ: { question: string; answer: ReactNode }[] = [
     question: "Does it work offline?",
     answer: (
       <p>
-        Partly. The editor needs an internet connection to load. Once it is
-        open, guest-mode notes are saved to your browser, so you can keep
-        writing if the connection drops. When you are signed in and offline, the
-        toolbar shows an offline badge, and changes need a connection to reach
-        your Drive.
+        Yes, after your first visit. Open NextNotePad once while online and
+        your browser keeps a copy of the editor, so it opens without internet
+        from then on. Notes written without an account are saved on your
+        device. When you are signed in and offline, the toolbar shows an
+        offline badge, and changes need a connection to reach your Drive.
+        Signing in, the AI tools and version history always need a
+        connection.
       </p>
     ),
   },

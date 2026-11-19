@@ -454,6 +454,17 @@ export async function getNode(
   return entry;
 }
 
+/** A user's note: not a folder and not one of the app's own metadata files. */
+export async function getNoteFile(
+  ds: DriveService,
+  id: string,
+): Promise<DriveEntry> {
+  const entry = await getNode(ds, id);
+  if (isFolder(entry) || isInternalEntry(entry))
+    throw new AppError("Not found", 404);
+  return entry;
+}
+
 export async function resolveRequestWorkspace(
   ds: DriveService,
   workspaceId: string,

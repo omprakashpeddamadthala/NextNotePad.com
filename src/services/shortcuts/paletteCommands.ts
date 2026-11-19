@@ -35,6 +35,10 @@ import {
   RotateCcw,
   Shield,
   Lock,
+  FileDown,
+  Printer,
+  LayoutTemplate,
+  FileClock,
   type LucideIcon,
 } from "lucide-react";
 import { useDialogStore } from "@/store/dialogStore";
@@ -109,6 +113,34 @@ function buildCommands(): PaletteCommand[] {
           useDialogStore.getState().openDialog("settings");
         }
       },
+    },
+    {
+      id: "file.newFromTemplate",
+      label: "New from Template…",
+      category: "File",
+      icon: LayoutTemplate,
+      run: () => useDialogStore.getState().openDialog("templates"),
+    },
+    {
+      id: "file.versionHistory",
+      label: "Version History…",
+      category: "File",
+      icon: FileClock,
+      run: () => runAction("file.versionHistory"),
+    },
+    {
+      id: "file.download",
+      label: "Download Note",
+      category: "File",
+      icon: FileDown,
+      run: () => runAction("file.download"),
+    },
+    {
+      id: "file.print",
+      label: "Print Note…",
+      category: "File",
+      icon: Printer,
+      run: () => runAction("file.print"),
     },
     {
       id: "empty-trash",

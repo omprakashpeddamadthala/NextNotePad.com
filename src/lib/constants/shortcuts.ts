@@ -21,6 +21,8 @@ export type ActionId =
   | "view.toggleWordWrap"
   | "view.toggleMinimap"
   | "view.toggleSidebar"
+  | "view.toggleFocusMode"
+  | "view.toggleTreeView"
   | "view.zoomIn"
   | "view.zoomOut"
   | "view.resetZoom"
@@ -58,6 +60,8 @@ export const SHORTCUTS: ShortcutDef[] = [
   { action: "view.toggleWordWrap", label: "Toggle Word Wrap", keys: "Alt+Z", category: "View" },
   { action: "view.toggleMinimap", label: "Toggle Minimap", keys: "Alt+M", category: "View" },
   { action: "view.toggleSidebar", label: "Toggle Sidebar", keys: "Ctrl+B", category: "View" },
+  { action: "view.toggleFocusMode", label: "Toggle Focus Mode", keys: "Ctrl+Shift+Enter", category: "View" },
+  { action: "view.toggleTreeView", label: "Toggle Tree View (JSON, XML, YAML)", keys: "Alt+T", category: "View" },
   { action: "view.zoomIn", label: "Zoom In", keys: "Ctrl+=", category: "View" },
   { action: "view.zoomOut", label: "Zoom Out", keys: "Ctrl+-", category: "View" },
   { action: "view.resetZoom", label: "Reset Zoom", keys: "Ctrl+0", category: "View" },

@@ -11,6 +11,8 @@ import {
   Lock,
   EyeOff,
   Columns2,
+  Focus,
+  ListTree,
 } from "lucide-react";
 import { TopMenu } from "./TopMenu";
 import {
@@ -52,6 +54,19 @@ export function ViewMenu() {
 
   return (
     <TopMenu label="View">
+      <DropdownMenuItem onSelect={() => runAction("view.toggleFocusMode")}>
+        <Focus /> Focus Mode
+        <DropdownMenuShortcut>
+          {SHORTCUT_BY_ACTION["view.toggleFocusMode"].keys}
+        </DropdownMenuShortcut>
+      </DropdownMenuItem>
+      <DropdownMenuItem onSelect={() => runAction("view.toggleTreeView")}>
+        <ListTree /> Tree View (JSON, XML, YAML)
+        <DropdownMenuShortcut>
+          {SHORTCUT_BY_ACTION["view.toggleTreeView"].keys}
+        </DropdownMenuShortcut>
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
       <DropdownMenuCheckboxItem
         checked={sidebarVisible}
         onCheckedChange={() => toggleSidebar()}

@@ -20,39 +20,42 @@ Main features: Monaco editor (the VS Code editor), tabs and split view, file exp
 
 ## 2. Tech stack
 
-| Part | What we use |
-|---|---|
-| Language | TypeScript |
-| Framework | Next.js 15 (App Router), React 19 |
-| Styling | Tailwind CSS 4 + shadcn/ui (Radix) |
-| Editor | Monaco Editor |
-| State | Zustand, TanStack React Query |
-| Database | PostgreSQL via Prisma 7 — **accounts and admin config only** |
-| User data | Google Drive API (signed in) / IndexedDB + localStorage (guest) |
-| Auth | Google OAuth 2.0 + JWT session cookie (`jose`) |
-| AI | Google Gemini (`@google/genai`) and Claude via AgentRouter |
-| Hosting | Docker image built by GitHub Actions (`.github/workflows/ci-cd.yml`) and pushed to Docker Hub |
+| Part      | What we use                                                                                   |
+| --------- | --------------------------------------------------------------------------------------------- |
+| Language  | TypeScript                                                                                    |
+| Framework | Next.js 15 (App Router), React 19                                                             |
+| Styling   | Tailwind CSS 4 + shadcn/ui (Radix)                                                            |
+| Editor    | Monaco Editor                                                                                 |
+| State     | Zustand, TanStack React Query                                                                 |
+| Database  | PostgreSQL via Prisma 7 — **accounts and admin config only**                                  |
+| User data | Google Drive API (signed in) / IndexedDB + localStorage (guest)                               |
+| Auth      | Google OAuth 2.0 + JWT session cookie (`jose`)                                                |
+| AI        | Google Gemini (`@google/genai`) and Claude via AgentRouter                                    |
+| Hosting   | Docker image built by GitHub Actions (`.github/workflows/ci-cd.yml`) and pushed to Docker Hub |
 
 ---
 
 ## 3. Pages and user flows
 
 ### Public (no login)
-| Page | Purpose |
-|---|---|
-| `/` | The editor itself (Guest Mode if not signed in) |
-| `/features`, `/faq`, `/security`, `/developers`, `/keyboard-shortcuts` | Info pages |
-| `/notepad-plus-plus-alternative` | SEO landing page |
-| `/guides`, `/guides/how-to-save-notes-online`, `/guides/organize-notes-with-folders-and-workspaces` | How-to guides |
-| `sitemap.xml`, `robots.txt`, `manifest`, Open Graph image | SEO / PWA files |
+
+| Page                                                                                                | Purpose                                         |
+| --------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `/`                                                                                                 | The editor itself (Guest Mode if not signed in) |
+| `/features`, `/faq`, `/security`, `/developers`, `/keyboard-shortcuts`                              | Info pages                                      |
+| `/notepad-plus-plus-alternative`                                                                    | SEO landing page                                |
+| `/guides`, `/guides/how-to-save-notes-online`, `/guides/organize-notes-with-folders-and-workspaces` | How-to guides                                   |
+| `sitemap.xml`, `robots.txt`, `manifest`, Open Graph image                                           | SEO / PWA files                                 |
 
 ### Signed in
+
 1. User clicks **Sign in with Google** → `/api/auth/google` → Google → `/api/auth/google/callback` → session cookie set.
 2. On first sign-in, the guest workspace is copied into their Drive.
 3. Files, folders, workspaces and settings now load from and save to Drive (`/api/files`, `/api/folders`, `/api/workspaces`, `/api/settings`).
 4. Optional: app password lock (`/api/lock/*`), AI tools (`/api/ai/*`).
 
 ### Admin only
+
 - Admin Panel inside the app: list / block / promote users (`/api/admin/users`), change AI keys and models (`/api/admin/ai-config`).
 
 ---
@@ -60,11 +63,13 @@ Main features: Monaco editor (the VS Code editor), tabs and split view, file exp
 ## 4. Data models and where data is stored
 
 **PostgreSQL (Prisma)** — `prisma/schema.prisma`
+
 - `User` — Google id, email, name, avatar, Google tokens (server only), `isAdmin`, `blocked`, password-lock settings.
 - `AppConfig` — one row: Gemini / AgentRouter API keys and model names (falls back to env vars when empty).
 - Old tables (`Workspace`, `Folder`, `File`, `SyncFailure`, `UserSettings`) still exist only for the one-time move to Drive. **Do not drop them** yet.
 
 **Google Drive** (signed-in users)
+
 ```
 NextNotePad.com/
 ├── .appConfig.json     settings, recent files, favorites, active workspace
@@ -80,15 +85,15 @@ NextNotePad.com/
 
 ## 5. Third-party services
 
-| Service | Used for | Keys (in `.env.local`) |
-|---|---|---|
+| Service                          | Used for                       | Keys (in `.env.local`)                                            |
+| -------------------------------- | ------------------------------ | ----------------------------------------------------------------- |
 | Google Cloud (OAuth + Drive API) | Sign-in and storing user files | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` |
-| PostgreSQL | Accounts and admin config | `DATABASE_URL` |
-| Google Gemini | AI text tools | `GEMINI_API_KEY`, `GEMINI_MODEL` |
-| AgentRouter (Claude) | Alternative AI provider | `AGENTROUTER_API_KEY`, `CLAUDE_MODEL` |
-| Docker Hub + GitHub Actions | Build and publish | GitHub repo secrets |
-| — | Session signing | `JWT_SECRET` |
-| — | Admin account | `ADMIN_EMAIL` |
+| PostgreSQL                       | Accounts and admin config      | `DATABASE_URL`                                                    |
+| Google Gemini                    | AI text tools                  | `GEMINI_API_KEY`, `GEMINI_MODEL`                                  |
+| AgentRouter (Claude)             | Alternative AI provider        | `AGENTROUTER_API_KEY`, `CLAUDE_MODEL`                             |
+| Docker Hub + GitHub Actions      | Build and publish              | GitHub repo secrets                                               |
+| —                                | Session signing                | `JWT_SECRET`                                                      |
+| —                                | Admin account                  | `ADMIN_EMAIL`                                                     |
 
 ---
 
@@ -106,6 +111,7 @@ CLAUDE.md was written as a general template. These parts don't match this app:
 ## 7. What "done" looks like
 
 For every task:
+
 - `npm run build` passes with no TypeScript errors
 - `npm run lint` passes
 - Related unit tests pass (`npm run test:*`)
@@ -115,20 +121,263 @@ For every task:
 
 ---
 
-## 9. Current task — Mobile UI/UX upgrade (approved 2026-11-18)
+## 13c. Current task — Tree header on one line (approved and built 2026-11-19)
+
+**What the user asked (2026-11-19):** the tree's top bar uses two lines; put Keys, Values and Only matches beside the search box so it all fits on **one line**.
+
+### Change
+One row, left to right: **JSON TREE label · search box · match count · up/down · Keys · Values · Only matches · Expand all · Collapse all · 1 2 3 · X**.
+- The search box shrinks first when space is tight.
+- In the narrow side-by-side view, the "JSON TREE" label hides when there isn't room, and if the row still doesn't fit it scrolls sideways instead of breaking into two lines.
+
+### Files touched
+`src/components/editor/TreeViewPanel.tsx` (header only)
+
+### Done when
+- Types, lint, build pass
+- Browser: header is one line in full-tab and side-by-side views; all buttons still work; no console errors
+
+---
+
+## 13b. Previous task — Edit and Side by side buttons for JSON/XML/YAML (approved and built 2026-11-19)
+
+**What the user asked (2026-11-19):** add an **Edit** button and a **Side by side** button for JSON-format notes, placed beside the Tree View and Copy buttons in the tab bar.
+
+### Change
+Toolbar order on JSON/XML/YAML notes: **Edit · Tree View · Side by side · Copy**.
+1. **Edit** (pencil icon) — only shown while the tree fills the tab. Closes the tree and goes back to the text so you can type.
+2. **Side by side** (two-columns icon) — shows the text on the left and the tree on the right, with a draggable divider (the layout from before 13a). Click again to go back to text only. Clicking **Tree View** while side by side switches to the full-tab tree.
+   - In side by side, clicking a tree row jumps the text to that line, and "Show in text" keeps the tree open (the text is visible).
+   - Hidden on phones (screen too narrow); phones keep the full-screen tree.
+3. **Alt+T** opens/closes the tree in whichever layout was used last. The layout choice is remembered between visits.
+
+### Files touched
+`src/store/uiStore.ts` (one new saved setting: tree layout "full" or "side"), `src/components/editor/EditorArea.tsx`, `src/components/editor/EditorTabs.tsx`, `src/components/editor/TreeViewPanel.tsx`
+
+### Not changed
+Copy button, parsing, search, expand/collapse, phone layout.
+
+### Done when
+- Types, lint, tree-view tests and build pass
+- Browser: Edit returns to text; Side by side shows both with a divider and row clicks jump the text; Tree switches side-by-side to full; Alt+T reopens the last layout; no console errors
+
+---
+
+## 13a. Current task — Tree view in the same tab + Copy button (approved and built 2026-11-19)
+
+**What the user asked (2026-11-19):** clicking the JSON tree view button should open the tree **in the same tab**, not side by side. Add a **Copy** button beside the tree view button.
+
+### Change
+1. **Same tab, not side by side (desktop).** Clicking the Tree View button (or Alt+T) makes the tree fill the note's tab, covering the text, exactly like phones already do. Clicking the button again (or the X in the tree) goes back to the text. The side-by-side panel is removed.
+   - The text editor stays loaded underneath, so edits and undo are kept.
+   - Clicking a row selects it (and opens/closes folders), the same as on phones. "Show in text" in a row's menu (or Enter) closes the tree and jumps to that line.
+2. **Copy button** beside the Tree View button in the editor toolbar, shown on the same notes (JSON/XML/YAML). It copies the **whole note's text** and shows "Note copied". Uses the existing `copyNote` helper.
+
+### Files touched
+`src/components/editor/EditorArea.tsx`, `src/components/editor/EditorTabs.tsx`, `src/components/editor/TreeViewPanel.tsx`
+
+### Not changed
+Parsing, search, expand/collapse, paths, errors, big-file handling, phone layout.
+
+### Done when
+- Types, lint, tree-view tests and build pass
+- Browser: Tree opens in the same tab with no side panel; closing it returns to the text with edits kept; "Show in text" jumps to the line; Copy puts the whole note on the clipboard; no console errors
+
+---
+
+## 13. Previous task — Tree view for JSON, XML and YAML (approved and built 2026-11-19)
+
+**Change from the plan:** XML uses a small reader in `src/services/treeView/parseXml.ts` instead of the browser's `DOMParser`, because `DOMParser` drops line numbers (needed for "click a row to jump") and can't run in the unit tests. Phones open the tree with a tap-to-expand list; "Show in text" in each row's menu jumps to the line.
+
+**Goal:** Open a JSON, XML or YAML note and see it as a collapsible tree next to the text, with a search that finds keys and values.
+
+### What exists today
+Format/minify JSON and XML, and a Markdown preview panel beside the editor. No tree view. No JSON/YAML parser that remembers line numbers.
+
+### How it works for the user
+- **Open it:** a "Tree" button in the editor toolbar (only on JSON/XML/YAML notes), View → Tree View, Command Palette, or **`Alt+T`** (a free shortcut). Phone: "Tree view" in the More menu, shown full screen (like Read view).
+- **Layout:** the tree sits to the right of the editor, like the Markdown preview, with a draggable divider. It **updates live** as you type (after a short pause).
+- **Each row shows:** key name, value coloured by type (text, number, true/false, null), and size for objects/arrays (`{3}`, `[12]`). XML shows element names, `@attributes` and text.
+- **Expand / collapse:** click the arrow on any row; toolbar buttons **Expand all**, **Collapse all**, and **Expand to level 1 / 2 / 3**. Keyboard: arrow keys move and open/close, like a file tree.
+- **Search:** one search box with **Keys / Values** toggles (both on by default), case-insensitive. Matches are highlighted, their parents open automatically, "3 of 17" counter with **previous / next** buttons (Enter / Shift+Enter), and a **"Only matches"** switch that hides everything else.
+- **Jump to text:** clicking a row moves the editor cursor to that line (JSON and YAML; XML jumps to the element's line).
+- **Copy:** each row has a small menu: **Copy value**, **Copy key**, **Copy path** (`$.users[0].name` for JSON/YAML, `/catalog/book[2]/title` for XML).
+- **Broken files:** if the text has a syntax error, the tree shows the error with its line and column, and keeps the last good tree greyed out until it's fixed.
+- **Big files:** only the visible rows are drawn (the same virtual list the explorer uses), so files with tens of thousands of entries stay smooth. Files over 10 MB show a warning instead of a tree.
+
+### Technical plan
+- **Parsers (loaded only when the tree opens):**
+  - JSON: `jsonc-parser` (Microsoft, MIT, ~20 KB) — gives line positions and allows comments/trailing commas.
+  - YAML: `yaml` (ISC, ~100 KB) — gives positions.
+  - XML: the browser's built-in `DOMParser` (no new dependency), with line numbers found by a small scan of the source.
+- **Pure, tested service** `src/services/treeView/`: parse → one common tree shape (`{ key, type, value, children, line, path }`), search, path building. Unit tests in `npm run test:tree-view`.
+- **UI:** `src/components/editor/TreeViewPanel.tsx` (+ one small row component), shown by `EditorArea.tsx` like the Markdown preview; `uiStore` gets a `treeViewVisible` flag (saved between visits).
+- Read-only: the tree never changes the note.
+
+### Not changed
+Editor, formatters, Markdown preview, APIs, database, sign-in.
+
+### New dependencies
+`jsonc-parser`, `yaml` (both lazy-loaded).
+
+### Done when
+- `npx tsc --noEmit`, `npm run lint`, `npm run build`, all `npm run test:*` pass (including new tree-view tests: parsing, positions, paths, search, XML attributes, errors)
+- Browser at desktop and phone size: open sample JSON, XML and YAML files; expand/collapse all and per level; search keys and values with prev/next and "only matches"; click a row jumps to the line; copy value/key/path; break the syntax and see the error; a 5 MB JSON stays responsive; no console errors
+
+---
+
+## 12. Previous task — 8 new features (approved 2026-11-19, built and tested; real Drive sign-in test pending)
+
+**Changes from the plan made while building:**
+- Spell check: `dictionary-en` only works in Node, so its two files (and licence) are copied to `public/dictionaries/en-US/` instead of adding it as a dependency. Only `nspell` (+ `@types/nspell`) was added.
+- Offline: Monaco is copied from `node_modules/monaco-editor/min/vs` to `public/monaco/<version>/vs` by `scripts/copy-monaco.mjs` (runs before dev and build; git-ignored) and loaded with `loader.config({ paths })`. This moves the editor from the CDN's 0.55.1 to the installed 0.56.0.
+- Version history "Compare with current" uses Monaco's diff editor inside the history window (the existing diff view only compares two open tabs).
+- `Ctrl+Shift+Enter` (focus mode) replaces Monaco's "insert line above" on that key.
+
+**Goal:** Close the main gaps found in a full code review (2026-11-19). The user picked all 8. Built in 4 phases, smallest and safest first; each phase is tested before the next starts.
+
+### What the review found already exists (not rebuilt)
+Tabs, split view, folders, workspaces, recycle bin, favorites, recent files, daily notes, ~50 text tools, AI tools, diff checker, Markdown preview + print, 9 themes, encodings, per-note encryption, app lock, voice typing, ZIP export/import, open local file (Ctrl+O), Save As (= duplicate), Drive sync, local folder copy, PWA install, mobile UI.
+
+### Phase 1 — Quick wins
+1. **Download note** — new "Download" item (File menu, mobile "More" sheet, Command Palette, note tab right-click). Saves the open note to the computer as a file with its own name and extension (`.txt`, `.md`, `.json`…), in its encoding. Locked notes must be unlocked first. Works for guests and signed-in users. Does not change Save As.
+2. **Live word count** — the bottom bar shows `123 words · 640 chars` for the open note; with text selected it shows the selection's count. Counted with the existing `textTools` word-count logic, debounced so large files don't slow typing. On phones it appears in the Read view header (the phone bottom bar has no room).
+3. **Focus mode** — `Ctrl+Shift+Enter` (also in View menu, palette and phone "More" sheet) hides the menu bar, sidebar, tabs, tools rail and status bar, and centres the text in a comfortable reading width. A small "Exit focus" button fades in on mouse move; `Esc` or the same shortcut exits. Not saved between visits.
+4. **Print any note** — "Print…" in the File menu and palette for every note. Plain text prints in a clean monospace layout with the note name as a header; Markdown keeps its existing rendered print. Uses the browser print dialog, so "Save as PDF" works too.
+
+### Phase 2 — Templates and spell check
+5. **Note templates** — "New from template…" (File menu, explorer "+" menu, palette, phone bottom-bar "New note" long-press → sheet). Built-in: Meeting notes, To-do list, Daily journal, Bug report, Project plan, Blank Markdown. `{{date}}` and `{{time}}` are filled in. "Save current note as template" stores your own templates in Settings (so they sync to Drive for signed-in users, localStorage for guests). Manage/delete them in Settings → General.
+6. **Spell check** — the Monaco editor blocks the browser's built-in spell checker, so this adds the `nspell` library with an English (US) dictionary (~550 KB, **downloaded only when spell check is turned on**, then cached). Misspelled words get a wavy underline in plain-text and Markdown notes only (never code). Right-click a word → suggestions, "Add to dictionary" (saved in Settings), "Ignore". Setting: Settings → Editor → Spell check (off by default). English only for now.
+
+### Phase 3 — Version history (signed-in users)
+7. **Version history** — Google Drive already keeps earlier versions of each file (about 30 days / up to 100 versions per file; Drive decides which to keep). The `drive.file` permission we already have allows reading them for files the app created, so **no new Google permission**.
+   - New API routes (thin, logic in `src/lib/drive/driveService.ts`):
+     - `GET /api/files/[id]/revisions` → list of versions (date, size)
+     - `GET /api/files/[id]/revisions/[revisionId]` → that version's text
+   - "Version history…" in the File menu, tab right-click and phone "More" sheet opens a panel: list of versions on the left, preview on the right, a "Compare with current" button (uses the existing diff view) and "Restore this version". Restoring saves the old text as a **new** version, so nothing is lost.
+   - Guests see "Sign in to keep version history". Locked (encrypted) notes show versions but need the passphrase to preview.
+
+### Phase 4 — Real offline mode (structural change)
+8. **Offline mode** — today the editor (Monaco, ~3 MB) is downloaded from a CDN (cdn.jsdelivr.net) on every visit, so the app can't open with no internet.
+   - Load Monaco from the app's own files instead of the CDN (`loader.config({ monaco })` with the already-installed `monaco-editor` package, plus its web-worker setup in `next.config.ts`). This also stops sending a request to a third-party CDN.
+   - Upgrade `public/sw.js` to cache the app's code files (`/_next/static/*`) and the editor after the first visit, and to serve them when offline. Content pages and API calls are not cached.
+   - Guests: fully usable offline after one online visit. Signed-in: opens offline with the files already cached in the browser; changes sync when back online (existing offline badge + `SyncOfflineFilesDialog`).
+   - Update the "Does it work offline?" answers on the site (`/faq`, homepage FAQ, `audit.md`) to match.
+   - **Why it's structural:** it changes how the editor is loaded and the build config. Risk: a slightly larger first download and a service worker that must update cleanly; I'll test install → offline → back online → new deploy.
+
+### Not changed
+Database, sign-in, existing APIs (only 2 new read-only routes), existing features' behaviour.
+
+### New dependencies
+- `nspell` + `dictionary-en` (Phase 2, lazy-loaded). No others.
+
+### Done when (each phase)
+- `npx tsc --noEmit`, `npm run lint`, `npm run build`, all `npm run test:*` pass; new unit tests for word counting, template placeholders and spell-check word filtering
+- Browser check at desktop (1440px) and phone (390px), guest and signed-in: happy path + error path (e.g. download a locked note, Drive revisions request fails, offline reload), no console errors
+- Phase 3 needs **you** to sign in for the real Drive test; Phase 4 tested with the browser's "Offline" switch
+
+---
+
+## 11. Previous task — "Loading your files from Google Drive" screen (approved 2026-11-19, built; real sign-in test pending)
+
+**Goal:** When a signed-in user opens the app, they should never see Welcome.txt, guest notes, or an empty file list while their Drive is loading. Instead they see a clean, animated loading screen until their real files are ready.
+
+### Why it happens today
+| Cause | Where |
+|---|---|
+| The browser keeps the guest's notes and open tabs (`np-workspace`, `np-tabs` in localStorage) and **always loads them on startup**, even for signed-in users. They're needed only once, to copy guest notes to Drive on first sign-in. | `guestOnlyLocalStorage` in `src/services/storage/localStorageService.ts` |
+| For the first moment the app doesn't know whether you're signed in (`status: "loading"`), so it shows the normal screen. | `src/store/authStore.ts` |
+| While Drive loads, only the editor area and file tree show a grey placeholder. The **tab bar, workspace name, menus and status bar still show the leftover guest data** (e.g. a "Welcome.txt" tab, "Guest workspace", "1 file"). | `EditorArea.tsx`, `AppShell.tsx` |
+
+### Planned changes
+1. **Remember "this browser is signed in".** Save a small flag (`np-signed-in`, just "1", no personal data) when sign-in is confirmed. Remove it when the app finds you are a guest (e.g. after sign-out or an expired session). This lets the app know straight away, before the server answers, that it should show the Drive loading screen.
+2. **New `DriveLoadingScreen` component** — covers the whole app (desktop and phone) while a signed-in user's workspace loads:
+   - App logo with a soft pulsing ring, a small Google Drive icon, and a thin animated progress bar
+   - Text: "Loading your files from Google Drive" and a smaller line "This only takes a moment"
+   - Fades out smoothly when the files are ready. Calm motion only, and it respects the "reduce motion" setting.
+   - Shown when: (signed-in flag is set **and** the sign-in check is still running) **or** (signed in **and** the workspace is not ready yet).
+3. The guest data is still loaded quietly in the background (so the first-sign-in copy to Drive keeps working), just never shown to a signed-in user.
+
+### Not changed
+- Guests: same as today (Welcome.txt on first visit).
+- How files are fetched from Drive, the APIs, the database, sign-in, the lock screen.
+- If Drive fails to load, the existing error message shows and the loading screen goes away (no endless spinner).
+
+### Files likely touched
+- `src/store/authStore.ts` (set/clear the flag)
+- New: `src/components/layout/DriveLoadingScreen.tsx`
+- `src/components/layout/AppShell.tsx` (render the loading screen)
+
+### Done when
+- `npx tsc --noEmit`, `npm run lint`, `npm run build`, existing `npm run test:*` pass
+- Guest in a fresh browser: Welcome.txt appears as before, no loading screen
+- Signed in (desktop and phone size): refresh → loading screen appears straight away, no Welcome.txt / guest tab / empty list ever flashes, then the real Drive files appear
+- Sign out → next load behaves as guest, no loading screen
+- No console errors
+
+---
+
+## 10. Previous task — SEO: rank for "best online notepad" (approved 2026-11-19)
+
+**Goal:** Give Google the best possible reasons to show NextNotePad for searches like "best online notepad", "free online notepad" and "online notepad". **Nobody can guarantee position #1.** Google also weighs links from other sites, site age and how users react, and code can't control those. This task fixes what _is_ in our control.
+
+### What the check found (2026-11-19, live site)
+
+| Area                                                                   | Status                                                                                                                                                                     |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Title, description, robots.txt, sitemap.xml, structured data, OG image | Good — done in PR #51                                                                                                                                                      |
+| 9 content pages (features, FAQ, guides…)                               | Live                                                                                                                                                                       |
+| **Home page text**                                                     | **Only ~63 words visible to Google.** `/` is just the editor. This is the most important URL and the biggest gap (`docs/seo/strategy.md` §2, "option B", still undecided). |
+| Links from `/` to content pages                                        | Only inside the client-side Help menu, so Google can't follow them                                                                                                         |
+| Page answering "which online notepad is best?"                         | None                                                                                                                                                                       |
+| Word count + one-click `.txt` download                                 | Most competitors show these on the page. Need to check what we already have before adding anything.                                                                        |
+
+### Planned changes (code)
+
+1. **Home page content below the editor (option B).** The editor stays exactly where it is on first screen. Scroll down to reach a real, server-rendered section (~600–900 words): what NextNotePad is, why it's a strong choice for an online notepad, how saving works (browser vs your own Google Drive), key features, a short FAQ (with `FAQPage` structured data), and plain links to the content pages. Requires the app shell to stop locking page scrolling on `/`. On phones, the content sits below the editor too.
+2. **New page `/best-online-notepad`** — "How to choose an online notepad" with a fair comparison table (NextNotePad vs onlinenotepad.org, anotepad, Google Keep, Notepad++/editpad-style sites). Rows: no sign-up, where notes are stored, tabs/folders, offline, encryption, price. It shows where competitors do better too (honest pages rank and get linked; fake "#1" claims get penalised). Registered in `src/lib/seo/site.ts` so the sitemap, footer and SEO tests pick it up.
+3. **Title tweak** on `/` to lead with the main phrase, e.g. `Free Online Notepad — No Sign-Up, Saves to Google Drive | NextNotePad` (≤ 70 chars, checked by existing tests).
+
+### Owner tasks (not code — I'll give step-by-step help)
+
+- Google Search Console: verify the domain, submit `sitemap.xml`, request indexing of `/` and the new page.
+- List the site on AlternativeTo, Product Hunt, Slant (earned links matter a lot for "best" searches).
+
+### Not changed
+
+- The editor itself, APIs, database, auth, Drive storage. No hidden text, keyword stuffing or fake reviews.
+
+### Files likely touched
+
+- `src/app/(app)/page.tsx` or `layout.tsx`, `src/components/layout/AppShell.tsx` (scroll on `/`)
+- New: `src/components/site/HomeContent.tsx`, `src/app/(site)/best-online-notepad/page.tsx`
+- `src/lib/seo/site.ts`, `src/lib/seo/jsonLd.ts`, `src/lib/seo/seo.test.ts`
+
+### Done when
+
+- `npx tsc --noEmit`, `npm run lint`, `npm run build`, `npm run test:seo` pass
+- `npm run seo:audit -- http://localhost:3000` passes with no broken links
+- `/` with JavaScript off shows the full text section; with JavaScript on, the editor works as before at desktop and phone sizes, and the text is reachable by scrolling
+- `/best-online-notepad` renders, appears in `sitemap.xml` and the footer, and has no console errors
+
+---
+
+## 9. Previous task — Mobile UI/UX upgrade (approved 2026-11-18, merged in #53)
 
 **Goal:** On phones (screens under 768px wide) the app should feel like a polished native notes app: every option easy to find, quick workspace switching, quick file search, a clean reading view, and easy text selection and copy. **Desktop layout is not changed.**
 
 ### What's wrong today
-| Area | Problem |
-|---|---|
-| Workspaces | There is **no workspace switcher on phones** — it only exists in the desktop sidebar. |
-| Search | Quick Open (find a file) is buried inside the Search menu. |
-| Menu | The "Menu" sheet is a 3×3 grid of desktop dropdown menus (File, Edit, Encoding…). Hard to tap, options hidden two levels deep. |
-| Reading / copying | Notes open in the code editor. Selecting text with a finger is fiddly and there is no Copy button. |
-| Top bar | Two similar icons (explorer + menu) on the left; title says "Editing locally" even for Drive files. |
+
+| Area              | Problem                                                                                                                        |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Workspaces        | There is **no workspace switcher on phones** — it only exists in the desktop sidebar.                                          |
+| Search            | Quick Open (find a file) is buried inside the Search menu.                                                                     |
+| Menu              | The "Menu" sheet is a 3×3 grid of desktop dropdown menus (File, Edit, Encoding…). Hard to tap, options hidden two levels deep. |
+| Reading / copying | Notes open in the code editor. Selecting text with a finger is fiddly and there is no Copy button.                             |
+| Top bar           | Two similar icons (explorer + menu) on the left; title says "Editing locally" even for Drive files.                            |
 
 ### Planned changes (phones only)
+
 1. **New top bar** — left: Files button. Middle: note name + workspace name (tap to switch workspace). Right: Search button and a "More" button.
 2. **Bottom action bar** (thumb-friendly) — 4 large buttons: **Files**, **Search**, **New note**, **Copy all**. Sits above the phone's home bar.
 3. **Workspace switcher sheet** — a bottom sheet listing all workspaces with a check mark on the active one, one tap to switch, plus "New workspace". Uses the existing workspace store/actions, no new API.
@@ -139,21 +388,24 @@ For every task:
    - **Read** — clean, wrapped text in a readable font where you can long-press to select any text normally (Markdown files show the existing Markdown preview).
 7. **Copy** — "Copy all" copies the whole note; in the editor, when text is selected, a small floating **Copy** button appears. A short "Copied" toast confirms it.
 8. **"More" sheet redesign** — replace the 3×3 dropdown grid with a clean, grouped list of large rows with icons and labels:
-   - *Note:* Rename, Save/Download, Lock, Find & Replace, Word wrap, Markdown preview
-   - *Workspace:* Switch, Export/Import, Recycle Bin, Stats
-   - *App:* Settings, Command Palette, Install app, Account / Sign in, About
-   Each row calls an action that already exists (registered actions / dialog store).
+   - _Note:_ Rename, Save/Download, Lock, Find & Replace, Word wrap, Markdown preview
+   - _Workspace:_ Switch, Export/Import, Recycle Bin, Stats
+   - _App:_ Settings, Command Palette, Install app, Account / Sign in, About
+     Each row calls an action that already exists (registered actions / dialog store).
 
 ### Files likely touched
+
 - `src/components/layout/AppShell.tsx`, `MobileAppBar.tsx`, `MobileMenuSheet.tsx`
 - New (one component per file): `MobileBottomBar.tsx`, `MobileWorkspaceSheet.tsx`, `MobileReadView.tsx`, `MobileCopyButton.tsx`
 - `src/components/explorer/FileExplorer.tsx`, `src/components/search/QuickOpenDialog.tsx` (mobile styles only)
 - `src/store/uiStore.ts` (add "workspace sheet open" and "read mode" flags)
 
 ### Not changed
+
 - Desktop layout, APIs, database, auth, Drive storage.
 
 ### Done when
+
 - `npx tsc --noEmit`, `npm run lint`, `npm run build` pass; existing `npm run test:*` pass
 - In the browser at phone size (390×844), as guest: switch workspace, search and open a file, create a note, toggle Read/Edit, select and copy text, copy all, open every "More" item — no console errors
 - Desktop (1440px) looks and works exactly as before
@@ -165,18 +417,20 @@ For every task:
 **Goal:** Remove what isn't needed. The app must look and behave exactly the same. No API, database, auth, routing or UI changes.
 
 ### What the scan found (2026-11-11)
-| Area | Result |
-|---|---|
-| Source files never imported | **0** — every file in `src/` and `scripts/` is used |
-| Public assets (`public/`) | **0 unused** — all icons and `sw.js` are referenced |
-| npm packages | **0 removable** — the ones with no direct import are loaded indirectly: `babel-plugin-react-compiler` (`reactCompiler: true` in `next.config.ts`), `@emnapi/*` (pinned to fix `npm ci`), `@types/*`, `react-dom` |
-| Unused exported functions/constants in app code | **0** |
-| TODO / FIXME / commented-out code | **0** |
-| Unused UI sub-components in `src/components/ui/` | **~26** (e.g. `ContextMenuSub*`, `ContextMenuRadio*`, `SheetFooter`, `SelectGroup`, `InputGroupButton`, `DialogTrigger`) |
-| Types/constants marked `export` but only used in their own file | **36** |
-| Comment lines | **~2,100** in ~32,000 lines. Almost all explain *why* (security notes, "do not drop these tables" warnings) |
+
+| Area                                                            | Result                                                                                                                                                                                                           |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Source files never imported                                     | **0** — every file in `src/` and `scripts/` is used                                                                                                                                                              |
+| Public assets (`public/`)                                       | **0 unused** — all icons and `sw.js` are referenced                                                                                                                                                              |
+| npm packages                                                    | **0 removable** — the ones with no direct import are loaded indirectly: `babel-plugin-react-compiler` (`reactCompiler: true` in `next.config.ts`), `@emnapi/*` (pinned to fix `npm ci`), `@types/*`, `react-dom` |
+| Unused exported functions/constants in app code                 | **0**                                                                                                                                                                                                            |
+| TODO / FIXME / commented-out code                               | **0**                                                                                                                                                                                                            |
+| Unused UI sub-components in `src/components/ui/`                | **~26** (e.g. `ContextMenuSub*`, `ContextMenuRadio*`, `SheetFooter`, `SelectGroup`, `InputGroupButton`, `DialogTrigger`)                                                                                         |
+| Types/constants marked `export` but only used in their own file | **36**                                                                                                                                                                                                           |
+| Comment lines                                                   | **~2,100** in ~32,000 lines. Almost all explain _why_ (security notes, "do not drop these tables" warnings)                                                                                                      |
 
 ### Planned changes
+
 1. Delete the ~26 unused UI sub-components (each checked again with a search before deleting).
 2. Remove the needless `export` keyword from the 36 local-only types/constants.
 3. Delete `skills-lock.json` — it's a lock file for AI-assistant skills, not used by the app.
@@ -184,12 +438,14 @@ For every task:
 5. Comments: remove only comments that just repeat what the code says. Keep comments that explain why something is done, warnings, and security notes.
 
 ### Not touched
+
 - `docs/seo/` and `scripts/seo/` — used by `npm run seo:audit`.
 - `prisma/migrations/` — the database history; deleting it breaks deploys.
 - `.claude/worktrees/` and `.kilo/worktrees/` — separate copies of the project that may hold unsaved work.
 - `docker-compose.yml` password — separate security fix, not part of cleanup.
 
 ### Done when
+
 - `npx tsc --noEmit`, `npm run lint`, `npm run format:check` pass
 - All `npm run test:*` unit tests pass (text-tools, lock, local-mirror, dictation, seo)
 - `npm run build` passes

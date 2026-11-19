@@ -6,3 +6,5 @@ src/generated
 .kilo
 _bmad-output
 .claude
+public/monaco
+public/dictionaries
