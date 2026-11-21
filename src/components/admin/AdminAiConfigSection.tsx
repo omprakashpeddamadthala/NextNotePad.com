@@ -288,7 +288,7 @@ export function AdminAiConfigSection() {
               >
                 <div className="flex items-center justify-between w-full mb-1">
                   <span className="text-xs font-semibold text-foreground font-mono">{m.label}</span>
-                  <span className="text-[9px] px-1.5 py-0.2 rounded font-medium bg-background border border-border/50 text-muted-foreground">
+                  <span className="text-[10px] px-1.5 py-0.2 rounded font-medium bg-background border border-border/50 text-muted-foreground">
                     {m.tag}
                   </span>
                 </div>

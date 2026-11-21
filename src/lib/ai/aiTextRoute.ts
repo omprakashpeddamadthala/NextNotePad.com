@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { parseJsonBody } from "@/lib/api/requestBody";
 import { aiTextRequestSchema } from "@/lib/validation/aiSchemas";
 import { AiProviderError } from "./AiProviderError";
-import { streamClaudeText } from "./claudeProvider";
 import { streamGeminiText } from "./geminiProvider";
 
 const encoder = new TextEncoder();
@@ -11,10 +10,9 @@ export function createAiTextRoute(systemInstruction: string) {
   return async function POST(request: NextRequest) {
     const parsed = await parseJsonBody(request, aiTextRequestSchema);
     if (!parsed.success) return parsed.response;
-    const { text, provider } = parsed.data;
+    const { text } = parsed.data;
 
-    const streamText = provider === "claude" ? streamClaudeText : streamGeminiText;
-    const stream = streamText({ text, systemInstruction });
+    const stream = streamGeminiText({ text, systemInstruction });
 
     let first: IteratorResult<string>;
     try {

@@ -29,7 +29,6 @@ export function HomeEditor() {
       >
         <div className="animate-in fade-in zoom-in-95 flex flex-col items-center gap-4 duration-300">
           <div className="relative">
-            <div className="absolute -inset-2 animate-pulse rounded-2xl bg-gradient-to-r from-purple-600/30 to-blue-600/30 blur-md" />
             <AppLogo size="xl" priority className="relative shadow-2xl" />
           </div>
           <div className="flex flex-col items-center text-center">

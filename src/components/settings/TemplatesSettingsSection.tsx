@@ -11,7 +11,7 @@ export function TemplatesSettingsSection() {
   const openDialog = useDialogStore((s) => s.openDialog);
 
   return (
-    <div className="rounded-xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs backdrop-blur-xs">
+    <div className="rounded-xl border border-border/70 bg-card p-4 sm:p-5">
       <div className="mb-4 flex items-center gap-2.5 pb-3 border-b border-border/60">
         <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
           <LayoutTemplate className="size-4" />
@@ -36,7 +36,7 @@ export function TemplatesSettingsSection() {
           </button>
         </p>
       ) : (
-        <ul className="divide-y divide-border/50 rounded-lg border border-border/50 bg-background/50">
+        <ul className="divide-y divide-border/50 rounded-lg bg-muted/40">
           {templates.map((t) => (
             <li key={t.id} className="flex items-center justify-between gap-3 px-3.5 py-2.5">
               <div className="min-w-0">

@@ -468,40 +468,22 @@ export function MonacoEditorWrapper({
       actionId: string;
     }[] = [
       {
-        id: "tools.ai.fixGrammar.contextMenu.gemini",
-        label: "Correct the Sentence (AI) — Gemini",
+        id: "tools.ai.fixGrammar.contextMenu",
+        label: "Correct the Sentence (AI)",
         order: 1,
-        actionId: "tools.ai.fixGrammar.gemini",
+        actionId: "tools.ai.fixGrammar",
       },
       {
-        id: "tools.ai.fixGrammar.contextMenu.claude",
-        label: "Correct the Sentence (AI) — Claude",
+        id: "tools.ai.generateMdSyntax.contextMenu",
+        label: "Generate MD Syntax (AI)",
         order: 2,
-        actionId: "tools.ai.fixGrammar.claude",
+        actionId: "tools.ai.generateMdSyntax",
       },
       {
-        id: "tools.ai.generateMdSyntax.contextMenu.gemini",
-        label: "Generate MD Syntax (AI) — Gemini",
+        id: "tools.ai.generatePrompt.contextMenu",
+        label: "Generate Prompt (AI)",
         order: 3,
-        actionId: "tools.ai.generateMdSyntax.gemini",
-      },
-      {
-        id: "tools.ai.generateMdSyntax.contextMenu.claude",
-        label: "Generate MD Syntax (AI) — Claude",
-        order: 4,
-        actionId: "tools.ai.generateMdSyntax.claude",
-      },
-      {
-        id: "tools.ai.generatePrompt.contextMenu.gemini",
-        label: "Generate Prompt (AI) — Gemini",
-        order: 5,
-        actionId: "tools.ai.generatePrompt.gemini",
-      },
-      {
-        id: "tools.ai.generatePrompt.contextMenu.claude",
-        label: "Generate Prompt (AI) — Claude",
-        order: 6,
-        actionId: "tools.ai.generatePrompt.claude",
+        actionId: "tools.ai.generatePrompt",
       },
     ];
 

@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeApplier } from "./ThemeApplier";
 import { ServiceWorkerRegistration } from "./ServiceWorkerRegistration";
 import { AppLockManager } from "@/components/lock/AppLockManager";
+import { PwaWindowFit } from "@/components/pwa/PwaWindowFit";
 
 export function AppProviders({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -21,6 +22,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       <TooltipProvider delayDuration={400}>
         <ThemeApplier />
         <ServiceWorkerRegistration />
+        <PwaWindowFit />
         <AppLockManager />
         {children}
         <Toaster position="bottom-right" richColors closeButton />

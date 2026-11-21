@@ -38,7 +38,6 @@ interface AppFeature {
   title: string;
   description: string;
   badge: string;
-  badgeClass: string;
   action?: () => void;
 }
 
@@ -57,13 +56,13 @@ function QuickAction({
     <button
       type="button"
       onClick={onClick}
-      className="group relative flex items-center gap-3 rounded-xl border border-border/60 bg-card/80 p-2.5 text-left text-xs transition-all duration-200 hover:border-amber-500/25 hover:shadow-md hover:shadow-amber-500/5 active:scale-[0.99] focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none cursor-pointer"
+      className="group relative flex items-center gap-3 rounded-xl border border-border/60 bg-card/80 p-2.5 text-left text-xs transition-all duration-200 hover:border-primary/30 hover:shadow-sm active:scale-[0.99] focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none cursor-pointer"
     >
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground ring-1 ring-border/50 transition-all duration-200 group-hover:bg-gradient-to-br group-hover:from-amber-500/15 group-hover:to-violet-500/15 group-hover:text-amber-600 dark:group-hover:text-amber-400 group-hover:ring-amber-500/20">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground ring-1 ring-border/50 transition-all duration-200 group-hover:bg-primary/10 group-hover:text-primary group-hover:ring-primary/20">
         <Icon className="size-4" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate font-semibold text-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors text-xs leading-tight">
+        <span className="block truncate font-semibold text-foreground group-hover:text-primary transition-colors text-xs leading-tight">
           {label}
         </span>
         {description && (
@@ -94,7 +93,6 @@ export function EditorWelcome() {
       title: "Monaco Pro Editor",
       description: "50+ languages, code folding, minimap, formatting, and multi-cursor editing.",
       badge: "50+ Langs",
-      badgeClass: "border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300",
       action: () => runAction("file.new"),
     },
     {
@@ -102,7 +100,6 @@ export function EditorWelcome() {
       title: "100% Offline-First",
       description: "Zero login needed. Files, tabs, and settings persist safely in browser IndexedDB.",
       badge: "Private",
-      badgeClass: "border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300",
       action: () => toast.info("All files are stored 100% locally in your browser (IndexedDB)."),
     },
     {
@@ -110,7 +107,6 @@ export function EditorWelcome() {
       title: "Google Drive Sync",
       description: "Optional cloud backup to synchronize your workspaces across computers & devices.",
       badge: "Cloud Sync",
-      badgeClass: "border-sky-200 dark:border-sky-500/30 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300",
       action: () => openDialog("settings"),
     },
     {
@@ -118,7 +114,6 @@ export function EditorWelcome() {
       title: "Side-by-Side Diff Checker",
       description: "Compare two files or revisions side-by-side with visual split-screen diffing.",
       badge: "Diff Tool",
-      badgeClass: "border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300",
       action: () => openDialog("commandPalette"),
     },
     {
@@ -126,7 +121,6 @@ export function EditorWelcome() {
       title: "Developer Text Tools",
       description: "Built-in JSON Formatter, Base64 encoder, Hash generator, URL tools & Markdown preview.",
       badge: "Built-in",
-      badgeClass: "border-teal-200 dark:border-teal-500/30 bg-teal-50 dark:bg-teal-950/40 text-[#007492] dark:text-[#00e5cc]",
       action: () => openDialog("commandPalette"),
     },
     {
@@ -134,7 +128,6 @@ export function EditorWelcome() {
       title: "Global Search & Regex",
       description: "Find across all open files with regular expressions, match case, and batch replace.",
       badge: "Fast Search",
-      badgeClass: "border-purple-200 dark:border-purple-500/30 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300",
       action: () => runAction("search.findInFiles"),
     },
     {
@@ -142,7 +135,6 @@ export function EditorWelcome() {
       title: "Recycle Bin Recovery",
       description: "Accidental deletion protection — easily restore soft-deleted files and folders anytime.",
       badge: "Recovery",
-      badgeClass: "border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300",
       action: () => runAction("view.toggleRecycleBin"),
     },
     {
@@ -150,7 +142,6 @@ export function EditorWelcome() {
       title: "Voice Dictation",
       description: "Hold Alt+V and speak — your words type live at the cursor, then grammar and filler words are fixed automatically, offline.",
       badge: "Speech-to-Text",
-      badgeClass: "border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300",
       action: () => toast.info("Open a file, then hold Alt+V (or click the mic in the top bar) and speak."),
     },
     {
@@ -158,20 +149,19 @@ export function EditorWelcome() {
       title: "Installable PWA App",
       description: "Install as a standalone native app on Mac, Windows, Linux, Android, and iOS.",
       badge: "Zero Install",
-      badgeClass: "border-sky-200 dark:border-sky-500/30 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300",
       action: () => toast.info("Use the 'Install App' button in the menu bar to install NextNotePad."),
     },
   ];
 
   return (
-    <div className="socratix-bg np-scrollbar h-full w-full overflow-y-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col justify-between select-none">
-      <div className="animate-in fade-in w-full max-w-7xl mx-auto flex-1 flex flex-col justify-between gap-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-border/60">
+    <div className="socratix-bg np-scrollbar h-full w-full overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 select-none">
+      <div className="animate-in fade-in duration-300 w-full max-w-6xl mx-auto flex flex-col gap-6 @container">
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-5 border-b border-border/60">
           <div className="flex items-center gap-3">
             <AppLogo
               size="lg"
               priority
-              iconClassName="shadow-[0_4px_16px_rgba(59,130,246,0.2)] hover:shadow-[0_6px_20px_rgba(59,130,246,0.3)] transition-shadow"
+              iconClassName="shadow-sm"
             />
             <div>
               <div className="flex items-center gap-2">
@@ -179,15 +169,14 @@ export function EditorWelcome() {
                   <span className="np-brand-gradient">Next</span>NotePad
                   <span className="text-amber-500 ml-0.5 text-xs font-semibold align-super">.com</span>
                 </h1>
-                <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/30 bg-amber-500/10 px-2 py-0.5 text-[9px] font-semibold text-amber-500 uppercase tracking-wide">
-                  <span className="size-1 rounded-full bg-amber-500 animate-pulse" />
+                <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/8 px-2 py-0.5 text-[10px] font-semibold text-primary uppercase tracking-wide">
                   {APP_BRAND.badge}
                 </span>
                 <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-mono font-medium text-muted-foreground border border-border/70">
                   v{APP_VERSION.version}
                 </span>
               </div>
-              <p className="text-[11.5px] text-muted-foreground mt-1 leading-tight">
+              <p className="text-xs text-muted-foreground mt-1 leading-tight">
                 {APP_BRAND.tagline}
               </p>
             </div>
@@ -195,7 +184,7 @@ export function EditorWelcome() {
 
           <div className="flex items-center gap-2 text-xs">
             <div className="flex items-center gap-1.5 rounded-md border border-border/70 bg-card px-2.5 py-1 shadow-xs">
-              <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="size-1.5 rounded-full bg-emerald-500" />
               <span className="font-medium text-[11px] text-foreground/80">
                 {authStatus === "authenticated" ? "Cloud Sync Active" : "Guest Mode (Local)"}
               </span>
@@ -207,13 +196,13 @@ export function EditorWelcome() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4.5 flex-1 items-stretch">
-          <div className="lg:col-span-4 flex flex-col justify-between gap-3">
+        <div className="grid grid-cols-1 @3xl:grid-cols-12 gap-6 items-start">
+          <div className="@3xl:col-span-4 flex flex-col gap-5">
             <div>
-              <h2 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Quick Actions
               </h2>
-              <div className="grid grid-cols-2 lg:grid-cols-1 gap-2">
+              <div className="grid grid-cols-1 @lg:grid-cols-2 @3xl:grid-cols-1 gap-2">
                 <QuickAction
                   icon={FilePlus}
                   label="New File"
@@ -243,13 +232,13 @@ export function EditorWelcome() {
               </div>
             </div>
 
-            <div className="flex-1 flex flex-col">
-              <h2 className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                <Clock className="size-3 text-[#007492] dark:text-[#00e5cc]" />
+            <div>
+              <h2 className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <Clock className="size-3" />
                 Recent Files
               </h2>
               {recentFiles.length > 0 ? (
-                <ul className="overflow-hidden rounded-xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#12131a] divide-y divide-slate-100 dark:divide-white/5 shadow-2xs flex-1">
+                <ul className="overflow-hidden rounded-xl border border-border/60 bg-card divide-y divide-border/50">
                   {recentFiles.map((node) => {
                     const Icon = getFileIcon(node.name);
                     return (
@@ -257,59 +246,56 @@ export function EditorWelcome() {
                         <button
                           type="button"
                           onClick={() => openFileForUser(node.id)}
-                          className="group flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs transition-colors hover:bg-slate-50 dark:hover:bg-white/5 focus-visible:ring-1 focus-visible:ring-[#007492] dark:focus-visible:ring-[#00e5cc] focus-visible:outline-none cursor-pointer"
+                          className="group flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs transition-colors hover:bg-accent/50 focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none cursor-pointer"
                         >
-                          <Icon className="size-3.5 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity text-slate-600 dark:text-slate-300" />
-                          <span className="truncate font-semibold text-slate-800 dark:text-slate-200 group-hover:text-[#007492] dark:group-hover:text-[#00e5cc] transition-colors text-xs">
+                          <Icon className="size-3.5 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity text-muted-foreground" />
+                          <span className="truncate font-medium text-foreground group-hover:text-primary transition-colors text-xs">
                             {node.name}
                           </span>
-                          <span className="ml-auto hidden truncate text-[10px] text-slate-400 dark:text-slate-500 sm:block max-w-[130px]">
+                          <span className="ml-auto hidden truncate text-[11px] text-muted-foreground/70 sm:block max-w-[130px]">
                             {node.path}
                           </span>
-                          <ChevronRight className="size-3 shrink-0 text-slate-400 opacity-0 transition-opacity group-hover:opacity-100" />
+                          <ChevronRight className="size-3 shrink-0 text-muted-foreground/50 opacity-0 transition-opacity group-hover:opacity-100" />
                         </button>
                       </li>
                     );
                   })}
                 </ul>
               ) : (
-                <div className="rounded-xl border border-dashed border-slate-300 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] p-3.5 text-center flex-1 flex flex-col items-center justify-center">
-                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">No recent files yet</p>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                    Create a file or use Ctrl+N to begin editing
-                  </p>
-                </div>
+                <p className="rounded-xl border border-dashed border-border/70 px-3 py-2.5 text-xs text-muted-foreground">
+                  No recent files yet. Create a file or press Ctrl+N to begin editing.
+                </p>
               )}
             </div>
 
-            <div className="rounded-xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#12131a] p-3 flex items-center gap-3 shadow-2xs">
+            <div className="rounded-xl border border-border/60 bg-card p-3 flex items-center gap-3">
               <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/20">
                 <ShieldCheck className="size-4" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-900 dark:text-white">Local &amp; Private Storage</span>
-                  <span className="text-[9px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold uppercase">IndexedDB</span>
+                  <span className="text-xs font-semibold text-foreground">Local &amp; Private Storage</span>
+                  <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold uppercase">IndexedDB</span>
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                <p className="text-[11px] text-muted-foreground truncate mt-0.5">
                   100% in-browser persistence. Zero tracking, zero telemetry.
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="lg:col-span-8 flex flex-col justify-between">
+          <div className="@3xl:col-span-8">
             <div className="mb-2 flex items-center justify-between">
-              <h2 className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                <Sparkles className="size-3 text-[#007492] dark:text-[#00e5cc]" />
+              <h2 className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <Sparkles className="size-3" />
                 Features &amp; Capabilities
               </h2>
-              <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                9 Built-in Modules
+              <span className="text-[11px] font-medium text-muted-foreground/70">
+                9 built-in modules
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 flex-1 items-stretch">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-3">
               {APP_FEATURES.map((feature) => {
                 const Icon = feature.icon;
                 return (
@@ -317,26 +303,22 @@ export function EditorWelcome() {
                     key={feature.title}
                     type="button"
                     onClick={feature.action}
-                    className="group relative flex flex-col justify-between rounded-xl border border-slate-200/80 dark:border-white/8 bg-white dark:bg-[#12131a] p-3 text-left transition-all duration-200 hover:border-amber-400/30 dark:hover:border-amber-400/20 hover:shadow-md hover:shadow-amber-500/5 active:scale-[0.99] cursor-pointer"
+                    className="group flex flex-col gap-2 rounded-xl border border-border/60 bg-card p-3.5 text-left transition-[border-color,box-shadow] duration-150 hover:border-primary/30 hover:shadow-sm focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none cursor-pointer"
                   >
-                    <div>
-                      <div className="flex items-center justify-between gap-1.5 mb-1.5">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-slate-100 dark:bg-white/5 text-slate-800 dark:text-[#00e5cc] ring-1 ring-slate-200/60 dark:ring-white/10 group-hover:bg-[#181d26] group-hover:text-white dark:group-hover:bg-[#00e5cc] dark:group-hover:text-[#0a0a0f] transition-colors">
-                            <Icon className="size-3.5" />
-                          </span>
-                          <span className="font-semibold text-slate-900 dark:text-white text-xs truncate leading-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                            {feature.title}
-                          </span>
+                    <div className="flex items-start gap-2.5">
+                      <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground ring-1 ring-border/50 transition-colors duration-150 group-hover:bg-primary/10 group-hover:text-primary group-hover:ring-primary/20">
+                        <Icon className="size-3.5" />
+                      </span>
+                      <div className="min-w-0">
+                        <div className="text-[13px] font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
+                          {feature.title}
                         </div>
-                        <span className={`rounded-full border px-1.5 py-0.2 text-[8.5px] font-medium shrink-0 leading-none ${feature.badgeClass}`}>
-                          {feature.badge}
-                        </span>
+                        <div className="text-[11px] text-muted-foreground/80">{feature.badge}</div>
                       </div>
-                      <p className="text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
-                        {feature.description}
-                      </p>
                     </div>
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      {feature.description}
+                    </p>
                   </button>
                 );
               })}
@@ -344,17 +326,17 @@ export function EditorWelcome() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-slate-200/80 dark:border-white/10 text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-4 border-t border-border/60 text-[11px] text-muted-foreground">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-slate-800 dark:text-slate-200">{APP_BRAND.domain}</span>
+            <span className="font-semibold text-foreground">{APP_BRAND.domain}</span>
             <span>•</span>
             <span>Fast, offline-first notepad with zero install</span>
           </div>
           <div className="flex items-center gap-3">
-            <span><kbd className="text-[10px] bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded border border-slate-200 dark:border-white/10">Ctrl+N</kbd> New</span>
-            <span><kbd className="text-[10px] bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded border border-slate-200 dark:border-white/10">Ctrl+O</kbd> Open</span>
-            <span><kbd className="text-[10px] bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded border border-slate-200 dark:border-white/10">Ctrl+P</kbd> Quick Open</span>
-            <span><kbd className="text-[10px] bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded border border-slate-200 dark:border-white/10">Ctrl+Shift+P</kbd> Tools</span>
+            <span><kbd className="font-mono text-[10px] bg-muted text-foreground/80 px-1.5 py-0.5 rounded border border-border/70">Ctrl+N</kbd> New</span>
+            <span><kbd className="font-mono text-[10px] bg-muted text-foreground/80 px-1.5 py-0.5 rounded border border-border/70">Ctrl+O</kbd> Open</span>
+            <span><kbd className="font-mono text-[10px] bg-muted text-foreground/80 px-1.5 py-0.5 rounded border border-border/70">Ctrl+P</kbd> Quick Open</span>
+            <span><kbd className="font-mono text-[10px] bg-muted text-foreground/80 px-1.5 py-0.5 rounded border border-border/70">Ctrl+Shift+P</kbd> Tools</span>
           </div>
         </div>
       </div>

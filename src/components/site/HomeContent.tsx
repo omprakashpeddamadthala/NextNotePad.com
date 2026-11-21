@@ -70,7 +70,7 @@ export function HomeContent() {
       <JsonLd data={faqJsonLd(HOME_FAQ)} />
 
       <section className="mx-auto max-w-5xl px-4 pt-16 sm:px-6 sm:pt-24">
-        <p className="text-sm font-medium tracking-wide text-indigo-600 uppercase">
+        <p className="text-sm font-medium tracking-wide text-primary uppercase">
           About NextNotePad
         </p>
         <h1 className="mt-3 max-w-3xl text-3xl font-bold tracking-tight text-balance text-slate-900 sm:text-5xl">
@@ -85,7 +85,7 @@ export function HomeContent() {
         <div className="mt-8 flex flex-wrap items-center gap-3">
           <a
             href="#editor-main"
-            className="rounded-md bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+            className="rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary/90"
           >
             Start writing
           </a>
@@ -111,7 +111,7 @@ export function HomeContent() {
         <ul className="mt-8 grid gap-px overflow-hidden rounded-xl bg-slate-200 ring-1 ring-slate-200 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map(({ icon: Icon, title, text }) => (
             <li key={title} className="bg-white p-6">
-              <Icon className="size-5 text-indigo-600" aria-hidden="true" />
+              <Icon className="size-5 text-primary" aria-hidden="true" />
               <h3 className="mt-4 font-semibold text-slate-900">{title}</h3>
               <p className="mt-2 text-sm leading-6 text-slate-600">{text}</p>
             </li>
@@ -150,14 +150,14 @@ export function HomeContent() {
           Step-by-step instructions are in the{" "}
           <Link
             href="/guides/how-to-save-notes-online"
-            className="text-indigo-700 underline hover:text-indigo-900"
+            className="text-primary underline hover:text-primary/80"
           >
             guide to saving notes online
           </Link>
           , and the details of what the app can access are on the{" "}
           <Link
             href="/security"
-            className="text-indigo-700 underline hover:text-indigo-900"
+            className="text-primary underline hover:text-primary/80"
           >
             privacy and security page
           </Link>
@@ -184,7 +184,7 @@ export function HomeContent() {
           </p>
           <Link
             href="/best-online-notepad"
-            className="mt-6 inline-block text-sm font-medium text-indigo-700 underline hover:text-indigo-900"
+            className="mt-6 inline-block text-sm font-medium text-primary underline hover:text-primary/80"
           >
             Compare online notepads
           </Link>
@@ -218,7 +218,7 @@ export function HomeContent() {
           More answers are on the{" "}
           <Link
             href="/faq"
-            className="text-indigo-700 underline hover:text-indigo-900"
+            className="text-primary underline hover:text-primary/80"
           >
             FAQ page
           </Link>

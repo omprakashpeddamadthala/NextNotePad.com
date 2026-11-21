@@ -113,7 +113,7 @@ export function SettingsDialog() {
                       className={cn(
                         "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer group",
                         isActive
-                          ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20 font-medium"
+                          ? "bg-primary/10 text-primary font-medium"
                           : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
                       )}
                     >
@@ -122,7 +122,7 @@ export function SettingsDialog() {
                           className={cn(
                             "size-4 shrink-0 transition-colors",
                             isActive
-                              ? "text-primary-foreground"
+                              ? "text-primary"
                               : "text-muted-foreground group-hover:text-foreground",
                           )}
                         />
@@ -133,7 +133,7 @@ export function SettingsDialog() {
                           <div
                             className={cn(
                               "text-[10px] truncate mt-1 hidden md:block",
-                              isActive ? "text-primary-foreground/80" : "text-muted-foreground/80",
+                              isActive ? "text-primary/70" : "text-muted-foreground/80",
                             )}
                           >
                             {tab.subtitle}
@@ -144,9 +144,9 @@ export function SettingsDialog() {
                       {tab.badge && (
                         <span
                           className={cn(
-                            "text-[9px] px-1.5 py-0.2 rounded-full font-semibold uppercase tracking-wider shrink-0",
+                            "text-[10px] px-1.5 py-0.2 rounded-full font-semibold uppercase tracking-wider shrink-0",
                             isActive
-                              ? "bg-white/20 text-white"
+                              ? "bg-primary/15 text-primary"
                               : "bg-muted text-muted-foreground border border-border/50",
                           )}
                         >
@@ -161,7 +161,7 @@ export function SettingsDialog() {
 
             <div className="hidden md:block p-3 m-3 rounded-xl border border-border/60 bg-background/50">
               <div className="flex items-center gap-2 text-[11px] font-medium text-foreground">
-                <span className="flex size-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="flex size-2 rounded-full bg-emerald-500" />
                 <span>Auto-saved to Browser</span>
               </div>
               <p className="text-[10px] text-muted-foreground mt-1">

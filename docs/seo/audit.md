@@ -24,7 +24,7 @@ These are the claims the site may make. Anything not on this list must not appea
 | Local folder copy | `localMirror/*` | Signed-in, File System Access API (Chromium desktop). |
 | Find/replace, find in files, Quick Open, Command Palette | `shortcuts.ts` | |
 | Diff checker, Markdown preview, formatters, text tools | `textTools.ts`, `formatters.ts` | Full list on `/developers`. |
-| AI grammar/Markdown/prompt tools | `src/app/api/ai/*` | Sends text to Gemini or Claude. |
+| AI grammar/Markdown/prompt tools | `src/app/api/ai/*` | Sends text to Gemini. |
 | Voice typing | `dictation/*` | Browser speech recognition. |
 | ZIP export/import | `zipService.ts` | Works in both modes. |
 | PWA install | `manifest.ts`, `public/sw.js` | |
@@ -89,7 +89,7 @@ Not available, so not assessed: Core Web Vitals field data (CrUX), Search Consol
 2. **Deploy, then submit the sitemap** in Search Console and request indexing of the new URLs. Run
    `npm run seo:audit -- https://nextnotepad.com` after deploying.
 3. **Privacy policy and terms pages** (owner-written legal text). Needed for Google OAuth verification and trust.
-4. **Unauthenticated AI endpoints** (`/api/ai/*`): anyone can call them and spend the Gemini/Claude quota. Not an
+4. **Unauthenticated AI endpoints** (`/api/ai/*`): anyone can call them and spend the Gemini quota. Not an
    SEO issue, but a cost and abuse risk worth fixing (require a session or rate-limit).
 5. ~~**Offline claim gap**~~: done 2026-11-19. Monaco is self-hosted and cached by the service worker, so "works
    offline after the first visit" is now true.

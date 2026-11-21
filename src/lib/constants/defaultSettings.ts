@@ -17,7 +17,6 @@ export const DEFAULT_SETTINGS: EditorSettings = {
   renderWhitespace: false,
   autoClosingBrackets: true,
   zoomLevel: 0,
-  aiProvider: "gemini",
   dictationAutoCorrect: true,
   spellCheck: false,
   spellCheckWords: [],

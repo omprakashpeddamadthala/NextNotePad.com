@@ -5,8 +5,6 @@ const SINGLETON_ID = "singleton";
 interface EffectiveAiConfig {
   geminiApiKey: string | null;
   geminiModel: string | null;
-  agentRouterApiKey: string | null;
-  claudeModel: string | null;
 }
 
 export async function getEffectiveAiConfig(): Promise<EffectiveAiConfig> {
@@ -19,8 +17,6 @@ export async function getEffectiveAiConfig(): Promise<EffectiveAiConfig> {
   return {
     geminiApiKey: row?.geminiApiKey || process.env.GEMINI_API_KEY || null,
     geminiModel: row?.geminiModel || process.env.GEMINI_MODEL || null,
-    agentRouterApiKey: row?.agentRouterApiKey || process.env.AGENTROUTER_API_KEY || null,
-    claudeModel: row?.claudeModel || process.env.CLAUDE_MODEL || null,
   };
 }
 
@@ -38,8 +34,6 @@ export async function getAiConfigStatus(): Promise<AiConfigStatus> {
 interface AiConfigUpdate {
   geminiApiKey?: string | null;
   geminiModel?: string | null;
-  agentRouterApiKey?: string | null;
-  claudeModel?: string | null;
 }
 
 export async function updateAiConfig(patch: AiConfigUpdate): Promise<void> {

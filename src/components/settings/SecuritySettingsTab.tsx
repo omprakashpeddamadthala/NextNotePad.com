@@ -84,7 +84,7 @@ export function SecuritySettingsTab() {
   if (authStatus === "guest") {
     return (
       <div className="space-y-6">
-        <div className="rounded-xl border border-border/80 bg-card/60 p-5 shadow-xs backdrop-blur-xs">
+        <div className="rounded-xl border border-border/70 bg-card p-5">
           <div className="flex flex-col items-center text-center py-6 px-4">
             <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-3">
               <Shield className="size-6" />
@@ -237,7 +237,7 @@ export function SecuritySettingsTab() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs backdrop-blur-xs">
+      <div className="rounded-xl border border-border/70 bg-card p-4 sm:p-5">
         <div className="flex items-center justify-between gap-4 pb-4 border-b border-border/60">
           <div className="flex items-center gap-3">
             <div
@@ -299,7 +299,7 @@ export function SecuritySettingsTab() {
       </div>
 
       {!enabled && (
-        <div className="rounded-xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs backdrop-blur-xs">
+        <div className="rounded-xl border border-border/70 bg-card p-4 sm:p-5">
           <div className="mb-4 pb-3 border-b border-border/60">
             <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
               <KeyRound className="size-4 text-primary" />
@@ -398,7 +398,7 @@ export function SecuritySettingsTab() {
 
       {enabled && (
         <div className="space-y-4">
-          <div className="rounded-xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs backdrop-blur-xs">
+          <div className="rounded-xl border border-border/70 bg-card p-4 sm:p-5">
             <div className="mb-4 pb-3 border-b border-border/60">
               <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
                 <Clock className="size-4 text-primary" />
@@ -410,7 +410,7 @@ export function SecuritySettingsTab() {
             </div>
 
             <div className="space-y-4">
-              <div className="space-y-2 rounded-lg border border-border/50 bg-background/50 p-3.5">
+              <div className="space-y-2 rounded-lg bg-muted/40 p-3.5">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label
@@ -468,7 +468,7 @@ export function SecuritySettingsTab() {
                 </Select>
               </div>
 
-              <div className="flex items-center justify-between gap-4 rounded-lg border border-border/50 bg-background/50 p-3.5">
+              <div className="flex items-center justify-between gap-4 rounded-lg bg-muted/40 p-3.5">
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-2">
                     <Smartphone className="size-3.5 text-primary" />
@@ -493,7 +493,7 @@ export function SecuritySettingsTab() {
                 />
               </div>
 
-              <div className="space-y-2 rounded-lg border border-border/50 bg-background/50 p-3.5">
+              <div className="space-y-2 rounded-lg bg-muted/40 p-3.5">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label
@@ -541,7 +541,7 @@ export function SecuritySettingsTab() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs backdrop-blur-xs">
+          <div className="rounded-xl border border-border/70 bg-card p-4 sm:p-5">
             <div className="mb-4 pb-3 border-b border-border/60 flex items-center justify-between">
               <div>
                 <h4 className="text-sm font-semibold text-foreground">
@@ -579,7 +579,7 @@ export function SecuritySettingsTab() {
               ) : (
                 <form
                   onSubmit={handleChangePassword}
-                  className="rounded-lg border border-border/60 bg-background/50 p-4 space-y-3"
+                  className="rounded-lg bg-muted/40 p-4 space-y-3"
                 >
                   <h5 className="text-xs font-semibold text-foreground">
                     Change Lock Password

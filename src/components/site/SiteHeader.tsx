@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { SiteNavLink } from "./SiteNavLink";
 
 const NAV = [
   { href: "/features", label: "Features" },
@@ -11,7 +12,7 @@ const NAV = [
 
 export function SiteHeader() {
   return (
-    <header className="border-b border-slate-200 bg-white">
+    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/85 backdrop-blur-md">
       <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-6">
         <Link
           href="/features"
@@ -33,19 +34,14 @@ export function SiteHeader() {
           <ul className="flex items-center gap-1 text-sm whitespace-nowrap">
             {NAV.map((item) => (
               <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className="rounded px-2 py-1.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                >
-                  {item.label}
-                </Link>
+                <SiteNavLink href={item.href} label={item.label} />
               </li>
             ))}
           </ul>
         </nav>
         <Link
           href="/"
-          className="ml-auto shrink-0 rounded bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
+          className="ml-auto shrink-0 rounded-lg bg-primary px-3.5 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary/90"
         >
           Open notepad
         </Link>

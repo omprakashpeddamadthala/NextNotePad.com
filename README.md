@@ -15,7 +15,7 @@ The UI deliberately avoids the "modern SaaS code editor" look — square corners
 - **Export/import** — zip a workspace up or restore from one (`jszip`, `file-saver`).
 - **Developer text utilities & code formatters** — case conversion, sorting, deduplication, line operations, hashing, and language-aware formatters.
 - **Diff viewer & split editor** — side-by-side or inline comparison between tabs or versions, plus multi-pane split editing.
-- **AI-powered text tools** — Fix Grammar & Spelling, Markdown conversion, and AI Prompt assistant powered by Google Gemini and Claude (via AgentRouter), with live streaming and runtime configuration in the Admin Panel.
+- **AI-powered text tools** — Fix Grammar & Spelling, Markdown conversion, and AI Prompt assistant powered by Google Gemini, with live streaming and runtime configuration in the Admin Panel.
 - **Voice dictation** — browser SpeechRecognition integration for hands-free drafting.
 - **Workspace stats**, responsive layout for mobile/tablet, resizable panels.
 - **Admin Panel** — user management (block/unblock, promote admins) and deployment-wide AI key rotation gated by `ADMIN_EMAIL`.
@@ -35,7 +35,7 @@ The UI deliberately avoids the "modern SaaS code editor" look — square corners
 | Database | PostgreSQL via Prisma 7 (`@prisma/client` + `@prisma/adapter-pg` driver adapter) — auth identity and deployment config only; workspace data lives in Google Drive |
 | Auth | Google OAuth 2.0 (`googleapis`) + JWT sessions (`jose`) |
 | Cloud sync | Google Drive API v3 |
-| AI Text Engine | Google Gemini (`@google/genai`) & Claude via AgentRouter |
+| AI Text Engine | Google Gemini (`@google/genai`) |
 | Import/export | JSZip, FileSaver, DOMPurify, `marked` (Markdown) |
 
 > ⚠️ This project pins **Next.js 15 / Prisma 7**, both recent major versions with breaking changes from their older, more widely-known APIs. Before making changes, read the matching guide under `node_modules/next/dist/docs/`.
@@ -71,8 +71,6 @@ cp .env.example .env.local
 | `JWT_SECRET` | Signs session JWTs. Generate with `openssl rand -base64 32`. |
 | `GEMINI_API_KEY` | Google Gemini API key for AI text utilities. Free tier at Google AI Studio. |
 | `GEMINI_MODEL` | Optional Gemini model ID (e.g. `gemini-2.5-flash`). |
-| `AGENTROUTER_API_KEY` | AgentRouter API key for Claude integration. |
-| `CLAUDE_MODEL` | Model ID for AgentRouter Claude integration (e.g. `claude-3-5-sonnet`). |
 | `ADMIN_EMAIL` | Account email granted deployment admin privileges (Admin panel + runtime AI config). |
 
 ### 3. Set up the database
@@ -140,7 +138,7 @@ src/
     search/           Search/replace engine
     shortcuts/        Keyboard shortcut registry
   lib/
-    ai/               Gemini & Claude text streaming providers
+    ai/               Gemini text streaming provider
     drive/            DriveService, AppConfigService (.appConfig.json), tree cache, legacy migration
     auth/             Google OAuth & JWT session helpers
     monaco/themes/    9 editor color themes (including authentic Notepad++)
@@ -153,7 +151,7 @@ prisma/
 
 ## Data model
 
-Database (Prisma): `User` (authentication / account identity only) and `AppConfig` (deployment-wide AI provider keys). Everything else lives in the user's Google Drive:
+Database (Prisma): `User` (authentication / account identity only) and `AppConfig` (deployment-wide Gemini key and model). Everything else lives in the user's Google Drive:
 
 ```text
 NextNotePad.com/

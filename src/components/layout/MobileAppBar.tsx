@@ -68,7 +68,7 @@ export function MobileAppBar() {
             onClick={toggle}
             aria-pressed={reading}
             aria-label={reading ? "Switch to edit mode" : "Switch to read mode"}
-            className="border-border/70 bg-background/70 text-foreground active:bg-accent flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[12px] font-medium shadow-xs transition-[background-color,transform] duration-150 active:scale-[0.97]"
+            className="border-border/70 bg-background/70 text-foreground active:bg-accent relative flex h-9 shrink-0 after:absolute after:-inset-1 after:content-[''] items-center gap-1.5 rounded-full border px-3 text-[12px] font-medium shadow-xs transition-[background-color,transform] duration-150 active:scale-[0.97]"
           >
             {reading ? (
               <PenLine className="size-3.5" />

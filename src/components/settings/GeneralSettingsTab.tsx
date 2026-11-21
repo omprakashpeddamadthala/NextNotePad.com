@@ -44,7 +44,7 @@ export function GeneralSettingsTab() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs backdrop-blur-xs">
+      <div className="rounded-xl border border-border/70 bg-card p-4 sm:p-5">
         <div className="mb-4 flex items-center gap-2.5 pb-3 border-b border-border/60">
           <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <History className="size-4" />
@@ -56,7 +56,7 @@ export function GeneralSettingsTab() {
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between gap-4 rounded-lg border border-border/50 bg-background/50 p-3.5 transition-colors hover:bg-muted/30">
+          <div className="flex items-center justify-between gap-4 rounded-lg bg-muted/40 p-3.5 transition-colors hover:bg-muted/60">
             <div className="space-y-0.5">
               <Label htmlFor="restore-session" className="text-sm font-medium cursor-pointer">
                 Restore session on startup
@@ -72,7 +72,7 @@ export function GeneralSettingsTab() {
             />
           </div>
 
-          <div className="space-y-2 rounded-lg border border-border/50 bg-background/50 p-3.5 transition-colors hover:bg-muted/30">
+          <div className="space-y-2 rounded-lg bg-muted/40 p-3.5 transition-colors hover:bg-muted/60">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
@@ -108,7 +108,7 @@ export function GeneralSettingsTab() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs backdrop-blur-xs">
+      <div className="rounded-xl border border-border/70 bg-card p-4 sm:p-5">
         <div className="mb-4 flex items-center gap-2.5 pb-3 border-b border-border/60">
           <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <FileCode2 className="size-4" />
@@ -120,7 +120,7 @@ export function GeneralSettingsTab() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2 rounded-lg border border-border/50 bg-background/50 p-3.5">
+          <div className="space-y-2 rounded-lg bg-muted/40 p-3.5">
             <div className="flex items-center gap-2">
               <Binary className="size-3.5 text-muted-foreground" />
               <Label htmlFor="default-encoding" className="text-sm font-medium">Default Encoding</Label>
@@ -143,7 +143,7 @@ export function GeneralSettingsTab() {
             <p className="text-[11px] text-muted-foreground">Standard UTF-8 is recommended for cross-platform compatibility.</p>
           </div>
 
-          <div className="space-y-2 rounded-lg border border-border/50 bg-background/50 p-3.5">
+          <div className="space-y-2 rounded-lg bg-muted/40 p-3.5">
             <div className="flex items-center gap-2">
               <FileCode2 className="size-3.5 text-muted-foreground" />
               <Label htmlFor="default-language" className="text-sm font-medium">Default Language</Label>
@@ -168,7 +168,7 @@ export function GeneralSettingsTab() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs backdrop-blur-xs">
+      <div className="rounded-xl border border-border/70 bg-card p-4 sm:p-5">
         <div className="mb-4 flex items-center gap-2.5 pb-3 border-b border-border/60">
           <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Mic className="size-4" />
@@ -181,7 +181,7 @@ export function GeneralSettingsTab() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-4 rounded-lg border border-border/50 bg-background/50 p-3.5 transition-colors hover:bg-muted/30">
+        <div className="flex items-center justify-between gap-4 rounded-lg bg-muted/40 p-3.5 transition-colors hover:bg-muted/60">
           <div className="space-y-0.5">
             <Label htmlFor="dictation-auto-correct" className="text-sm font-medium cursor-pointer">
               Auto-correct grammar
