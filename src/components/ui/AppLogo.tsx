@@ -112,14 +112,14 @@ export function AppLogo({
                 )}
               </span>
               {badge && (
-                <span className="rounded-full border border-amber-300/30 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-amber-500 uppercase tracking-wide leading-none">
+                <span className="rounded-full border border-amber-300/30 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-500 uppercase tracking-wide leading-none">
                   {badge}
                 </span>
               )}
             </div>
           )}
           {showTagline && (
-            <p className="text-[10.5px] sm:text-[11px] text-muted-foreground/70 leading-snug mt-0.5 max-w-sm">
+            <p className="text-[11px] text-muted-foreground/70 leading-snug mt-0.5 max-w-sm">
               {resolvedTagline}
             </p>
           )}

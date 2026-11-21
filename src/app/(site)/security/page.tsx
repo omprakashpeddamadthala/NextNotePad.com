@@ -103,7 +103,7 @@ export default function SecurityPage() {
         Most features run entirely in your browser. The exceptions are the
         optional AI tools (Fix Grammar &amp; Spelling, Markdown generation and
         the prompt assistant). When you use one, the text you selected is sent
-        to an AI provider, either Google Gemini or Claude, to be processed. Do
+        to Google Gemini to be processed. Do
         not use these tools on passwords, personal data or anything
         confidential.
       </p>

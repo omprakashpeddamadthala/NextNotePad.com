@@ -14,9 +14,7 @@ export function AboutDialog() {
   return (
     <Dialog open={open} onOpenChange={(v) => setDialogOpen("about", v)}>
       <DialogContent className="sm:max-w-sm overflow-hidden p-0 gap-0">
-        <div className="relative flex flex-col items-center justify-center gap-3 bg-gradient-to-b from-[#0a0d1a] to-[#111525] px-6 pt-8 pb-6">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.15),transparent_65%)]" />
-
+        <div className="relative flex flex-col items-center justify-center gap-3 bg-[#0e1018] px-6 pt-8 pb-6">
           <AppLogo
             size="xl"
             priority
@@ -32,22 +30,22 @@ export function AboutDialog() {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="rounded-full bg-white/10 border border-white/15 px-2.5 py-0.5 text-[10.5px] font-mono font-medium text-white/80">
+            <span className="rounded-full bg-white/10 border border-white/15 px-2.5 py-0.5 text-[11px] font-mono font-medium text-white/80">
               v{APP_VERSION.version}
             </span>
-            <span className="rounded-full bg-amber-500/15 border border-amber-400/20 px-2.5 py-0.5 text-[10.5px] font-semibold text-amber-300 uppercase tracking-wide">
+            <span className="rounded-full bg-amber-500/15 border border-amber-400/20 px-2.5 py-0.5 text-[11px] font-semibold text-amber-300 uppercase tracking-wide">
               {APP_BRAND.badge}
             </span>
           </div>
         </div>
 
         <div className="px-5 py-4 space-y-3">
-          <p className="text-[12.5px] text-muted-foreground leading-relaxed">
+          <p className="text-[13px] text-muted-foreground leading-relaxed">
             A fast, modern browser text editor with offline-first storage, multi-tabs, syntax highlighting
             for 50+ languages, Google Drive sync, diff checker, and developer tools.
           </p>
 
-          <div className="grid grid-cols-2 gap-2 text-[11.5px]">
+          <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="bg-muted/50 rounded-lg px-3 py-2 border border-border/60">
               <div className="text-muted-foreground/60 text-[10px] uppercase tracking-wide font-semibold">Stack</div>
               <div className="text-foreground font-medium mt-0.5">Next.js · Monaco · Zustand</div>
@@ -59,7 +57,7 @@ export function AboutDialog() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between border-t px-5 py-3 text-[10.5px] text-muted-foreground/60 font-mono bg-muted/20">
+        <div className="flex items-center justify-between border-t px-5 py-3 text-[11px] text-muted-foreground/60 font-mono bg-muted/20">
           <span>Build #{APP_VERSION.buildNumber}{APP_VERSION.commitSha ? ` · ${APP_VERSION.commitSha}` : ""}</span>
           <a
             href="https://nextnotepad.com"

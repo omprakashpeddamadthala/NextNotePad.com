@@ -8,8 +8,6 @@ export type CursorStyle =
 
 export type AutoSaveMode = "off" | "2s" | "5s" | "10s" | "manual";
 
-export type AiProvider = "gemini" | "claude";
-
 export type EncodingName =
   | "UTF-8"
   | "UTF-8 BOM"
@@ -42,7 +40,6 @@ export interface EditorSettings {
   renderWhitespace: boolean;
   autoClosingBrackets: boolean;
   zoomLevel: number;
-  aiProvider: AiProvider;
   /** Auto-correct voice typing (grammar, fillers, spoken punctuation). */
   dictationAutoCorrect: boolean;
   /** Underline misspelled words in plain-text and Markdown notes. */

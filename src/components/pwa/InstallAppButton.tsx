@@ -38,17 +38,16 @@ export function InstallAppButton({ iconOnly = false }: { iconOnly?: boolean }) {
       size={iconOnly ? "icon-lg" : "sm"}
       variant="outline"
       className={cn(
-        "border-primary/20 bg-background/80 text-primary hover:border-primary/35 hover:bg-primary/8 shadow-xs",
         iconOnly
-          ? "size-11 rounded-lg"
-          : "h-8 gap-1.5 rounded-lg px-2.5 text-xs",
+          ? "border-primary/20 bg-background/80 text-primary hover:border-primary/35 hover:bg-primary/8 shadow-xs size-11 rounded-lg"
+          : "border-border/40 bg-transparent text-muted-foreground hover:text-foreground hover:bg-accent/40 h-7 gap-1.5 rounded-lg px-2 text-[11px] font-medium shadow-none",
       )}
       onClick={() => void handleClick()}
-      aria-label={iconOnly ? `Install ${APP_BRAND.name} app` : undefined}
-      title={iconOnly ? `Install ${APP_BRAND.name} app` : undefined}
+      aria-label={`Install ${APP_BRAND.name} app`}
+      title={`Install ${APP_BRAND.name} app`}
     >
       <Download className="size-3.5" />
-      {!iconOnly && "Install App"}
+      {!iconOnly && <span className="hidden 2xl:inline">Install App</span>}
     </Button>
   );
 }

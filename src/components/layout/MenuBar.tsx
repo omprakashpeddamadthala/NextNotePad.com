@@ -19,8 +19,6 @@ import { WindowMenu } from "@/components/menu/WindowMenu";
 import { HelpMenu } from "@/components/menu/HelpMenu";
 import { useAuthStore } from "@/store/authStore";
 import { useUIStore } from "@/store/uiStore";
-import { useTabsStore } from "@/store/tabsStore";
-import { useWorkspaceStore } from "@/store/workspaceStore";
 import { AccountMenu } from "@/components/auth/AccountMenu";
 import { SyncStatusBadge } from "@/components/auth/SyncStatusBadge";
 import { InstallAppButton } from "@/components/pwa/InstallAppButton";
@@ -45,12 +43,6 @@ export function MenuBar() {
   const toolsRailVisible = useUIStore((s) => s.toolsRailVisible);
   const toggleToolsRail = useUIStore((s) => s.toggleToolsRail);
 
-  const activeTabId = useTabsStore((s) => s.activeTabId);
-  const tabs = useTabsStore((s) => s.tabs);
-  const nodes = useWorkspaceStore((s) => s.nodes);
-
-  const activeTab = tabs.find((t) => t.id === activeTabId);
-  const activeNode = activeTab ? nodes[activeTab.fileId] : null;
 
   return (
     <TooltipProvider>
@@ -71,7 +63,7 @@ export function MenuBar() {
             className="focus-visible:ring-ring/40 mr-2 flex cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 transition-all duration-200 hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-1"
           >
             <AppLogo size="sm" showText={false} showDomain={false} />
-            <span className="font-heading text-[13px] font-bold tracking-tight text-foreground flex items-center leading-none">
+            <span className="font-heading text-[13px] font-bold tracking-tight text-foreground hidden xl:flex items-center leading-none">
               <span className="np-brand-gradient">Next</span>
               <span>NotePad</span>
               <span className="text-amber-500 font-semibold text-[11px] ml-px">.com</span>
@@ -80,7 +72,7 @@ export function MenuBar() {
 
           <div className="mx-0.5 h-4 w-px bg-border/40" />
 
-          <nav aria-label="Menu bar" className="flex items-center gap-0.5 rounded-lg bg-background/40 border border-border/30 px-1 py-0.5">
+          <nav aria-label="Menu bar" className="flex items-center gap-0.5">
             <FileMenu />
             <EditMenu />
             <SearchMenu />
@@ -93,23 +85,21 @@ export function MenuBar() {
           </nav>
         </div>
 
-        <div className="mx-3 flex min-w-0 flex-1 items-center justify-center">
+        <div className="mx-3 flex min-w-32 flex-1 items-center justify-center">
           <button
             type="button"
             onClick={() => openDialog("quickOpen")}
             title="Search files across all workspaces (Ctrl+P)"
             aria-label="Search files across all workspaces"
-            className="np-search-pill group flex h-7 w-full max-w-xs sm:max-w-sm items-center justify-between gap-2 px-3 text-[11px] text-muted-foreground cursor-pointer"
+            className="np-search-pill group flex h-7 w-full min-w-32 max-w-xs sm:max-w-sm items-center justify-between gap-2 px-3 text-[11px] text-muted-foreground cursor-pointer"
           >
             <div className="flex min-w-0 items-center gap-2 truncate">
               <Search className="size-3.5 shrink-0 opacity-50 group-hover:opacity-80 transition-opacity" />
               <span className="truncate font-normal">
-                {activeNode
-                  ? `${activeNode.name} — Search files`
-                  : "Search files across workspaces…"}
+                Search files…
               </span>
             </div>
-            <kbd className="hidden sm:inline-flex shrink-0 items-center gap-0.5 rounded-full border border-border/40 bg-muted/30 px-2 py-0.5 text-[9px] font-mono text-muted-foreground/70">
+            <kbd className="hidden xl:inline-flex shrink-0 items-center gap-0.5 rounded-full border border-border/40 bg-muted/30 px-2 py-0.5 text-[10px] font-mono text-muted-foreground/70">
               Ctrl P
             </kbd>
           </button>
@@ -153,7 +143,7 @@ export function MenuBar() {
                 )}
               >
                 <Sparkles className="size-3.5 text-amber-500" />
-                <span className="hidden sm:inline font-medium">Dev Tools</span>
+                <span className="hidden xl:inline font-medium">Dev Tools</span>
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-xs">
@@ -171,7 +161,7 @@ export function MenuBar() {
 
           {authStatus === "guest" && (
             <span
-              className="border-border/40 bg-muted/40 text-muted-foreground hidden lg:flex h-6 items-center gap-1.5 rounded-full border px-2 text-[10px] font-medium"
+              className="border-border/40 bg-muted/40 text-muted-foreground hidden 2xl:flex h-6 items-center gap-1.5 rounded-full border px-2 text-[10px] font-medium"
               title="Guest mode — files stored locally in browser"
             >
               <span className="size-1.5 rounded-full bg-emerald-500 np-glow-dot" />

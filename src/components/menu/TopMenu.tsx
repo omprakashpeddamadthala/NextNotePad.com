@@ -18,7 +18,7 @@ export function TopMenu({ label, children }: TopMenuProps) {
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          "text-foreground/65 flex h-7 items-center rounded-md px-2 text-[12.5px] font-medium transition-[color,background-color] duration-100 ease-out outline-none",
+          "text-foreground/65 flex h-7 items-center rounded-md px-2 text-[13px] font-medium transition-[color,background-color] duration-100 ease-out outline-none",
           "hover:bg-accent hover:text-foreground focus-visible:ring-ring/30 focus-visible:ring-1",
           "data-[state=open]:bg-accent data-[state=open]:text-foreground",
         )}

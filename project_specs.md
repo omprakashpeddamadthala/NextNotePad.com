@@ -30,7 +30,7 @@ Main features: Monaco editor (the VS Code editor), tabs and split view, file exp
 | Database  | PostgreSQL via Prisma 7 — **accounts and admin config only**                                  |
 | User data | Google Drive API (signed in) / IndexedDB + localStorage (guest)                               |
 | Auth      | Google OAuth 2.0 + JWT session cookie (`jose`)                                                |
-| AI        | Google Gemini (`@google/genai`) and Claude via AgentRouter                                    |
+| AI        | Google Gemini (`@google/genai`)                                                               |
 | Hosting   | Docker image built by GitHub Actions (`.github/workflows/ci-cd.yml`) and pushed to Docker Hub |
 
 ---
@@ -65,7 +65,7 @@ Main features: Monaco editor (the VS Code editor), tabs and split view, file exp
 **PostgreSQL (Prisma)** — `prisma/schema.prisma`
 
 - `User` — Google id, email, name, avatar, Google tokens (server only), `isAdmin`, `blocked`, password-lock settings.
-- `AppConfig` — one row: Gemini / AgentRouter API keys and model names (falls back to env vars when empty).
+- `AppConfig` — one row: Gemini API key and model name (falls back to env vars when empty).
 - Old tables (`Workspace`, `Folder`, `File`, `SyncFailure`, `UserSettings`) still exist only for the one-time move to Drive. **Do not drop them** yet.
 
 **Google Drive** (signed-in users)
@@ -90,7 +90,6 @@ NextNotePad.com/
 | Google Cloud (OAuth + Drive API) | Sign-in and storing user files | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` |
 | PostgreSQL                       | Accounts and admin config      | `DATABASE_URL`                                                    |
 | Google Gemini                    | AI text tools                  | `GEMINI_API_KEY`, `GEMINI_MODEL`                                  |
-| AgentRouter (Claude)             | Alternative AI provider        | `AGENTROUTER_API_KEY`, `CLAUDE_MODEL`                             |
 | Docker Hub + GitHub Actions      | Build and publish              | GitHub repo secrets                                               |
 | —                                | Session signing                | `JWT_SECRET`                                                      |
 | —                                | Admin account                  | `ADMIN_EMAIL`                                                     |
@@ -121,7 +120,191 @@ For every task:
 
 ---
 
-## 13c. Current task — Tree header on one line (approved and built 2026-11-19)
+## 19. Current task — UI polish round 2 (approved and built 2026-11-21)
+
+**What the user asked (2026-11-21):** "improve complete UI". This follows round 1 (section 14). Screens checked with real screenshots in dark and light mode, at desktop and phone width: editor, File menu, Settings, Command Palette, welcome screen, Features page.
+
+### What the review found
+1. **Welcome screen (no file open) — the weakest screen.** The 9 feature card titles are cut off ("Mona…", "Googl…", "V…") because the coloured labels sit on the same line. The cards are tall and mostly empty, the empty "Recent files" box takes up half the column, and each label uses a different bright colour.
+2. **Settings.** The selected tab on the left is a solid blue block that is heavier than anything else in the app. Each setting sits in a box inside another box (double borders), which looks busy.
+3. **Dev Toolkit panel.** Every tool icon has a different bright colour (amber, cyan, purple, green, pink…), so the panel looks like confetti.
+4. The editor, menus, Command Palette and info pages look clean after round 1. No change is needed there.
+
+### Planned changes
+**A — Welcome screen** (`src/components/editor/EditorWelcome.tsx`)
+- Feature cards: the title gets its own full line, so nothing is cut off. The label moves under it as small grey text, and the cards are shorter, with even height.
+- "Recent files" with no files becomes a short one-line message instead of a big empty box.
+- Labels use one calm style (grey, or brand blue for "Recommended"-type labels) instead of many colours.
+- The same content is kept: no features, links or wording removed.
+
+**B — Settings** (`SettingsDialog.tsx`, setting rows in `GeneralSettingsTab.tsx`, `EditorSettingsTab.tsx`, `SecuritySettingsTab.tsx`)
+- Selected tab: a light blue tint with blue text, not a solid blue block.
+- Settings inside a section become simple rows split by thin lines, with no box inside a box.
+- No settings are added, removed or renamed.
+
+**C — Dev Toolkit** (`src/components/layout/ToolsNavRail.tsx`)
+- All tool icons use one muted colour that turns brand blue on hover or when active.
+
+### Not changed
+- The editor, menus, top bar, status bar, Command Palette, info pages and phone layout (already done in round 1)
+- No features, settings, text or SEO changed
+
+### Done when
+- Types, lint and build pass
+- Screenshots in dark and light mode: no cut-off titles on the welcome screen, Settings shows no box-in-box, and the Dev Toolkit icons are calm
+- Every button on these screens still works; no console errors
+
+---
+
+## 18. Waiting — Show Gemini's real error instead of "invalid API key" (waiting for approval, 2026-11-21)
+
+**What the user asked (2026-11-21):** "gemini ai integration not working, given correct key".
+
+### What the check found
+- The key saved in Admin → AI Config **is valid**: Google accepts it and lists the models (model setting `gemini-3.8-flash`).
+- Every AI request (also `gemini-2.5-flash` and `gemini-2.5-flash-lite`) returns **403: "The Gemini API free tier is not available for this project. Please set up billing…"**. This is a Google account setting, not an app bug.
+- The app makes this confusing: `geminiProvider.ts` turns every 401/403 into "Gemini rejected the request (invalid API key)", and `useMonacoAiActions.ts` turns every 503 into "AI … isn't configured on this server yet".
+
+### Planned change
+- `src/lib/ai/geminiProvider.ts`: 401 → "Gemini rejected the API key." For 403, show Google's own message (e.g. the billing message) and return status **403** instead of 503, so the browser shows it as-is.
+- `src/hooks/useMonacoAiActions.ts`: for 403, show the server's message instead of the fixed "doesn't have access to its configured model" text.
+
+### Not changed
+- How Gemini is called, the model, the Admin screen
+
+### Done when
+- Types, lint and build pass
+- With the current key, using an AI tool shows Google's billing message instead of "isn't configured"
+
+---
+
+## 17. Previous task — Installed app shows only the editor (approved and built 2026-11-21; installed-app check by user pending)
+
+**What the user asked (2026-11-21):** "hide bottom page, only editor it should show". Chosen: **installed app only**.
+
+### What exists today
+`src/app/(app)/page.tsx` puts the editor on the first screen, and the page scrolls down to `HomeContent` (the SEO description) and `SiteFooter`.
+
+### Planned change
+In `src/app/(app)/page.tsx` only, use a CSS rule for **installed-app mode** (`@media (display-mode: standalone)`, the same check the app already uses elsewhere):
+- hide `HomeContent` and `SiteFooter`
+- stop the page from scrolling, so only the editor fills the window
+
+It is CSS only and works from the first paint, so the text doesn't flash before it hides.
+
+### Not changed
+- The website in a normal browser tab still shows the text and footer below the editor, so Google still sees them
+- No text, SEO tags or other pages change
+
+### Done when
+- Types, lint and build pass
+- Normal browser tab: you can still scroll down to the text and footer
+- Installed app: only the editor, no scrolling (checked by the user)
+
+---
+
+## 16. Previous task — Installed app opens filling the screen, taskbar stays visible (approved and built 2026-11-21; installed-app check by user pending)
+
+**What the user asked (2026-11-21):** the installed app (PWA) should open full screen by default, but the Windows taskbar at the bottom must still show. Chosen option: **fill the screen, keep the taskbar and the app's title bar** (not F11-style full screen).
+
+### What exists today
+- `src/app/manifest.ts` already uses `display: "standalone"`, so the installed app opens in its own window without browser tabs or an address bar.
+- The window size is whatever Chrome/Edge last remembered, which is often a small window. A web app can't ask Windows to "maximize". It can only resize its own window when it runs as an installed app.
+
+### Planned changes
+1. **New** `src/components/pwa/PwaWindowFit.tsx` (client component, renders nothing). When the app runs as an installed app on a desktop (`display-mode: standalone`, not a phone), it moves the window to the top-left and resizes it to `screen.availWidth × screen.availHeight`. That is the screen size **minus the Windows taskbar**, so the taskbar stays visible.
+   - It runs **once per launch** (remembered in `sessionStorage`), so if the user resizes the window later, a page reload won't snap it back.
+   - In a normal browser tab it does nothing.
+2. Mount it next to the existing install button logic (`AppProviders`), one line.
+3. `manifest.ts` stays `standalone`. `fullscreen` mode is **not** used, because it would hide the taskbar.
+
+### Not changed
+- The browser-tab version of the site, the phone app, the View → Full Screen (F11) menu item and Focus mode
+
+### Done when
+- Types, lint and build pass
+- Installed app on Windows (Chrome or Edge) opens filling the screen with the taskbar visible, and a normal browser tab is unaffected. The installed-app check has to be done by the user, because I can't install the app from here.
+
+---
+
+## 15. Previous task — Keep Google Gemini as the only AI (approved and built 2026-11-21)
+
+**What the user asked (2026-11-21):** "only one integration ai gemini remove remaining every where". Gemini stays. Claude (through AgentRouter) is removed from the code, menus, settings, database and docs.
+
+### What exists today
+- `src/lib/ai/claudeProvider.ts` is the code that calls AgentRouter. `aiTextRoute.ts` picks Gemini or Claude depending on a `provider` field the browser sends.
+- Each of the three AI tools (Fix Grammar, Generate MD Syntax, Generate Prompt) has a **Gemini / Claude** choice in **Tools menu**, the **Dev Toolkit** panel and the **right-click menu**.
+- The `aiProvider` setting (types + defaults) and the `providerOverride` parameter thread the choice through `aiText.ts` and `useMonacoAiActions.ts`.
+- The database table `AppConfig` has two columns `agentRouterApiKey` and `claudeModel`. The environment variables are `AGENTROUTER_API_KEY` and `CLAUDE_MODEL`.
+- The Admin AI Config screen is **already Gemini-only**, so it stays as it is.
+
+### Planned changes
+1. **Delete** `src/lib/ai/claudeProvider.ts`.
+2. **AI route:** `aiTextRoute.ts` always uses Gemini. The `provider` field is removed from `aiTextRequestSchema`, and `agentRouterApiKey`/`claudeModel` are removed from `updateAiConfigSchema` and `appConfig.ts`.
+3. **Browser side:** remove `AiProvider`, the `aiProvider` setting and `providerOverride` (`types/settings.ts`, `defaultSettings.ts`, `aiText.ts`, `useMonacoAiActions.ts`). Old saved settings that still contain `aiProvider` are simply ignored.
+4. **Menus:** each AI tool becomes **one plain item** with no Gemini/Claude sub-choice, in the Tools menu, Dev Toolkit and right-click menu. The menus call the plain action ids (`tools.ai.fixGrammar`, `tools.ai.generateMdSyntax`, `tools.ai.generatePrompt`) that the command palette already uses. Both the `.gemini` and the `.claude` variants are removed. The `.claude` actions are removed.
+5. **Database:** remove the two columns from `prisma/schema.prisma` and add a new migration that drops `agentRouterApiKey` and `claudeModel` from `AppConfig`. This deletes any AgentRouter key stored there.
+6. **Config & docs:** remove `AGENTROUTER_API_KEY` / `CLAUDE_MODEL` from `.env.example` and `.env.local`, and remove Claude mentions from `README.md`, `/features`, `/security` and this spec (sections 2 and 5).
+
+### Not changed
+- Gemini behaviour, the Admin AI Config screen, voice typing, the AI tool names and what they do
+- Nothing else in the UI
+
+### Done when
+- No `claude` / `agentrouter` left in `src`, `prisma/schema.prisma`, `.env.example` or `README.md` (except the old, already-applied migration file, which must not be edited)
+- `npx tsc`, `npm run lint`, `next build` pass
+- Browser: each AI tool shows one item in all three menus. With no Gemini key it shows the clear "isn't configured" error, and with a key it works.
+
+---
+
+## 14. Previous task — UI polish across the whole app (approved and built 2026-11-21; light mode, dialogs and real-phone check pending)
+
+**What the user asked (2026-11-21):** "improve UI". Chosen: **polish the current look** (same layouts, nothing moved or removed) on the desktop editor, dialogs & settings, public info pages and the phone view.
+
+### What the review found
+1. **Rainbow gradients everywhere.** They're on the top-bar line, the "Next" logo text, the active tab and rail bars (which keep animating), the Sign in button, the loading bar and a shimmer on the status bar. CLAUDE.md says no generic gradients.
+2. **Endless animations.** The Guest dot, the Settings "status" dot and the tab/rail bars pulse forever, which pulls your eye away from your writing.
+3. **Text too small and too many sizes.** There are 16 different hand-picked sizes from 4px to 22px; 50+ places use 9–10px.
+4. **Two different looks.** Info pages use slate/indigo and are light-only. The editor uses blue #3574f0 with amber, so the brand feels inconsistent.
+5. **Dialogs don't match.** Each dialog has its own corners, padding, header and button row.
+
+### Planned changes
+**Phase A — Design basics (affects everything)** — `src/app/globals.css`
+- Replace all the rainbow gradients with one solid brand blue (`--primary`). The top bar gets a plain 1px border. The active tab and rail bar become a still 2px blue line, and the Sign in button turns solid blue.
+- Stop the endless animations. The dots stay but no longer pulse. Hover, open and close movements stay short (150–200ms) and respect "reduce motion".
+- Add one small text-size scale (11 / 12 / 13 / 14px; 10px only for keyboard hints) and use it instead of the hand-picked sizes.
+
+**Phase B — Desktop editor** — `MenuBar`, `EditorTabs`/`TabItem`, `StatusBar`, `FileExplorer`/`TreeNode`, `ToolsNavRail`, `EditorWelcome`
+- Line up heights and gaps in the top bar. Tidy up the menu group, search box and right-side buttons.
+- Tabs: clearer active tab, calmer inactive tabs, smoother close button.
+- Status bar: solid colour, even spacing, easier-to-read text.
+- File explorer: consistent row height, hover and selected states, and indent guides.
+
+**Phase C — Dialogs & settings** — `components/ui/dialog.tsx`, `SettingsDialog`, settings tabs, `components/dialogs/*`
+- One shared look: the same corners, padding, title + description header and button row at the bottom, with a soft fade/scale when opening.
+- Settings: cleaner side menu, section headings and line-up of rows. No settings are added or removed.
+
+**Phase D — Public info pages** — `SiteHeader`, `SiteFooter`, `ContentPage`, `HomeContent`, `(site)` pages
+- Use the app's colours and fonts instead of slate/indigo.
+- The header stays at the top while scrolling (slightly see-through) and highlights the current page.
+- Better spacing and text styling for reading, plus nicer tables, code and keyboard keys. **No page wording, titles or SEO tags change.**
+
+**Phase E — Phone view** — `MobileAppBar`, `MobileBottomBar`, `MobileMenuSheet`, `MobileReadView`
+- Every button is at least 44px tall so it's easy to tap. Spacing matches the new scale, and the safe-area padding (around the notch and home bar) is checked.
+
+### Not changed
+- No features, menus, shortcuts, settings, text content or SEO metadata are added or removed
+- Monaco editor themes and the 9 colour themes keep working; only the app frame around them changes
+- No new libraries
+
+### Done when (each phase)
+- `npm run build` and `npm run lint` pass
+- Browser check in light and dark mode, desktop and phone width, as guest; no console errors
+- Before/after check that every button and menu still works
+
+---
+
+## 13c. Previous task — Tree header on one line (approved and built 2026-11-19)
 
 **What the user asked (2026-11-19):** the tree's top bar uses two lines; put Keys, Values and Only matches beside the search box so it all fits on **one line**.
 

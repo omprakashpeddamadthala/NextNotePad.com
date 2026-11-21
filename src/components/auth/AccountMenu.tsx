@@ -67,14 +67,16 @@ export function AccountMenu() {
     return (
       <Button
         size="sm"
-        className="np-signin-btn h-7.5 cursor-pointer gap-2 px-3 text-[11.5px] font-medium shadow-sm transition-all duration-200"
+        className="np-signin-btn h-7 cursor-pointer gap-2 px-3 text-xs font-medium"
         onClick={() => {
           // eslint-disable-next-line @next/next/no-location-assign-relative-destination
           window.location.href = "/api/auth/google";
         }}
       >
         <GoogleIcon className="shrink-0" />
-        <span>Sign in with Google</span>
+        <span>
+          Sign in<span className="hidden xl:inline"> with Google</span>
+        </span>
       </Button>
     );
   }

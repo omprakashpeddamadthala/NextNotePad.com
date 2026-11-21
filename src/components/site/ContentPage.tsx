@@ -22,7 +22,7 @@ const PROSE =
   "[&_h3]:mt-8 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-slate-900 " +
   "[&_p]:mt-4 [&_p]:leading-7 [&_ul]:mt-4 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-6 " +
   "[&_ol]:mt-4 [&_ol]:list-decimal [&_ol]:space-y-2 [&_ol]:pl-6 [&_li]:leading-7 " +
-  "[&_a]:text-indigo-700 [&_a]:underline [&_a:hover]:text-indigo-900 " +
+  "[&_a]:text-primary [&_a]:underline [&_a:hover]:text-primary " +
   "[&_strong]:font-semibold [&_strong]:text-slate-900 " +
   "[&_kbd]:rounded [&_kbd]:border [&_kbd]:border-slate-300 [&_kbd]:bg-slate-50 [&_kbd]:px-1.5 [&_kbd]:py-0.5 [&_kbd]:font-mono [&_kbd]:text-xs " +
   "[&_code]:rounded [&_code]:bg-slate-100 [&_code]:px-1 [&_code]:font-mono [&_code]:text-sm " +
@@ -94,7 +94,7 @@ export function ContentPage({
 
       <div className={PROSE}>{children}</div>
 
-      <aside className="mt-14 rounded-lg border border-indigo-100 bg-indigo-50 p-6">
+      <aside className="mt-14 rounded-xl border border-primary/15 bg-primary/5 p-6">
         <h2 className="text-lg font-semibold text-slate-900">Try it now</h2>
         <p className="mt-2 text-slate-600">
           NextNotePad opens straight into the editor. No download, and you can
@@ -102,7 +102,7 @@ export function ContentPage({
         </p>
         <Link
           href="/"
-          className="mt-4 inline-block rounded bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700"
+          className="mt-4 inline-block rounded-lg bg-primary px-4 py-2 font-medium text-white shadow-sm transition-colors hover:bg-primary/90"
         >
           Open the notepad
         </Link>
@@ -118,7 +118,7 @@ export function ContentPage({
                 <li key={relatedPath}>
                   <Link
                     href={relatedPath}
-                    className="text-indigo-700 underline hover:text-indigo-900"
+                    className="text-primary underline hover:text-primary/80"
                   >
                     {target.title}
                   </Link>

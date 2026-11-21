@@ -9,7 +9,6 @@ import {
   generatePrompt,
 } from "@/services/ai/aiText";
 import { ApiError } from "@/lib/api/fetchJson";
-import type { AiProvider } from "@/types/settings";
 
 interface UseMonacoAiActionsParams {
   registerGlobalActions: boolean | undefined;
@@ -22,7 +21,7 @@ function describeError(err: unknown, notConfiguredMessage: string): string {
     if (err.status === 429)
       return "AI is rate-limited right now — try again shortly.";
     if (err.status === 403)
-      return "The selected AI provider doesn't have access to its configured model.";
+      return "Gemini doesn't have access to its configured model.";
     return err.message;
   }
   return "Couldn't reach the AI service.";
@@ -31,7 +30,6 @@ function describeError(err: unknown, notConfiguredMessage: string): string {
 type StreamCall = (
   text: string,
   onChunk: (delta: string) => void,
-  providerOverride?: AiProvider,
 ) => Promise<string>;
 
 interface StreamingAiActionConfig {
@@ -49,7 +47,6 @@ interface StreamingAiActionConfig {
 function runStreamingAiAction(
   editor: MonacoEditorNS.IStandaloneCodeEditor,
   config: StreamingAiActionConfig,
-  providerOverride?: AiProvider,
 ): void {
   const { isRunning } = config;
   if (isRunning.current) {
@@ -111,7 +108,6 @@ function runStreamingAiAction(
         firstChunk = false;
         endOffset += delta.length;
       },
-      providerOverride,
     )
     .then((result) => {
       const currentRange = spanFromStart();
@@ -149,7 +145,7 @@ export function useMonacoAiActions({
   const isGeneratingMarkdown = useRef(false);
   const isGeneratingPrompt = useRef(false);
 
-  function runFixGrammar(providerOverride?: AiProvider) {
+  function runFixGrammar() {
     if (!registerGlobalActions || !editorRef.current) return;
     runStreamingAiAction(
       editorRef.current,
@@ -165,11 +161,10 @@ export function useMonacoAiActions({
         notConfiguredMessage: "AI correction isn't configured on this server yet.",
         snapBackIfUnchanged: true,
       },
-      providerOverride,
     );
   }
 
-  function runGenerateMarkdown(providerOverride?: AiProvider) {
+  function runGenerateMarkdown() {
     if (!registerGlobalActions || !editorRef.current) return;
     runStreamingAiAction(
       editorRef.current,
@@ -185,11 +180,10 @@ export function useMonacoAiActions({
         notConfiguredMessage: "AI Markdown generation isn't configured on this server yet.",
         snapBackIfUnchanged: false,
       },
-      providerOverride,
     );
   }
 
-  function runGeneratePrompt(providerOverride?: AiProvider) {
+  function runGeneratePrompt() {
     if (!registerGlobalActions || !editorRef.current) return;
     runStreamingAiAction(
       editorRef.current,
@@ -205,19 +199,10 @@ export function useMonacoAiActions({
         notConfiguredMessage: "AI prompt generation isn't configured on this server yet.",
         snapBackIfUnchanged: false,
       },
-      providerOverride,
     );
   }
 
   useRegisterAction("tools.ai.fixGrammar", () => runFixGrammar(), [registerGlobalActions]);
-  useRegisterAction("tools.ai.fixGrammar.gemini", () => runFixGrammar("gemini"), [registerGlobalActions]);
-  useRegisterAction("tools.ai.fixGrammar.claude", () => runFixGrammar("claude"), [registerGlobalActions]);
-
   useRegisterAction("tools.ai.generateMdSyntax", () => runGenerateMarkdown(), [registerGlobalActions]);
-  useRegisterAction("tools.ai.generateMdSyntax.gemini", () => runGenerateMarkdown("gemini"), [registerGlobalActions]);
-  useRegisterAction("tools.ai.generateMdSyntax.claude", () => runGenerateMarkdown("claude"), [registerGlobalActions]);
-
   useRegisterAction("tools.ai.generatePrompt", () => runGeneratePrompt(), [registerGlobalActions]);
-  useRegisterAction("tools.ai.generatePrompt.gemini", () => runGeneratePrompt("gemini"), [registerGlobalActions]);
-  useRegisterAction("tools.ai.generatePrompt.claude", () => runGeneratePrompt("claude"), [registerGlobalActions]);
 }

@@ -91,10 +91,10 @@ def calculate_metrics(items: list[dict]) -> float:
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-border/80 bg-card/70 p-4 sm:p-5 shadow-xs backdrop-blur-xs">
+      <div className="rounded-xl border border-border/70 bg-card p-4 sm:p-5">
         <div className="flex items-center justify-between pb-3 border-b border-border/60 mb-3">
           <div className="flex items-center gap-2">
-            <span className="flex size-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="flex size-2 rounded-full bg-emerald-500" />
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Live Editor Preview
             </h4>
@@ -187,7 +187,7 @@ def calculate_metrics(items: list[dict]) -> float:
         </div>
       </div>
 
-      <div className="rounded-xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs backdrop-blur-xs">
+      <div className="rounded-xl border border-border/70 bg-card p-4 sm:p-5">
         <div className="mb-4 flex items-center gap-2.5 pb-3 border-b border-border/60">
           <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Type className="size-4" />
@@ -238,7 +238,7 @@ def calculate_metrics(items: list[dict]) -> float:
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-            <div className="space-y-2 rounded-lg border border-border/50 bg-background/50 p-3.5">
+            <div className="space-y-2 rounded-lg bg-muted/40 p-3.5">
               <div className="flex items-center justify-between">
                 <Label htmlFor="fontSize" className="text-sm font-medium">Font Size</Label>
                 <span className="text-xs font-mono font-semibold text-primary">{settings.fontSize}px</span>
@@ -291,7 +291,7 @@ def calculate_metrics(items: list[dict]) -> float:
               </div>
             </div>
 
-            <div className="space-y-2 rounded-lg border border-border/50 bg-background/50 p-3.5">
+            <div className="space-y-2 rounded-lg bg-muted/40 p-3.5">
               <div className="flex items-center justify-between">
                 <Label htmlFor="tabWidth" className="text-sm font-medium">Tab Indentation</Label>
                 <span className="text-xs font-mono font-semibold text-primary">{settings.tabWidth} spaces</span>
@@ -313,7 +313,7 @@ def calculate_metrics(items: list[dict]) -> float:
             </div>
           </div>
 
-          <div className="space-y-2 rounded-lg border border-border/50 bg-background/50 p-3.5">
+          <div className="space-y-2 rounded-lg bg-muted/40 p-3.5">
             <div className="flex items-center gap-2">
               <MousePointer2 className="size-3.5 text-muted-foreground" />
               <Label htmlFor="cursorStyle" className="text-sm font-medium">Cursor Style</Label>
@@ -340,7 +340,7 @@ def calculate_metrics(items: list[dict]) -> float:
         </div>
       </div>
 
-      <div className="rounded-xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs backdrop-blur-xs">
+      <div className="rounded-xl border border-border/70 bg-card p-4 sm:p-5">
         <div className="mb-4 flex items-center gap-2.5 pb-3 border-b border-border/60">
           <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Code2 className="size-4" />
@@ -401,7 +401,7 @@ def calculate_metrics(items: list[dict]) -> float:
             return (
               <div
                 key={item.key}
-                className="flex items-center justify-between gap-3 rounded-lg border border-border/50 bg-background/50 p-3 transition-colors hover:bg-muted/30"
+                className="flex items-center justify-between gap-3 rounded-lg bg-muted/40 p-3 transition-colors hover:bg-muted/60"
               >
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-2">

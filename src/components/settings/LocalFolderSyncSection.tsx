@@ -44,7 +44,7 @@ export function LocalFolderSyncSection() {
   const connected = status === "idle" || status === "syncing" || status === "error";
 
   return (
-    <div className="rounded-xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs backdrop-blur-xs">
+    <div className="rounded-xl border border-border/70 bg-card p-4 sm:p-5">
       <div className="mb-4 flex items-center gap-2.5 pb-3 border-b border-border/60">
         <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
           <FolderSync className="size-4" />
@@ -73,7 +73,7 @@ export function LocalFolderSyncSection() {
         </p>
       ) : (
         <div className="space-y-3">
-          <div className="rounded-lg border border-border/50 bg-background/50 p-3.5 space-y-1">
+          <div className="rounded-lg bg-muted/40 p-3.5 space-y-1">
             <p className="text-sm font-medium">
               {folderName ? `Folder: ${folderName}` : "No folder selected"}
             </p>

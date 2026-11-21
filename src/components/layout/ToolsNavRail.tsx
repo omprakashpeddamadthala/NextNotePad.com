@@ -115,7 +115,7 @@ export function ToolsNavRail() {
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             placeholder="Search dev tools…"
-            className="placeholder:text-muted-foreground/45 h-7 flex-1 border-none bg-transparent pr-4 pl-1.5 text-[11.5px] shadow-none focus-visible:ring-0"
+            className="placeholder:text-muted-foreground/45 h-7 flex-1 border-none bg-transparent pr-4 pl-1.5 text-xs shadow-none focus-visible:ring-0"
             aria-label="Search developer tools"
           />
           {filter && (
@@ -162,7 +162,6 @@ export function ToolsNavRail() {
           <ToolSection title="Preview & AI">
             <ToolButton
               icon={Columns2}
-              iconColor="text-indigo-400"
               title="Markdown Preview"
               subtitle="Side-by-side live render"
               active={previewOn}
@@ -176,50 +175,29 @@ export function ToolsNavRail() {
               filter={q}
             />
 
-            <ToolDropdown
+            <ToolButton
               icon={Sparkles}
-              iconColor="text-amber-400"
               title="Fix Grammar & Spelling"
               subtitle="AI text polish"
+              onClick={() => runAction("tools.ai.fixGrammar")}
               filter={q}
-            >
-              <DropdownMenuItem onSelect={() => runAction("tools.ai.fixGrammar.gemini")}>
-                Fix with Gemini
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => runAction("tools.ai.fixGrammar.claude")}>
-                Fix with Claude (AgentRouter)
-              </DropdownMenuItem>
-            </ToolDropdown>
+            />
 
-            <ToolDropdown
+            <ToolButton
               icon={FileCode}
-              iconColor="text-cyan-400"
               title="Generate MD Syntax"
               subtitle="AI markdown generator"
+              onClick={() => runAction("tools.ai.generateMdSyntax")}
               filter={q}
-            >
-              <DropdownMenuItem onSelect={() => runAction("tools.ai.generateMdSyntax.gemini")}>
-                Generate with Gemini
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => runAction("tools.ai.generateMdSyntax.claude")}>
-                Generate with Claude
-              </DropdownMenuItem>
-            </ToolDropdown>
+            />
 
-            <ToolDropdown
+            <ToolButton
               icon={Wand2}
-              iconColor="text-purple-400"
               title="Generate Prompt"
               subtitle="AI prompt builder"
+              onClick={() => runAction("tools.ai.generatePrompt")}
               filter={q}
-            >
-              <DropdownMenuItem onSelect={() => runAction("tools.ai.generatePrompt.gemini")}>
-                Prompt with Gemini
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => runAction("tools.ai.generatePrompt.claude")}>
-                Prompt with Claude
-              </DropdownMenuItem>
-            </ToolDropdown>
+            />
           </ToolSection>
         )}
 
@@ -227,7 +205,6 @@ export function ToolsNavRail() {
           <ToolSection title="Code & Formatting">
             <ToolDropdown
               icon={FileJson}
-              iconColor="text-emerald-400"
               title="JSON Tools"
               subtitle="Format / minify JSON"
               filter={q}
@@ -242,7 +219,6 @@ export function ToolsNavRail() {
 
             <ToolDropdown
               icon={Code2}
-              iconColor="text-blue-400"
               title="HTML Encode / Decode"
               subtitle="Entity conversion"
               filter={q}
@@ -257,7 +233,6 @@ export function ToolsNavRail() {
 
             <ToolDropdown
               icon={Quote}
-              iconColor="text-violet-400"
               title="String Escape / Unescape"
               subtitle="JSON string escape"
               filter={q}
@@ -276,7 +251,6 @@ export function ToolsNavRail() {
           <ToolSection title="Text Transformations">
             <ToolDropdown
               icon={CaseSensitive}
-              iconColor="text-pink-400"
               title="Case Converter"
               subtitle="Upper, lower, camel, snake..."
               filter={q}
@@ -293,7 +267,6 @@ export function ToolsNavRail() {
 
             <ToolDropdown
               icon={ArrowDownAZ}
-              iconColor="text-teal-400"
               title="Sort & Dedupe Lines"
               subtitle="Sort, reverse, shuffle, number"
               filter={q}
@@ -328,7 +301,6 @@ export function ToolsNavRail() {
 
             <ToolDropdown
               icon={Eraser}
-              iconColor="text-amber-400"
               title="Whitespace Cleanup"
               subtitle="Trim, collapse, tabs/spaces"
               filter={q}
@@ -349,7 +321,6 @@ export function ToolsNavRail() {
 
             <ToolButton
               icon={SquareSlash}
-              iconColor="text-lime-400"
               title="Slugify"
               subtitle="URL-friendly text string"
               onClick={() => runAction("tools.slugify")}
@@ -358,7 +329,6 @@ export function ToolsNavRail() {
 
             <ToolButton
               icon={Shield}
-              iconColor="text-orange-400"
               title="ROT13"
               subtitle="Simple letter rotation cipher"
               onClick={() => runAction("tools.rot13")}
@@ -371,7 +341,6 @@ export function ToolsNavRail() {
           <ToolSection title="Crypto & Encoders">
             <ToolDropdown
               icon={Binary}
-              iconColor="text-emerald-400"
               title="Base64 Encode / Decode"
               subtitle="Standard base64 conversion"
               filter={q}
@@ -386,7 +355,6 @@ export function ToolsNavRail() {
 
             <ToolDropdown
               icon={Link2}
-              iconColor="text-sky-400"
               title="URL Encode / Decode"
               subtitle="URI component encoding"
               filter={q}
@@ -401,7 +369,6 @@ export function ToolsNavRail() {
 
             <ToolDropdown
               icon={Hash}
-              iconColor="text-orange-400"
               title="Hash Generator"
               subtitle="MD5, SHA-1, SHA-256..."
               filter={q}
@@ -418,7 +385,6 @@ export function ToolsNavRail() {
 
             <ToolButton
               icon={KeyRound}
-              iconColor="text-yellow-400"
               title="Decode JWT"
               subtitle="Inspect header & payload"
               onClick={() => runAction("tools.jwtDecode")}
@@ -431,7 +397,6 @@ export function ToolsNavRail() {
           <ToolSection title="Productivity Utilities">
             <ToolButton
               icon={FileDiff}
-              iconColor="text-cyan-400"
               title="Diff Checker"
               subtitle="Side-by-side text diff"
               onClick={() => runAction("tools.diffChecker")}
@@ -440,7 +405,6 @@ export function ToolsNavRail() {
 
             <ToolButton
               icon={BarChart3}
-              iconColor="text-indigo-400"
               title="Text Statistics"
               subtitle="Words, chars, read time"
               onClick={() => runAction("tools.textStats")}
@@ -449,7 +413,6 @@ export function ToolsNavRail() {
 
             <ToolButton
               icon={Fingerprint}
-              iconColor="text-purple-400"
               title="Generate UUID"
               subtitle="RFC 4122 v4 unique ID"
               onClick={() => runAction("tools.generateUuid")}
@@ -458,7 +421,6 @@ export function ToolsNavRail() {
 
             <ToolDropdown
               icon={Clock}
-              iconColor="text-blue-400"
               title="Timestamp Converter"
               subtitle="Unix timestamp & ISO"
               filter={q}
@@ -473,7 +435,6 @@ export function ToolsNavRail() {
 
             <ToolDropdown
               icon={Calculator}
-              iconColor="text-emerald-400"
               title="Number Base Converter"
               subtitle="Dec, Hex, Bin converter"
               filter={q}
@@ -494,7 +455,6 @@ export function ToolsNavRail() {
 
             <ToolDropdown
               icon={Palette}
-              iconColor="text-rose-400"
               title="Color Converter"
               subtitle="HEX, RGB & HSL formats"
               filter={q}
@@ -539,7 +499,6 @@ function ToolSection({
 
 function ToolButton({
   icon: Icon,
-  iconColor,
   title,
   subtitle,
   active,
@@ -547,7 +506,6 @@ function ToolButton({
   filter,
 }: {
   icon: LucideIcon;
-  iconColor?: string;
   title: string;
   subtitle: string;
   active?: boolean;
@@ -575,15 +533,15 @@ function ToolButton({
     >
       <div
         className={cn(
-          "flex size-7 shrink-0 items-center justify-center rounded-md bg-muted/60 transition-transform duration-150 group-hover:scale-105",
+          "flex size-7 shrink-0 items-center justify-center rounded-md bg-muted/60 transition-colors duration-150 group-hover:bg-primary/10",
           active && "bg-primary/20",
         )}
       >
-        <Icon className={cn("size-3.5", iconColor || "text-foreground")} />
+        <Icon className={cn("size-3.5 transition-colors", active ? "text-primary" : "text-muted-foreground group-hover:text-primary")} />
       </div>
       <div className="min-w-0 flex-1 leading-tight">
-        <div className="truncate text-[11.5px] font-medium">{title}</div>
-        <div className="truncate text-[10px] text-muted-foreground/70">
+        <div className="truncate text-xs font-medium">{title}</div>
+        <div className="truncate text-[11px] text-muted-foreground/70">
           {subtitle}
         </div>
       </div>
@@ -593,14 +551,12 @@ function ToolButton({
 
 function ToolDropdown({
   icon: Icon,
-  iconColor,
   title,
   subtitle,
   children,
   filter,
 }: {
   icon: LucideIcon;
-  iconColor?: string;
   title: string;
   subtitle: string;
   children: React.ReactNode;
@@ -621,12 +577,12 @@ function ToolDropdown({
           type="button"
           className="group flex w-full items-center gap-2.5 rounded-lg p-1.5 text-left transition-all duration-150 hover:bg-accent/60 text-foreground cursor-pointer outline-none"
         >
-          <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted/60 transition-transform duration-150 group-hover:scale-105">
-            <Icon className={cn("size-3.5", iconColor || "text-foreground")} />
+          <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted/60 transition-colors duration-150 group-hover:bg-primary/10">
+            <Icon className="size-3.5 text-muted-foreground transition-colors group-hover:text-primary" />
           </div>
           <div className="min-w-0 flex-1 leading-tight">
-            <div className="truncate text-[11.5px] font-medium">{title}</div>
-            <div className="truncate text-[10px] text-muted-foreground/70">
+            <div className="truncate text-xs font-medium">{title}</div>
+            <div className="truncate text-[11px] text-muted-foreground/70">
               {subtitle}
             </div>
           </div>

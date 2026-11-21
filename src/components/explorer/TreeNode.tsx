@@ -171,7 +171,7 @@ export function TreeNode({ node, depth }: TreeNodeProps) {
             }}
             style={{ paddingLeft: `${depth * 12 + 6}px` }}
             className={cn(
-              "group/item relative flex h-full w-full items-center gap-1 rounded-md pr-1.5 text-left text-[12.5px] transition-[color,background-color] duration-100 outline-none",
+              "group/item relative flex h-full w-full items-center gap-1 rounded-md pr-1.5 text-left text-[13px] transition-[color,background-color] duration-100 outline-none",
               "hover:bg-accent/70 hover:text-foreground focus-visible:ring-ring/20 focus-visible:ring-1",
               isSelected
                 ? "bg-primary/10 text-primary before:bg-primary font-medium before:absolute before:top-1.5 before:bottom-1.5 before:left-0 before:w-[2.5px] before:rounded-full"

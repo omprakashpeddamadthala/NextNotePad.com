@@ -47,57 +47,15 @@ import { VoiceDictationButton } from "@/components/editor/VoiceDictationButton";
 export function ToolsMenu() {
   return (
     <TopMenu label="Tools">
-      <DropdownMenuSub>
-        <DropdownMenuSubTrigger>
-          <Sparkles /> Fix Grammar &amp; Spelling (AI)
-        </DropdownMenuSubTrigger>
-        <DropdownMenuSubContent>
-          <DropdownMenuItem
-            onSelect={() => runAction("tools.ai.fixGrammar.gemini")}
-          >
-            Gemini
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onSelect={() => runAction("tools.ai.fixGrammar.claude")}
-          >
-            Claude (via AgentRouter)
-          </DropdownMenuItem>
-        </DropdownMenuSubContent>
-      </DropdownMenuSub>
-      <DropdownMenuSub>
-        <DropdownMenuSubTrigger>
-          <FileCode /> Generate MD Syntax (AI)
-        </DropdownMenuSubTrigger>
-        <DropdownMenuSubContent>
-          <DropdownMenuItem
-            onSelect={() => runAction("tools.ai.generateMdSyntax.gemini")}
-          >
-            Gemini
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onSelect={() => runAction("tools.ai.generateMdSyntax.claude")}
-          >
-            Claude (via AgentRouter)
-          </DropdownMenuItem>
-        </DropdownMenuSubContent>
-      </DropdownMenuSub>
-      <DropdownMenuSub>
-        <DropdownMenuSubTrigger>
-          <Wand2 /> Generate Prompt (AI)
-        </DropdownMenuSubTrigger>
-        <DropdownMenuSubContent>
-          <DropdownMenuItem
-            onSelect={() => runAction("tools.ai.generatePrompt.gemini")}
-          >
-            Gemini
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onSelect={() => runAction("tools.ai.generatePrompt.claude")}
-          >
-            Claude (via AgentRouter)
-          </DropdownMenuItem>
-        </DropdownMenuSubContent>
-      </DropdownMenuSub>
+      <DropdownMenuItem onSelect={() => runAction("tools.ai.fixGrammar")}>
+        <Sparkles /> Fix Grammar &amp; Spelling (AI)
+      </DropdownMenuItem>
+      <DropdownMenuItem onSelect={() => runAction("tools.ai.generateMdSyntax")}>
+        <FileCode /> Generate MD Syntax (AI)
+      </DropdownMenuItem>
+      <DropdownMenuItem onSelect={() => runAction("tools.ai.generatePrompt")}>
+        <Wand2 /> Generate Prompt (AI)
+      </DropdownMenuItem>
       <VoiceDictationButton variant="menu" />
       <DropdownMenuSeparator />
       <DropdownMenuItem onSelect={() => runAction("tools.base64Encode")}>

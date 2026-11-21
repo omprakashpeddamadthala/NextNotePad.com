@@ -1,21 +1,16 @@
 import { ApiError, fetchStream, jsonBody } from "@/lib/api/fetchJson";
-import { useSettingsStore } from "@/store/settingsStore";
-import type { AiProvider } from "@/types/settings";
 
 const AI_REQUEST_TIMEOUT_MS = 135_000;
 
 type AiTextRequest = (
   text: string,
   onChunk?: (delta: string) => void,
-  providerOverride?: AiProvider,
 ) => Promise<string>;
 
 function aiTextRequest(endpoint: string, action: string): AiTextRequest {
-  return async (text, onChunk, providerOverride) => {
-    const provider =
-      providerOverride ?? useSettingsStore.getState().settings.aiProvider;
+  return async (text, onChunk) => {
     const res = await fetchStream(endpoint, {
-      ...jsonBody("POST", { text, provider }),
+      ...jsonBody("POST", { text }),
       action,
       timeoutMs: AI_REQUEST_TIMEOUT_MS,
     });

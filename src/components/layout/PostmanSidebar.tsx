@@ -232,7 +232,7 @@ export function CollectionsSidebar() {
                   setFilterQuery(e.target.value);
                 }}
                 placeholder="Filter files…"
-                className="placeholder:text-muted-foreground/45 h-6 flex-1 border-none bg-transparent pr-4 pl-1.5 text-[11.5px] shadow-none focus-visible:ring-0"
+                className="placeholder:text-muted-foreground/45 h-6 flex-1 border-none bg-transparent pr-4 pl-1.5 text-xs shadow-none focus-visible:ring-0"
                 aria-label="Filter files"
               />
               {filterQuery && (
@@ -329,7 +329,7 @@ function QuickNavButton({
         >
           <Icon className="size-3.5" />
           {badge !== undefined && (
-            <span className="absolute -top-1 -right-1 flex size-3.5 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-white">
+            <span className="absolute -top-1 -right-1 flex size-3.5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white">
               {badge}
             </span>
           )}

@@ -121,7 +121,7 @@ export function PasswordLockScreen() {
     >
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 size-[500px] rounded-full bg-gradient-to-b from-amber-500/10 via-primary/5 to-transparent blur-3xl"
+        className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 size-[500px] rounded-full bg-primary/8 blur-3xl"
       />
 
       <header className="relative flex flex-col items-center gap-2 pt-2">
@@ -140,7 +140,7 @@ export function PasswordLockScreen() {
       <main className="relative my-auto w-full max-w-sm">
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
           <div className="flex flex-col items-center text-center">
-            <div className="relative mb-4 flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500/20 via-primary/10 to-transparent ring-1 ring-white/10 shadow-inner">
+            <div className="relative mb-4 flex size-14 items-center justify-center rounded-2xl bg-primary/12 ring-1 ring-white/10 shadow-inner">
               <Lock className="size-6 text-amber-400" />
               <div className="absolute -bottom-1 -right-1 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xs">
                 <ShieldCheck className="size-3" />

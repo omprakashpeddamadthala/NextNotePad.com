@@ -180,9 +180,8 @@ export default function FeaturesPage() {
       </p>
       <p>
         There are also optional AI tools that fix grammar and spelling or turn
-        text into Markdown. These send the selected text to an AI provider
-        (Google Gemini or Claude) to process it, so avoid using them on anything
-        confidential.
+        text into Markdown. These send the selected text to Google Gemini to
+        process it, so avoid using them on anything confidential.
       </p>
 
       <h2>Privacy and protection</h2>

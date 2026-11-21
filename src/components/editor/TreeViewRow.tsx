@@ -91,7 +91,7 @@ export function TreeViewRow({
       onClick={onSelect}
       onDoubleClick={container ? onToggle : undefined}
       className={cn(
-        "group flex h-full cursor-default items-center gap-1 pr-1 font-mono text-[12.5px] leading-none whitespace-nowrap transition-colors duration-100",
+        "group flex h-full cursor-default items-center gap-1 pr-1 font-mono text-[13px] leading-none whitespace-nowrap transition-colors duration-100",
         selected ? "bg-primary/12" : "hover:bg-accent/60",
         isActiveMatch && "ring-primary/60 ring-1 ring-inset",
         !isMatch && query.trim() && "opacity-75",
