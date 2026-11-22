@@ -13,11 +13,6 @@ datasource db {
 // Google Drive is the source of truth for all application data (workspaces, folders, files,
 // settings, recents — see src/lib/drive/). The database holds only authentication / account
 // identity, plus the deployment-wide AppConfig below (admin AI keys, not per-user data).
-//
-// The legacy Workspace / Folder / File / SyncFailure / UserSettings tables and the
-// User.activeWorkspaceId column still exist in deployed databases: they are read (raw SQL) by
-// the one-time per-user copy to Drive in src/lib/drive/legacyMigration.ts. Do NOT generate a
-// migration that drops them until every user's data has been verified in Drive.
 
 model User {
   id        String   @id @default(cuid())

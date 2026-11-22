@@ -4,7 +4,6 @@ import { getSessionUser } from "@/lib/auth/session";
 import { isUserLocked } from "@/lib/lock/lockService";
 import { getDriveClientForUser } from "./driveClient";
 import { DriveNotFoundError, DriveService } from "./driveService";
-import { ensureLegacyMigrated } from "./legacyMigration";
 import {
   AppError,
   resolveActiveWorkspaceId,
@@ -20,7 +19,6 @@ export async function getDriveSession() {
     throw new AppError("Application is locked. Unlock required.", 423);
   }
   const ds = new DriveService(getDriveClientForUser(user), user.id);
-  await ensureLegacyMigrated(ds);
   return { user, ds };
 }
 

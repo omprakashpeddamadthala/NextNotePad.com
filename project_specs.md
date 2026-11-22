@@ -66,7 +66,7 @@ Main features: Monaco editor (the VS Code editor), tabs and split view, file exp
 
 - `User` — Google id, email, name, avatar, Google tokens (server only), `isAdmin`, `blocked`, password-lock settings.
 - `AppConfig` — one row: Gemini API key and model name (falls back to env vars when empty).
-- Old tables (`Workspace`, `Folder`, `File`, `SyncFailure`, `UserSettings`) still exist only for the one-time move to Drive. **Do not drop them** yet.
+- Nothing else. Workspaces, folders, files and settings live only in Google Drive.
 
 **Google Drive** (signed-in users)
 
@@ -120,7 +120,37 @@ For every task:
 
 ---
 
-## 19. Current task — UI polish round 2 (approved and built 2026-11-21)
+## 20. Current task — Remove the one-time database → Drive copy tool (approved and built 2026-11-22)
+
+**What the user asked (2026-11-22):** "remove workspace table, do not store in db, store that info in Google Drive itself", then "remove the copy tool".
+
+### What exists today
+- Workspaces, folders, files and settings are **already** stored only in Google Drive. The new database (`144.24.155.218`) has just 2 tables: `User` and `AppConfig`. There is no workspace table in it.
+- The only code that still reads workspace data from a database is the one-time copy tool `src/lib/drive/legacyMigration.ts`. It runs on every Drive request (from `src/lib/drive/session.ts`) and copies old `Workspace` / `Folder` / `File` / `UserSettings` rows into Drive if they exist.
+
+### Planned changes
+1. Delete `src/lib/drive/legacyMigration.ts`.
+2. `src/lib/drive/session.ts` — remove the import and the `ensureLegacyMigrated(ds)` call.
+3. `scripts/drive-test/run.ts` — remove the 4 "Legacy DB -> Drive migration" tests and their `seedLegacyUser` helper (they test the deleted code).
+4. `prisma/schema.prisma` — replace the comment about the old tables with: the database holds only accounts and AppConfig; all workspace data lives in Google Drive.
+5. This file, section 4 — remove the "Old tables … Do not drop them" line.
+
+### Not changed
+- No database tables are dropped, in the new or the old database.
+- `migrations.legacyDatabase` in `appConfigService.ts` stays, so users' existing `.appConfig.json` files in Drive still load without errors.
+- How workspaces are saved in Drive does not change.
+
+### Risk (accepted by user)
+Anyone whose notes are still only in the old database (`103.99.36.194`) and were never copied to Drive will no longer get them copied automatically.
+
+### Done when
+- Types, lint and build pass
+- `npm run dev` starts; signed in, workspaces load, create and switch from Drive with no console errors
+- No code mentions `legacyMigration` any more
+
+---
+
+## 19. Previous task — UI polish round 2 (approved and built 2026-11-21)
 
 **What the user asked (2026-11-21):** "improve complete UI". This follows round 1 (section 14). Screens checked with real screenshots in dark and light mode, at desktop and phone width: editor, File menu, Settings, Command Palette, welcome screen, Features page.
 
